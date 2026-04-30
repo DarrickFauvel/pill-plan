@@ -41,6 +41,49 @@ Health-app aesthetic — calm, clinical-clean, approachable. Reference: Apple He
 - Transitions: `150ms ease` for interactive states
 - SSE-driven updates use CSS `@starting-style` for smooth fragment merges
 
+### Accessibility — Senior-Optimized
+A significant portion of users are seniors or caregivers for seniors. Accessibility is a core requirement, not an afterthought. Target WCAG 2.1 AA minimum; AAA where feasible.
+
+**Vision**
+- Body text minimum `1.125rem` (`18px`); never smaller
+- Heading scale starts at `1.5rem` and steps up — no small headings
+- Color contrast: minimum 4.5:1 for body text, 3:1 for large text and UI components (WCAG AA); prefer 7:1 for critical labels (AAA)
+- Color is never the sole indicator of state — always pair with an icon, label, or pattern
+- Support `@media (prefers-contrast: more)` — darken borders and text, remove transparency
+- Support `@media (prefers-color-scheme: dark)` — high-contrast dark palette
+
+**Motor**
+- Minimum tap target: `56px × 56px` for primary actions (exceeds WCAG 2.5.5's 44px — seniors often have reduced fine motor control or arthritis)
+- Generous spacing between tap targets — no two interactive elements closer than `8px`
+- No drag-and-drop as the only interaction path — always provide a button alternative
+- No double-tap or long-press required for any primary action
+
+**Cognitive**
+- Plain language throughout — no medical jargon without explanation
+- Labels on every interactive element — no icon-only buttons
+- Destructive actions always require an explicit confirmation step
+- Error messages state exactly what went wrong and how to fix it — never just "invalid"
+- No auto-dismissing toasts for critical information — use persistent banners that require acknowledgment
+- Session timeout warnings give at least 2 minutes notice with a clear "Stay logged in" option
+- Consistent navigation — controls stay in the same place across pages
+
+**Motion & Time**
+- Respect `@media (prefers-reduced-motion: reduce)` — disable all transitions and animations
+- No content that flashes more than 3 times per second
+- No time limits on any task — seniors may take longer to complete forms
+
+**Focus & Keyboard**
+- Visible focus ring on every interactive element: `outline: 3px solid var(--color-primary); outline-offset: 3px`
+- Logical tab order follows visual reading order
+- Skip-to-main-content link as first focusable element on every page
+- Modal/sheet traps focus within it while open; returns focus on close
+
+**Screen Reader**
+- `aria-label` or `aria-labelledby` on every interactive element that lacks visible text
+- Live regions (`aria-live="polite"`) on SSE-updated areas so screen readers announce changes
+- Status messages (dose taken, refill logged) announced via `role="status"`
+- The Grid uses `role="grid"`, `role="row"`, `role="gridcell"` with descriptive `aria-label` per cell (e.g., "Wednesday April 15, Morning slot, 2 medications, all taken")
+
 ### Mobile-First
 MediGrid is primarily used on phones — patients checking doses, caregivers logging refills on the go. Desktop is an enhancement, not the baseline.
 

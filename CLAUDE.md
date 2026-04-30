@@ -10,7 +10,13 @@ A PWA for organizing medications and verifying pill organizer refills. Full prod
 - Semantic HTML5 only — use `<nav>`, `<main>`, `<article>`, `<section>`, `<aside>`, `<header>`, `<footer>` appropriately
 - No `<div>` soup — every element should have a semantic reason
 - Every page must have `<meta name="viewport" content="width=device-width, initial-scale=1">`
+- Every page must have a skip link as the first focusable element: `<a href="#main" class="skip-link">Skip to content</a>`
 - Use correct `type` attributes on inputs: `type="email"`, `type="tel"`, `type="number"` — triggers the right mobile keyboard
+- Every `<input>` and `<select>` must have an associated `<label>` — never use `placeholder` as a substitute
+- Every icon-only button must have `aria-label` describing its action
+- SSE-updated regions must have `aria-live="polite"` so screen readers announce changes
+- The Grid must use `role="grid"` / `role="row"` / `role="gridcell"` with descriptive `aria-label` per cell
+- Destructive actions (`<button>` that deletes) need `aria-describedby` pointing to a warning
 - Datastar attributes live on HTML elements (`data-signals`, `data-on-click`, `data-bind`, etc.)
 
 ### CSS
@@ -19,10 +25,17 @@ A PWA for organizing medications and verifying pill organizer refills. Full prod
 - Use `@layer` for cascade management: `@layer base, components, utilities`
 - Prefer `grid` and `flex` — no floats, no absolute positioning for layout
 - Fluid sizing with `clamp()` — no hard breakpoints where avoidable
-- Minimum tap target: `44px × 44px` on all interactive elements
+- **Tap targets: `56px × 56px` minimum** for primary actions — seniors have reduced fine motor control
+- Spacing between interactive elements: never less than `8px`
 - No hover-only affordances — touch devices have no hover state
 - `touch-action: manipulation` on buttons and links to eliminate tap delay
-- Font sizes: never below `1rem` (`16px`) on mobile
+- **Font sizes: never below `1.125rem` (`18px`)** — seniors need larger text
+- Visible focus ring: `outline: 3px solid var(--color-primary); outline-offset: 3px` — never `outline: none`
+- Color is never the sole state indicator — always pair with icon, label, or pattern
+- Contrast: minimum 4.5:1 for body text; 7:1 preferred for critical labels
+- `@media (prefers-contrast: more)` — darken borders, remove transparency
+- `@media (prefers-reduced-motion: reduce)` — disable all transitions and animations
+- `@media (prefers-color-scheme: dark)` — high-contrast dark palette
 - `@media print` styles in `public/css/grid.css` for the printable grid
 
 ### JavaScript
@@ -83,7 +96,9 @@ res.end();
 - No `console.log` left in committed code — use a thin logger wrapper
 - Prefer `const` over `let`; never `var`
 - Destructure function parameters when there are more than 2
-- Error messages shown to users must be friendly — never expose stack traces or SQL errors
+- Error messages shown to users must be friendly and specific — never expose stack traces or SQL errors, never just say "invalid"
+- Destructive actions always require a confirmation step before executing
+- No auto-dismissing toasts for critical information — use persistent banners
 
 ## File Structure
 
