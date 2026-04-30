@@ -35,10 +35,11 @@ async function migrate() {
     const statements = sql
       .split(';')
       .map((s) => s.trim())
-      .filter((s) => s.length > 0)
-      .map((s) => ({ sql: s }));
+      .filter((s) => s.length > 0);
 
-    await db.batch(statements, 'write');
+    for (const stmt of statements) {
+      await db.execute({ sql: stmt, args: [] });
+    }
 
     await db.execute({
       sql: 'INSERT INTO _migrations (name, ran_at) VALUES (?, ?)',

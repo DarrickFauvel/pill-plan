@@ -4,7 +4,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import { Eta } from 'eta';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, relative } from 'path';
 import authRoutes from './routes/auth.js';
 import { requireAuth } from './middleware/auth.js';
 
@@ -20,7 +20,9 @@ const eta = new Eta({
 const app = express();
 
 app.engine('eta', (filePath, data, cb) => {
-  eta.renderFileAsync(filePath, data)
+  // Eta v3 prepends views dir internally, so pass path relative to views without extension
+  const name = relative(viewsDir, filePath).replace(/\.eta$/, '');
+  eta.renderAsync(name, data)
     .then((html) => cb(null, html))
     .catch(cb);
 });
