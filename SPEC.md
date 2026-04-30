@@ -41,6 +41,21 @@ Health-app aesthetic — calm, clinical-clean, approachable. Reference: Apple He
 - Transitions: `150ms ease` for interactive states
 - SSE-driven updates use CSS `@starting-style` for smooth fragment merges
 
+### Mobile-First
+MediGrid is primarily used on phones — patients checking doses, caregivers logging refills on the go. Desktop is an enhancement, not the baseline.
+
+- All CSS written mobile-first: base styles target small screens, `@media (min-width: ...)` adds desktop enhancements
+- Minimum tap target size: `44px × 44px` (WCAG 2.5.5)
+- Touch-friendly interactions: no hover-only affordances, no tiny controls
+- Bottom navigation bar on mobile (thumb reach); sidebar on desktop
+- The Grid scrolls horizontally on small screens — one week visible at a time with swipe navigation; full month visible on desktop
+- Inputs use appropriate `type` attributes (`tel`, `number`, `email`) to trigger the right mobile keyboard
+- No `300ms` tap delay — `touch-action: manipulation` on interactive elements
+- Viewport meta: `<meta name="viewport" content="width=device-width, initial-scale=1">`
+- Font sizes never below `1rem` on mobile — no pinch-to-read
+- Forms are single-column on mobile, can go multi-column on desktop
+- Modals are full-screen bottom sheets on mobile, centered dialogs on desktop
+
 ---
 
 ## Tech Stack

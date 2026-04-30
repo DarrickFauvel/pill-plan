@@ -9,13 +9,20 @@ A PWA for organizing medications and verifying pill organizer refills. Full prod
 ### HTML
 - Semantic HTML5 only — use `<nav>`, `<main>`, `<article>`, `<section>`, `<aside>`, `<header>`, `<footer>` appropriately
 - No `<div>` soup — every element should have a semantic reason
+- Every page must have `<meta name="viewport" content="width=device-width, initial-scale=1">`
+- Use correct `type` attributes on inputs: `type="email"`, `type="tel"`, `type="number"` — triggers the right mobile keyboard
 - Datastar attributes live on HTML elements (`data-signals`, `data-on-click`, `data-bind`, etc.)
 
 ### CSS
+- **Mobile-first always** — base styles target small screens, `@media (min-width: ...)` layers on desktop enhancements. Never write desktop-first styles and work down.
 - All design tokens in `public/css/tokens.css` as CSS custom properties
 - Use `@layer` for cascade management: `@layer base, components, utilities`
 - Prefer `grid` and `flex` — no floats, no absolute positioning for layout
 - Fluid sizing with `clamp()` — no hard breakpoints where avoidable
+- Minimum tap target: `44px × 44px` on all interactive elements
+- No hover-only affordances — touch devices have no hover state
+- `touch-action: manipulation` on buttons and links to eliminate tap delay
+- Font sizes: never below `1rem` (`16px`) on mobile
 - `@media print` styles in `public/css/grid.css` for the printable grid
 
 ### JavaScript
