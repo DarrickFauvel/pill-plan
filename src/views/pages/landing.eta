@@ -284,6 +284,7 @@
     <li><a href="/signup">Get started</a></li>
   </ul>
   <p class="landing-footer__copy">
-    &copy; <%= new Date().getFullYear() %> MediGrid. Built for health.
+    &copy; <%= new Date().getFullYear() %> MediGrid. Built by
+    <a href="https://darrickdevelops.com" target="_blank" rel="noopener noreferrer">Darrick Develops</a>.
   </p>
 </footer>
