@@ -51,21 +51,45 @@ A PWA for organizing medications and verifying pill organizer refills. Full prod
 - No front-end framework — Datastar handles all reactivity
 
 ### Datastar
-- Datastar drives all client ↔ server interaction via SSE
-- The server sends HTML fragments; Datastar merges them into the DOM
+Datastar drives all client ↔ server interaction via a persistent SSE connection. **Signals are the default — DOM fragment replacement is the last resort.**
+
+**Event priority (use the highest one that fits):**
+
+1. **`datastar-merge-signals`** — preferred. Send updated data values; Datastar's reactive bindings (`data-text`, `data-bind`, `data-show`, `data-class`) update the DOM without any replacement. Zero reflow for elements already in the DOM.
+2. **`datastar-execute-script`** — for lightweight client-side actions (toasts, focus management, scroll) that don't need a DOM node replaced.
+3. **`datastar-merge-fragments`** — only when the shape of the HTML itself changes (e.g., a list item is added/removed, a new card is inserted). Never use this to update a value that a signal binding can handle.
+
+**When using `datastar-merge-fragments`:**
+- Always target the smallest possible element by `id` — never replace a parent when a child is all that changed
+- Use `data-merge-mode="morph"` to diff/patch the existing node instead of replacing it — preserves focus, scroll position, and input state
+- Never send large HTML subtrees; pre-compute data in the route handler and keep templates lean
+
+**Signals on the page:**
+- Declare all reactive state in `data-signals` on a top-level element at page load
+- Bind display to signals with `data-text="$signalName"`, `data-show="$condition"`, `data-class`
+- The server pushes `datastar-merge-signals` to update values; bindings handle the rest automatically
+
+**General rules:**
 - Use `data-on-click="@post('/api/...')"` for mutations
 - Use `data-on-load="@get('/api/...')"` to populate on mount
-- Server responses must be SSE streams with `datastar-merge-fragments`, `datastar-merge-signals`, or `datastar-execute-script` events
-- Never return JSON to Datastar endpoints — always return SSE with HTML fragments
-- Keep fragments small and targeted — update only the element that changed
+- Never return JSON to Datastar endpoints — always SSE
+- One persistent SSE connection per session at `GET /api/sse`; do not open a new connection per action
 
-**SSE response format (Express):**
+**SSE response helpers (Express):**
 ```js
-res.setHeader('Content-Type', 'text/event-stream');
-res.setHeader('Cache-Control', 'no-cache');
-res.setHeader('Connection', 'keep-alive');
+/** @param {import('express').Response} res */
+function sseHeaders(res) {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+}
 
-res.write(`event: datastar-merge-fragments\ndata: fragments <div id="target">...</div>\n\n`);
+// Preferred: signal update — no DOM replacement
+res.write(`event: datastar-merge-signals\ndata: signals {"daysRemaining": 12, "refillAlert": false}\n\n`);
+
+// Only when HTML shape changes: morph the existing node
+res.write(`event: datastar-merge-fragments\ndata: merge morph\ndata: fragments <li id="med-123">...</li>\n\n`);
+
 res.end();
 ```
 

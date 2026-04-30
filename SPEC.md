@@ -390,18 +390,28 @@ Status indicators:
 
 ## SSE Architecture (Datastar)
 
-The server maintains one SSE connection per authenticated session. Datastar's `@get` and `@post` attributes on HTML elements trigger server actions; the server responds with SSE fragments that Datastar merges into the DOM.
+The server maintains one persistent SSE connection per authenticated session at `GET /api/sse`. Datastar's `@get` and `@post` attributes trigger server actions; the server responds with SSE events that Datastar processes.
 
-**SSE Event Types**
-- `datastar-merge-fragments` — partial HTML updates (grid cell, alert banner, medication card)
-- `datastar-merge-signals` — signal updates (days remaining, refill alerts)
-- `datastar-execute-script` — toast notifications
+**Performance principle: signals over fragments.** Replacing DOM nodes causes reflow and risks losing focus or scroll state. Updating a signal is free — Datastar's reactive bindings handle the DOM change natively. Only send a fragment when the HTML structure itself must change.
+
+**SSE Event Hierarchy**
+| Event | When to use |
+|---|---|
+| `datastar-merge-signals` | Value changes — status, counts, labels, alert flags. Bindings update the DOM with zero reflow. **Default choice.** |
+| `datastar-execute-script` | Client-side actions with no DOM node to update — toasts, focus, scroll. |
+| `datastar-merge-fragments` (morph) | HTML structure changes — list item added/removed, new card inserted. Use `merge morph` to diff rather than replace. |
+
+**Reactive bindings on the page** (`data-signals` declared at page load):
+- `data-text="$signalName"` — updates text content
+- `data-show="$condition"` — shows/hides without DOM removal
+- `data-class="{'active': $isActive}"` — toggles classes
+- `data-bind="$value"` — two-way binding for inputs
 
 **Example flow — marking a dose taken:**
 1. User taps a slot cell → Datastar `@post /api/grid/entry/:id`
 2. Express updates `grid_entries`, recalculates days remaining
-3. Server emits SSE fragment: updated cell HTML + updated days-remaining badge
-4. Datastar merges fragment into DOM — no full page reload
+3. Server emits `datastar-merge-signals` → `{"slotStatus_abc": "taken", "daysRemaining_xyz": 11}`
+4. Datastar reactive bindings update the status dot and days-remaining badge in place — no DOM replacement, no reflow
 
 ---
 
