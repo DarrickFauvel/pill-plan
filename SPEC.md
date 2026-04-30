@@ -110,6 +110,7 @@ MediGrid is primarily used on phones — patients checking doses, caregivers log
 | Client logic | Vanilla JS (ES2022+, JSDoc type annotations throughout) |
 | Reactivity | [Datastar](https://data-star.dev) — hypermedia signals + SSE fragment merges |
 | Server | Node.js + Express |
+| Templating | [Eta](https://eta.js.org) — lightweight, fast, server-side HTML templates |
 | Real-time | Server-Sent Events (SSE) via Express |
 | Database | Turso (libSQL / distributed SQLite) |
 | Auth | Email + password (bcrypt, server-side sessions in Turso) |
@@ -446,16 +447,18 @@ medigrid/
 │   │   ├── gridBuilder.js
 │   │   └── notifications.js
 │   └── views/
-│       ├── fragments/
-│       │   ├── grid-cell.html
-│       │   ├── med-card.html
-│       │   └── alert-banner.html
+│       ├── layouts/
+│       │   └── base.eta        # Base layout (head, skip link, nav, main slot)
+│       ├── fragments/          # Partial templates returned via SSE
+│       │   ├── grid-cell.eta
+│       │   ├── med-card.eta
+│       │   └── alert-banner.eta
 │       └── pages/
-│           ├── login.html
-│           ├── signup.html
-│           ├── grid.html
-│           ├── medications.html
-│           └── print.html
+│           ├── login.eta
+│           ├── signup.eta
+│           ├── grid.eta
+│           ├── medications.eta
+│           └── print.eta
 ├── SPEC.md
 ├── package.json
 └── .env

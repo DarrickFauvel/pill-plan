@@ -63,6 +63,16 @@ res.write(`event: datastar-merge-fragments\ndata: fragments <div id="target">...
 res.end();
 ```
 
+### Eta Templating
+- All server-rendered HTML uses [Eta](https://eta.js.org) templates (`.eta` files in `src/views/`)
+- Configure Eta once in `src/server.js`: `app.engine('eta', eta.renderFile)` + `app.set('view engine', 'eta')`
+- Full pages: `res.render('pages/grid', { data })` — Eta extends the base layout
+- SSE fragments: `eta.renderFile('fragments/grid-cell', data)` then write to the SSE stream — do not use `res.render` for fragments
+- Base layout at `src/views/layouts/base.eta` — contains `<head>`, skip link, nav, and `<%~ it.body %>` slot
+- Pages extend the base layout using Eta's `layout()` helper: `<% layout('layouts/base') %>`
+- Keep logic out of templates — pass pre-computed values from the route handler, never query the DB inside a template
+- Template variables use `<%= it.value %>` (escaped) by default; use `<%~ it.html %>` only for trusted server-generated HTML fragments
+
 ### Express
 - Routes in `src/routes/` — one file per resource
 - Auth middleware in `src/middleware/auth.js` — applied to all `/api/*` and `/app/*` routes
@@ -127,8 +137,10 @@ src/
     gridBuilder.js
     notifications.js
   views/
-    fragments/   # HTML partials returned via SSE
-    pages/       # Full page HTML
+    layouts/
+      base.eta       # Base layout — head, skip link, nav, body slot
+    fragments/       # Partial .eta templates returned via SSE
+    pages/           # Full page .eta templates
 ```
 
 ## Running Locally
