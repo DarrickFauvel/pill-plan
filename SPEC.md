@@ -32,6 +32,8 @@ Health-app aesthetic — calm, clinical-clean, approachable. Reference: Apple He
 - Line height: 1.5 body, 1.2 headings
 
 ### Spacing & Radius
+All sizing uses relative units — `rem` for font sizes and global spacing, `em` for component-internal spacing, `%`/`fr`/`ch` for layout, `dvh`/`dvw` for viewport. `px` is reserved for borders, outlines, box-shadows, and media query breakpoints.
+
 - Base spacing unit: `0.5rem`
 - Card radius: `1rem`
 - Button radius: `0.5rem`
@@ -53,7 +55,7 @@ A significant portion of users are seniors or caregivers for seniors. Accessibil
 - Support `@media (prefers-color-scheme: dark)` — high-contrast dark palette
 
 **Motor**
-- Minimum tap target: `56px × 56px` for primary actions (exceeds WCAG 2.5.5's 44px — seniors often have reduced fine motor control or arthritis)
+- Minimum tap target: `3.5rem × 3.5rem` for primary actions (56px at default root — exceeds WCAG 2.5.5's 44px; scales with user zoom for seniors with accessibility font settings)
 - Generous spacing between tap targets — no two interactive elements closer than `8px`
 - No drag-and-drop as the only interaction path — always provide a button alternative
 - No double-tap or long-press required for any primary action

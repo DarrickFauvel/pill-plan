@@ -21,15 +21,21 @@ A PWA for organizing medications and verifying pill organizer refills. Full prod
 
 ### CSS
 - **Mobile-first always** — base styles target small screens, `@media (min-width: ...)` layers on desktop enhancements. Never write desktop-first styles and work down.
+- **Relative units always** — use `px` only where a physical pixel is the right unit (borders, outlines, box-shadows, media query breakpoints). Everything else:
+  - Font sizes: `rem` (relative to root, respects browser zoom and user font preferences)
+  - Component-internal spacing (padding, margin, gap): `em` so it scales with the component's own font size
+  - Layout widths: `%`, `fr`, or `ch` (e.g. `max-width: 65ch` for readable line lengths)
+  - Viewport-relative: `dvh`/`dvw` (dynamic viewport units) instead of `vh`/`vw` — avoids mobile browser chrome issues
+  - Fluid ranges: `clamp(min, preferred, max)` with `rem`/`vw` inside
+  - Tap target minimums expressed in `rem`: `3.5rem` (56px at default root) — scales with user zoom
 - All design tokens in `public/css/tokens.css` as CSS custom properties
 - Use `@layer` for cascade management: `@layer base, components, utilities`
 - Prefer `grid` and `flex` — no floats, no absolute positioning for layout
-- Fluid sizing with `clamp()` — no hard breakpoints where avoidable
-- **Tap targets: `56px × 56px` minimum** for primary actions — seniors have reduced fine motor control
-- Spacing between interactive elements: never less than `8px`
+- **Tap targets: `3.5rem × 3.5rem` minimum** for primary actions — seniors have reduced fine motor control
+- Spacing between interactive elements: never less than `0.5rem`
 - No hover-only affordances — touch devices have no hover state
 - `touch-action: manipulation` on buttons and links to eliminate tap delay
-- **Font sizes: never below `1.125rem` (`18px`)** — seniors need larger text
+- **Font sizes: never below `1.125rem`** — seniors need larger text
 - Visible focus ring: `outline: 3px solid var(--color-primary); outline-offset: 3px` — never `outline: none`
 - Color is never the sole state indicator — always pair with icon, label, or pattern
 - Contrast: minimum 4.5:1 for body text; 7:1 preferred for critical labels
