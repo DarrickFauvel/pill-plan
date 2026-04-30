@@ -1,0 +1,74 @@
+@layer tokens {
+  :root {
+    /* Colors */
+    --color-primary:   #6EC6A0;
+    --color-secondary: #7BB8D4;
+    --color-surface:   #F5FAFA;
+    --color-card:      #FFFFFF;
+    --color-text:      #1A2E2A;
+    --color-muted:     #7A9A94;
+    --color-warning:   #F4A261;
+    --color-danger:    #E76F51;
+    --color-border:    #D4E8E2;
+
+    /* Typography */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-size-sm:   clamp(0.9rem,  0.85rem + 0.15vw, 1rem);
+    --font-size-base: clamp(1.125rem, 1.05rem + 0.2vw,  1.25rem);
+    --font-size-lg:   clamp(1.25rem,  1.15rem + 0.3vw,  1.5rem);
+    --font-size-xl:   clamp(1.5rem,   1.3rem  + 0.5vw,  2rem);
+    --font-size-2xl:  clamp(1.875rem, 1.6rem  + 0.7vw,  2.5rem);
+
+    --line-height-body:    1.5;
+    --line-height-heading: 1.2;
+
+    /* Spacing (base unit: 0.5rem) */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+
+    /* Radius */
+    --radius-sm:   0.5rem;
+    --radius-md:   0.75rem;
+    --radius-lg:   1rem;
+    --radius-full: 999rem;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+    /* Transitions */
+    --transition: 150ms ease;
+
+    /* Tap target minimum (3.5rem = 56px at default root) */
+    --tap-min: 3.5rem;
+
+    /* Focus ring */
+    --focus-ring: 3px solid var(--color-primary);
+    --focus-offset: 3px;
+  }
+
+  @media (prefers-contrast: more) {
+    :root {
+      --color-text:   #000000;
+      --color-muted:  #3A5A54;
+      --color-border: #4A7A70;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-surface: #0F1E1B;
+      --color-card:    #1A2E2A;
+      --color-text:    #E8F5F2;
+      --color-muted:   #9ABDB6;
+      --color-border:  #2A4A44;
+    }
+  }
+}

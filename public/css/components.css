@@ -1,0 +1,242 @@
+@layer components {
+
+  /* ─── Buttons ──────────────────────────────────────────── */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap-min);
+    padding-inline: var(--space-6);
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color var(--transition), color var(--transition),
+                border-color var(--transition), box-shadow var(--transition);
+    user-select: none;
+  }
+
+  .btn--primary {
+    background-color: var(--color-primary);
+    color: var(--color-card);
+  }
+
+  .btn--primary:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 85%, var(--color-text));
+  }
+
+  .btn--secondary {
+    background-color: transparent;
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .btn--secondary:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  }
+
+  .btn--danger {
+    background-color: var(--color-danger);
+    color: var(--color-card);
+  }
+
+  .btn--full {
+    inline-size: 100%;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+
+  /* ─── Form elements ─────────────────────────────────────── */
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .form-group label {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+  }
+
+  .input {
+    inline-size: 100%;
+    min-block-size: var(--tap-min);
+    padding-inline: var(--space-4);
+    background-color: var(--color-card);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    transition: border-color var(--transition), box-shadow var(--transition);
+    touch-action: manipulation;
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 25%, transparent);
+  }
+
+  .input::placeholder {
+    color: var(--color-muted);
+  }
+
+  .input--error {
+    border-color: var(--color-danger);
+  }
+
+  .field-error {
+    font-size: var(--font-size-sm);
+    color: var(--color-danger);
+  }
+
+
+  /* ─── Alert banner ──────────────────────────────────────── */
+
+  .alert {
+    padding: var(--space-4);
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+  }
+
+  .alert--error {
+    background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    color: var(--color-danger);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
+  }
+
+  .alert--success {
+    background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: color-mix(in srgb, var(--color-primary) 70%, var(--color-text));
+    border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  }
+
+  .alert--warning {
+    background-color: color-mix(in srgb, var(--color-warning) 12%, transparent);
+    color: color-mix(in srgb, var(--color-warning) 70%, var(--color-text));
+    border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
+  }
+
+
+  /* ─── Card ──────────────────────────────────────────────── */
+
+  .card {
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-sm);
+  }
+
+
+  /* ─── Auth layout ───────────────────────────────────────── */
+
+  .auth-layout {
+    display: grid;
+    place-items: center;
+    min-block-size: 100dvh;
+    padding: var(--space-4);
+    background-color: var(--color-surface);
+  }
+
+  .auth-card {
+    inline-size: min(100%, 26rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+    box-shadow: var(--shadow-md);
+  }
+
+  .auth-brand {
+    text-align: center;
+  }
+
+  .auth-logo {
+    font-size: var(--font-size-2xl);
+    color: var(--color-primary);
+    letter-spacing: -0.02em;
+  }
+
+  .auth-tagline {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    margin-block-start: var(--space-1);
+  }
+
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .auth-switch {
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+  }
+
+
+  /* ─── Save indicator ─────────────────────────────────────── */
+
+  .save-indicator {
+    position: fixed;
+    inset-block-end: var(--space-6);
+    inset-inline-end: var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+    padding-inline: var(--space-4);
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    z-index: 50;
+    pointer-events: none;
+    transition: opacity var(--transition);
+  }
+
+  .save-indicator--saving {
+    color: var(--color-muted);
+  }
+
+  .save-indicator--saved {
+    color: var(--color-primary);
+  }
+
+  .save-indicator--error {
+    color: var(--color-danger);
+    pointer-events: auto;
+    border-color: var(--color-danger);
+  }
+
+  @keyframes spin {
+    to { rotate: 360deg; }
+  }
+
+  .save-indicator__spinner {
+    inline-size: 1em;
+    block-size: 1em;
+    border: 2px solid currentColor;
+    border-block-start-color: transparent;
+    border-radius: var(--radius-full);
+    animation: spin 600ms linear infinite;
+  }
+}
