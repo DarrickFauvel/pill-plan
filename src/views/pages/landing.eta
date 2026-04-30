@@ -1,0 +1,289 @@
+<% layout('../layouts/base') %>
+
+<!-- ─── Navigation ──────────────────────────────────────── -->
+<header>
+  <nav class="landing-nav" aria-label="Main navigation">
+    <a href="/" class="landing-nav__logo" aria-label="MediGrid home">MediGrid</a>
+    <div class="landing-nav__actions">
+      <a href="/login" class="btn btn--secondary">Sign in</a>
+      <a href="/signup" class="btn btn--primary">Get started</a>
+    </div>
+  </nav>
+</header>
+
+<main id="main">
+
+  <!-- ─── Hero ────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero__inner">
+      <div class="hero__content">
+        <p class="hero__eyebrow" aria-hidden="true">
+          <span>💊</span> Medication organizer
+        </p>
+        <h1 class="hero__headline">
+          Your medications,<br>
+          <mark>always organized.</mark>
+        </h1>
+        <p class="hero__sub">
+          MediGrid helps patients and caregivers plan doses, fill weekly pill
+          organizers, and get alerted before supplies run out.
+        </p>
+        <div class="hero__actions">
+          <a href="/signup" class="btn btn--primary">Create free account</a>
+          <a href="/login" class="btn btn--secondary">Sign in</a>
+        </div>
+      </div>
+
+      <!-- App preview — decorative, aria-hidden -->
+      <div class="hero-visual" aria-hidden="true" role="presentation">
+        <div class="preview-badges">
+          <div class="preview-badge preview-badge--saved">✓ Dose logged</div>
+          <div class="preview-badge preview-badge--refill">⚠ Refill in 6 days</div>
+        </div>
+
+        <div class="app-preview">
+          <div class="preview-topbar">
+            <span class="preview-topbar__title">April 2026</span>
+            <div class="preview-topbar__nav">
+              <button tabindex="-1">&#8249;</button>
+              <button tabindex="-1">&#8250;</button>
+            </div>
+          </div>
+
+          <div class="preview-days">
+            <span></span>
+            <span class="preview-day">Mon</span>
+            <span class="preview-day">Tue</span>
+            <span class="preview-day">Wed</span>
+            <span class="preview-day preview-day--today">Thu</span>
+            <span class="preview-day">Fri</span>
+            <span class="preview-day">Sat</span>
+            <span class="preview-day">Sun</span>
+          </div>
+
+          <!-- Morning row -->
+          <div class="preview-row">
+            <span class="preview-slot-label">Morning</span>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--taken"></span>
+              <span class="preview-dot preview-dot--taken"></span>
+              <span class="preview-dot preview-dot--taken"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--taken"></span>
+              <span class="preview-dot preview-dot--taken"></span>
+              <span class="preview-dot preview-dot--taken"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--taken"></span>
+              <span class="preview-dot preview-dot--taken"></span>
+              <span class="preview-dot preview-dot--taken"></span>
+            </div>
+            <div class="preview-cell preview-cell--today">
+              <span class="preview-dot"></span>
+              <span class="preview-dot"></span>
+              <span class="preview-dot"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--future"></span>
+              <span class="preview-dot preview-dot--future"></span>
+              <span class="preview-dot preview-dot--future"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--future"></span>
+              <span class="preview-dot preview-dot--future"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--future"></span>
+              <span class="preview-dot preview-dot--future"></span>
+            </div>
+          </div>
+
+          <!-- Evening row -->
+          <div class="preview-row">
+            <span class="preview-slot-label">Evening</span>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--taken"></span>
+              <span class="preview-dot preview-dot--taken"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--taken"></span>
+              <span class="preview-dot preview-dot--taken"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--taken"></span>
+              <span class="preview-dot preview-dot--taken"></span>
+            </div>
+            <div class="preview-cell preview-cell--today">
+              <span class="preview-dot"></span>
+              <span class="preview-dot"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--future"></span>
+              <span class="preview-dot preview-dot--future"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--future"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--future"></span>
+            </div>
+          </div>
+
+          <!-- Bedtime row -->
+          <div class="preview-row">
+            <span class="preview-slot-label">Bedtime</span>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--taken"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--taken"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--taken"></span>
+            </div>
+            <div class="preview-cell preview-cell--today">
+              <span class="preview-dot"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--future"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--future"></span>
+            </div>
+            <div class="preview-cell">
+              <span class="preview-dot preview-dot--future"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ─── Features ────────────────────────────────────────── -->
+  <section class="features" aria-labelledby="features-heading">
+    <div class="section-header">
+      <span class="section-label">Features</span>
+      <h2 class="section-title" id="features-heading">
+        Everything you need to stay on track
+      </h2>
+      <p class="section-desc">
+        Built for daily use by patients managing their own health and
+        caregivers looking after loved ones.
+      </p>
+    </div>
+
+    <ul class="features-grid" role="list">
+      <li class="feature-card">
+        <div class="feature-icon" aria-hidden="true">🗓</div>
+        <h3>The Grid</h3>
+        <p>
+          A full-month view of your 7-day pill organizer. See every slot, every
+          day — with custom time slots that match your real routine.
+        </p>
+      </li>
+      <li class="feature-card">
+        <div class="feature-icon feature-icon--blue" aria-hidden="true">💊</div>
+        <h3>Medication management</h3>
+        <p>
+          Search medications by name using the RxNorm database. Set schedules,
+          dose quantities, and let MediGrid track your supply automatically.
+        </p>
+      </li>
+      <li class="feature-card">
+        <div class="feature-icon feature-icon--warm" aria-hidden="true">🔔</div>
+        <h3>Refill alerts</h3>
+        <p>
+          Get notified 7 days before any medication runs out — before you miss
+          a dose. Log refills in seconds and stay ahead of the pharmacy.
+        </p>
+      </li>
+      <li class="feature-card">
+        <div class="feature-icon" aria-hidden="true">🖨</div>
+        <h3>Printable grid</h3>
+        <p>
+          Print a clean, paper-friendly version of your monthly grid. Perfect
+          for filling a physical organizer or sharing with a care team.
+        </p>
+      </li>
+      <li class="feature-card">
+        <div class="feature-icon feature-icon--blue" aria-hidden="true">👥</div>
+        <h3>Multiple profiles</h3>
+        <p>
+          One account, multiple people. Caregivers can manage profiles for
+          everyone they look after — and switch between them instantly.
+        </p>
+      </li>
+      <li class="feature-card">
+        <div class="feature-icon feature-icon--warm" aria-hidden="true">📱</div>
+        <h3>Works everywhere</h3>
+        <p>
+          A Progressive Web App that works on any phone, tablet, or desktop —
+          online or offline. Install it to your home screen for instant access.
+        </p>
+      </li>
+    </ul>
+  </section>
+
+
+  <!-- ─── How it works ─────────────────────────────────────── -->
+  <section class="how" aria-labelledby="how-heading">
+    <div class="section-header">
+      <span class="section-label">How it works</span>
+      <h2 class="section-title" id="how-heading">Up and running in minutes</h2>
+    </div>
+
+    <ol class="steps" role="list">
+      <li class="step">
+        <h3>Add your medications</h3>
+        <p>
+          Search by name to find your medication, set your daily schedule and
+          dose, then enter how many pills you have on hand.
+        </p>
+      </li>
+      <li class="step">
+        <h3>Fill your organizer</h3>
+        <p>
+          The Grid shows exactly what goes in each compartment for every day
+          of the week. Print it out and use it right at the medicine cabinet.
+        </p>
+      </li>
+      <li class="step">
+        <h3>Stay on track</h3>
+        <p>
+          Log doses as you take them, watch your supply count down, and get
+          a heads-up before you need to call in a refill.
+        </p>
+      </li>
+    </ol>
+  </section>
+
+
+  <!-- ─── Final CTA ────────────────────────────────────────── -->
+  <section class="cta-section" aria-labelledby="cta-heading">
+    <div class="cta-section__inner">
+      <h2 id="cta-heading">Ready to get organized?</h2>
+      <p>
+        It takes two minutes to set up. No credit card required.
+      </p>
+      <a href="/signup" class="btn btn--primary">
+        Create your free account
+      </a>
+    </div>
+  </section>
+
+</main>
+
+
+<!-- ─── Footer ───────────────────────────────────────────── -->
+<footer class="landing-footer">
+  <a href="/" class="landing-footer__brand">MediGrid</a>
+  <ul class="landing-footer__links">
+    <li><a href="/login">Sign in</a></li>
+    <li><a href="/signup">Get started</a></li>
+  </ul>
+  <p class="landing-footer__copy">
+    &copy; <%= new Date().getFullYear() %> MediGrid. Built for health.
+  </p>
+</footer>

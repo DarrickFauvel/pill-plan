@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/grid.css">
+  <% if (it.extraCss) { %><link rel="stylesheet" href="<%= it.extraCss %>"><% } %>
   <title><%= it.title ? it.title + ' — MediGrid' : 'MediGrid' %></title>
 </head>
 <body>

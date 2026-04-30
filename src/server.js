@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join, relative } from 'path';
 import authRoutes from './routes/auth.js';
 import { requireAuth } from './middleware/auth.js';
+import db from './db/client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const viewsDir   = join(__dirname, 'views');
@@ -35,7 +36,21 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Public pages
-app.get('/', (req, res) => res.redirect('/login'));
+app.get('/', async (req, res) => {
+  const sid = req.cookies?.sid;
+  if (sid) {
+    const { rows } = await db.execute({
+      sql: 'SELECT user_id FROM sessions WHERE id = ? AND expires_at > ?',
+      args: [sid, new Date().toISOString()],
+    });
+    if (rows.length) return res.redirect('/app/grid');
+  }
+  res.render('pages/landing', {
+    title: 'Your medications, always organized',
+    saveIndicator: false,
+    extraCss: '/css/landing.css',
+  });
+});
 
 app.get('/login', (req, res) =>
   res.render('pages/login', {
