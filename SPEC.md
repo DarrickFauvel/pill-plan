@@ -210,6 +210,50 @@ qty_added     INTEGER NOT NULL
 
 ---
 
+## Autosave Pattern
+
+All data input in MediGrid uses **debounced autosave** — no manual save buttons. A persistent save indicator in the bottom-right corner reflects the current save state.
+
+### Behavior
+- User edits any field → a 1000ms debounce timer starts (resets on each keystroke)
+- When the timer fires → indicator shows "Saving…", POST is sent via Datastar
+- Server responds with `datastar-merge-signals` → indicator transitions to "Saved"
+- "Saved" state auto-clears to idle after 2000ms
+- On network or server error → indicator shows "Not saved" and stays visible until the next successful save
+- Navigating away while a save is pending → indicator shows a warning; the pending request completes before unload
+
+### Save Indicator (bottom-right)
+```
+┌───────────────┐
+│  ✓ Saved      │  ← idle/saved state (fades out)
+└───────────────┘
+
+┌───────────────┐
+│  ⟳ Saving…   │  ← in-flight
+└───────────────┘
+
+┌───────────────┐
+│  ✕ Not saved  │  ← error (persists until resolved)
+└───────────────┘
+```
+
+- Fixed position: `bottom: 1.5rem; right: 1.5rem`
+- Pill-shaped chip: `background: var(--color-card)`, subtle drop shadow
+- `role="status"` + `aria-live="polite"` — screen readers announce state changes
+- Hidden (`data-show="$saveStatus !== 'idle'"`) when no activity
+- Never blocks scrolling or tappable content — `pointer-events: none` in idle/saved states
+
+### Signal Shape
+```json
+{ "saveStatus": "idle" }
+```
+States: `"idle"` | `"saving"` | `"saved"` | `"error"`
+
+### Where it applies
+Every form field that writes to the DB: medication details, dose schedule, time slot labels, profile name, refill quantities, notes. Does **not** apply to destructive actions (delete, deactivate) — those use explicit confirmation dialogs.
+
+---
+
 ## Features & Flows
 
 ### 1. Auth

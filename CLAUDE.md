@@ -123,6 +123,50 @@ res.end();
 - Passwords hashed with `bcrypt` (cost factor 12)
 - `src/middleware/auth.js` looks up the session on every request and attaches `req.user` and `req.profile`
 
+### Autosave & Save Indicator
+All data-writing inputs use debounced autosave — no save buttons. The save indicator is a fixed bottom-right chip driven entirely by the `$saveStatus` signal.
+
+**Client-side (JS):**
+```js
+/** @type {ReturnType<typeof setTimeout> | null} */
+let saveTimer = null;
+
+/**
+ * Call on every `input` event for autosaved fields.
+ * @param {() => void} saveFn - the Datastar POST trigger
+ */
+function scheduleAutosave(saveFn) {
+  clearTimeout(saveTimer);
+  sse.mergeSignals({ saveStatus: 'pending' });
+  saveTimer = setTimeout(saveFn, 1000);
+}
+```
+
+- Debounce delay: **1000ms** — long enough to avoid thrashing, short enough to feel live
+- On POST fire: set `saveStatus` to `"saving"` before the request leaves
+- On success response: server emits `datastar-merge-signals` → `{"saveStatus": "saved"}`
+- After 2000ms on client: reset `saveStatus` to `"idle"` via a `setTimeout`
+- On error response: server emits `{"saveStatus": "error"}` — stays visible until next success
+
+**HTML (in base layout):**
+```html
+<div
+  id="save-indicator"
+  role="status"
+  aria-live="polite"
+  data-show="$saveStatus !== 'idle'"
+  data-class="{'save-indicator--error': $saveStatus === 'error'}"
+>
+  <span data-show="$saveStatus === 'saving'">Saving…</span>
+  <span data-show="$saveStatus === 'saved'">Saved</span>
+  <span data-show="$saveStatus === 'error'">Not saved</span>
+</div>
+```
+
+- One indicator instance in `layouts/base.eta` — shared across all pages
+- `pointer-events: none` when `idle` or `saved` — never blocks tap targets
+- Does **not** apply to delete/deactivate — those use confirmation dialogs, not autosave
+
 ### RxNorm API
 - Proxied through Express at `/api/meds/search` and `/api/meds/details/:rxcui`
 - Never call RxNorm directly from the client
