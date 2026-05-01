@@ -14,7 +14,10 @@ export async function searchMeds(q) {
     const body = await res.json();
     const candidates = body?.approximateGroup?.candidate;
     if (!Array.isArray(candidates)) return [];
-    return candidates.map((c) => ({ rxcui: String(c.rxcui), name: String(c.term) }));
+    const seen = new Set();
+    return candidates
+      .filter((c) => c.name && !seen.has(c.rxcui) && seen.add(c.rxcui))
+      .map((c) => ({ rxcui: String(c.rxcui), name: String(c.name) }));
   } catch (err) {
     console.error('[rxnorm] searchMeds error:', err.message);
     return [];
