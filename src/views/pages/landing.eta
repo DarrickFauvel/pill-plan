@@ -176,52 +176,76 @@
 
     <ul class="features-grid" role="list">
       <li class="feature-card">
-        <div class="feature-icon" aria-hidden="true">🗓</div>
-        <h3>The Grid</h3>
-        <p>
-          A full-month view of your 7-day pill organizer. See every slot, every
-          day — with custom time slots that match your real routine.
-        </p>
+        <div class="feature-card__header">
+          <div class="feature-icon" aria-hidden="true">🗓</div>
+          <h3>The Grid</h3>
+        </div>
+        <div class="feature-card__body">
+          <p>
+            A full-month view of your 7-day pill organizer. See every slot, every
+            day — with custom time slots that match your real routine.
+          </p>
+        </div>
       </li>
       <li class="feature-card">
-        <div class="feature-icon feature-icon--blue" aria-hidden="true">💊</div>
-        <h3>Medication management</h3>
-        <p>
-          Search medications by name using the RxNorm database. Set schedules,
-          dose quantities, and let MediGrid track your supply automatically.
-        </p>
+        <div class="feature-card__header">
+          <div class="feature-icon feature-icon--blue" aria-hidden="true">💊</div>
+          <h3>Medication management</h3>
+        </div>
+        <div class="feature-card__body">
+          <p>
+            Search medications by name using the RxNorm database. Set schedules,
+            dose quantities, and let MediGrid track your supply automatically.
+          </p>
+        </div>
       </li>
       <li class="feature-card">
-        <div class="feature-icon feature-icon--warm" aria-hidden="true">🔔</div>
-        <h3>Refill alerts</h3>
-        <p>
-          Get notified 7 days before any medication runs out — before you miss
-          a dose. Log refills in seconds and stay ahead of the pharmacy.
-        </p>
+        <div class="feature-card__header">
+          <div class="feature-icon feature-icon--warm" aria-hidden="true">🔔</div>
+          <h3>Refill alerts</h3>
+        </div>
+        <div class="feature-card__body">
+          <p>
+            Get notified 7 days before any medication runs out — before you miss
+            a dose. Log refills in seconds and stay ahead of the pharmacy.
+          </p>
+        </div>
       </li>
       <li class="feature-card">
-        <div class="feature-icon" aria-hidden="true">🖨</div>
-        <h3>Printable grid</h3>
-        <p>
-          Print a clean, paper-friendly version of your monthly grid. Perfect
-          for filling a physical organizer or sharing with a care team.
-        </p>
+        <div class="feature-card__header">
+          <div class="feature-icon" aria-hidden="true">🖨</div>
+          <h3>Printable grid</h3>
+        </div>
+        <div class="feature-card__body">
+          <p>
+            Print a clean, paper-friendly version of your monthly grid. Perfect
+            for filling a physical organizer or sharing with a care team.
+          </p>
+        </div>
       </li>
       <li class="feature-card">
-        <div class="feature-icon feature-icon--blue" aria-hidden="true">👥</div>
-        <h3>Multiple profiles</h3>
-        <p>
-          One account, multiple people. Caregivers can manage profiles for
-          everyone they look after — and switch between them instantly.
-        </p>
+        <div class="feature-card__header">
+          <div class="feature-icon feature-icon--blue" aria-hidden="true">👥</div>
+          <h3>Multiple profiles</h3>
+        </div>
+        <div class="feature-card__body">
+          <p>
+            One account, multiple people. Caregivers can manage profiles for
+            everyone they look after — and switch between them instantly.
+          </p>
+        </div>
       </li>
       <li class="feature-card">
-        <div class="feature-icon feature-icon--warm" aria-hidden="true">📱</div>
-        <h3>Works everywhere</h3>
-        <p>
-          A Progressive Web App that works on any phone, tablet, or desktop —
-          online or offline. Install it to your home screen for instant access.
-        </p>
+        <div class="feature-card__header">
+          <div class="feature-icon feature-icon--warm" aria-hidden="true">📱</div>
+          <h3>Works everywhere</h3>
+        </div>
+        <div class="feature-card__body">
+          <p>
+            A Progressive Web App that works on any phone, tablet, or desktop —
+            online or offline. Install it to your home screen for instant access.
+          </p>
+        </div>
       </li>
     </ul>
   </section>
