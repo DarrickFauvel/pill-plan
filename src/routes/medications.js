@@ -289,6 +289,234 @@ router.post('/api/medications', requireAuth, loadAppContext, async (req, res) =>
 
 
 /* ────────────────────────────────────────────────────────────
+   Medication detail / edit page
+   GET /app/medications/:id
+   ──────────────────────────────────────────────────────────── */
+
+router.get('/app/medications/:id', requireAuth, loadAppContext, async (req, res) => {
+  const { id } = req.params;
+
+  const medResult = await db.execute({
+    sql: 'SELECT * FROM medications WHERE id = ? AND profile_id = ?',
+    args: [id, req.profile.id],
+  });
+
+  if (!medResult.rows.length) {
+    return res.redirect('/app/medications');
+  }
+
+  const row = medResult.rows[0];
+  const med = {
+    id: String(row.id),
+    name: String(row.name),
+    rxcui: row.rxcui ? String(row.rxcui) : null,
+    strength: row.strength ? String(row.strength) : '',
+    form: row.form ? String(row.form) : '',
+    instructions: row.instructions ? String(row.instructions) : '',
+    totalQuantity: Number(row.total_quantity ?? 0),
+    refillThreshold: Number(row.refill_threshold ?? 7),
+    active: Number(row.active),
+  };
+
+  const schedulesResult = await db.execute({
+    sql: `SELECT s.id, s.slot_id, s.dose_qty, s.days, t.label, t.sort_order
+          FROM schedules s
+          JOIN time_slots t ON t.id = s.slot_id
+          WHERE s.med_id = ?
+          ORDER BY t.sort_order`,
+    args: [id],
+  });
+
+  const schedules = schedulesResult.rows.map((r) => ({
+    id: String(r.id),
+    slotId: String(r.slot_id),
+    doseQty: Number(r.dose_qty ?? 1),
+    days: r.days ? String(r.days) : '[0,1,2,3,4,5,6]',
+    label: String(r.label),
+    sortOrder: Number(r.sort_order),
+  }));
+
+  const slotsResult = await db.execute({
+    sql: 'SELECT id, label, sort_order FROM time_slots WHERE profile_id = ? ORDER BY sort_order ASC',
+    args: [req.profile.id],
+  });
+
+  const slots = slotsResult.rows.map((r) => ({
+    id: String(r.id),
+    label: String(r.label),
+    sortOrder: Number(r.sort_order),
+  }));
+
+  /** @type {Record<string, {doseQty: number}>} */
+  const scheduleMap = {};
+  for (const s of schedules) {
+    scheduleMap[s.slotId] = { doseQty: s.doseQty };
+  }
+
+  const scheduleRaw = schedules.length
+    ? schedules.map((s) => `${s.slotId}:${s.doseQty}:${s.days}`).join(',')
+    : null;
+
+  const { daysRemaining, needsRefill } = calcDaysRemaining(
+    med.totalQuantity,
+    med.refillThreshold,
+    scheduleRaw
+  );
+
+  res.render('pages/medications-detail', {
+    title: med.name,
+    path: '/app/medications',
+    profile: req.profile,
+    profiles: req.profiles,
+    med,
+    slots,
+    schedules,
+    scheduleMap,
+    daysRemaining,
+    needsRefill,
+    extraCss: '/css/medications.css',
+  });
+});
+
+
+/* ────────────────────────────────────────────────────────────
+   Autosave medication details
+   POST /api/medications/:id
+   ──────────────────────────────────────────────────────────── */
+
+router.post('/api/medications/:id', requireAuth, loadAppContext, async (req, res) => {
+  const { id } = req.params;
+
+  const ownerCheck = await db.execute({
+    sql: 'SELECT id FROM medications WHERE id = ? AND profile_id = ?',
+    args: [id, req.profile.id],
+  });
+
+  sseHeaders(res);
+
+  if (!ownerCheck.rows.length) {
+    res.write('event: datastar-merge-signals\n');
+    res.write('data: signals {"saveStatus":"error"}\n');
+    res.write('\n');
+    return res.end();
+  }
+
+  const body = req.body;
+
+  const name = String(body.name ?? '').trim();
+  if (!name) {
+    res.write('event: datastar-merge-signals\n');
+    res.write('data: signals {"saveStatus":"error"}\n');
+    res.write('\n');
+    return res.end();
+  }
+
+  const strength = String(body.strength ?? '').trim() || null;
+  const form = String(body.form ?? '').trim() || null;
+  const instructions = String(body.instructions ?? '').trim() || null;
+  const totalQuantity = Math.max(0, parseInt(body.total_quantity, 10) || 0);
+  const refillThreshold = Math.max(1, parseInt(body.refill_threshold, 10) || 7);
+
+  await db.execute({
+    sql: `UPDATE medications
+          SET name = ?, strength = ?, form = ?, instructions = ?,
+              total_quantity = ?, refill_threshold = ?
+          WHERE id = ?`,
+    args: [name, strength, form, instructions, totalQuantity, refillThreshold, id],
+  });
+
+  res.write('event: datastar-merge-signals\n');
+  res.write('data: signals {"saveStatus":"saved"}\n');
+  res.write('\n');
+  res.end();
+});
+
+
+/* ────────────────────────────────────────────────────────────
+   Update schedule for a medication
+   POST /api/medications/:id/schedule
+   ──────────────────────────────────────────────────────────── */
+
+router.post('/api/medications/:id/schedule', requireAuth, loadAppContext, async (req, res) => {
+  const { id } = req.params;
+
+  const ownerCheck = await db.execute({
+    sql: 'SELECT id FROM medications WHERE id = ? AND profile_id = ?',
+    args: [id, req.profile.id],
+  });
+
+  if (!ownerCheck.rows.length) {
+    return res.redirect('/app/medications');
+  }
+
+  const body = req.body;
+
+  const slotRows = await db.execute({
+    sql: 'SELECT id FROM time_slots WHERE profile_id = ?',
+    args: [req.profile.id],
+  });
+
+  const validSlotIds = new Set(slotRows.rows.map((r) => String(r.id)));
+
+  /** @type {Array<{slotId: string, doseQty: number}>} */
+  const scheduleEntries = [];
+
+  for (const [key, val] of Object.entries(body)) {
+    if (!key.startsWith('slot_')) continue;
+    if (val !== '1') continue;
+    const slotId = key.slice(5);
+    if (!validSlotIds.has(slotId)) continue;
+    const doseQty = Math.max(1, parseInt(body[`dose_${slotId}`], 10) || 1);
+    scheduleEntries.push({ slotId, doseQty });
+  }
+
+  /** @type {Array<{sql: string, args: Array<string|number>}>} */
+  const statements = [
+    {
+      sql: 'DELETE FROM schedules WHERE med_id = ?',
+      args: [id],
+    },
+    ...scheduleEntries.map(({ slotId, doseQty }) => ({
+      sql: 'INSERT INTO schedules (id, med_id, slot_id, days, dose_qty) VALUES (?, ?, ?, ?, ?)',
+      args: [randomUUID(), id, slotId, '[0,1,2,3,4,5,6]', doseQty],
+    })),
+  ];
+
+  await db.batch(statements, 'write');
+
+  res.redirect(`/app/medications/${id}`);
+});
+
+
+/* ────────────────────────────────────────────────────────────
+   Log a refill (add to supply)
+   POST /api/medications/:id/refill
+   ──────────────────────────────────────────────────────────── */
+
+router.post('/api/medications/:id/refill', requireAuth, loadAppContext, async (req, res) => {
+  const { id } = req.params;
+
+  const ownerCheck = await db.execute({
+    sql: 'SELECT id FROM medications WHERE id = ? AND profile_id = ?',
+    args: [id, req.profile.id],
+  });
+
+  if (!ownerCheck.rows.length) {
+    return res.redirect('/app/medications');
+  }
+
+  const qtyAdd = Math.max(1, parseInt(req.body.qty_add, 10) || 1);
+
+  await db.execute({
+    sql: 'UPDATE medications SET total_quantity = total_quantity + ? WHERE id = ?',
+    args: [qtyAdd, id],
+  });
+
+  res.redirect(`/app/medications/${id}`);
+});
+
+
+/* ────────────────────────────────────────────────────────────
    Deactivate (soft-delete) a medication
    POST /api/medications/:id/deactivate
    ──────────────────────────────────────────────────────────── */

@@ -1,0 +1,160 @@
+<% layout('../layouts/app') %>
+<div
+  class="medications-detail-page"
+  data-signals='<%~ JSON.stringify({saveStatus:"idle",name:it.med.name,strength:it.med.strength,form:it.med.form,instructions:it.med.instructions,total_quantity:it.med.totalQuantity,refill_threshold:it.med.refillThreshold}) %>'
+>
+
+  <header class="page-header">
+    <a href="/app/medications" class="back-link">← Medications</a>
+    <h1 data-text="$name || 'Medication'"></h1>
+  </header>
+
+  <!-- Supply & refill -->
+  <section class="detail-section" aria-labelledby="supply-heading">
+    <h2 id="supply-heading">Current supply</h2>
+    <div class="supply-row">
+      <p class="supply-count">
+        <span data-text="$total_quantity"></span> on hand
+        <% if (it.daysRemaining !== null) { %>
+          <span class="days-badge<%= it.needsRefill ? ' days-badge--warning' : '' %>">
+            <%= it.daysRemaining %> day<%= it.daysRemaining === 1 ? '' : 's' %> left
+          </span>
+        <% } %>
+      </p>
+    </div>
+    <form action="/api/medications/<%= it.med.id %>/refill" method="POST" class="refill-form">
+      <div class="form-group">
+        <label for="qty-add">Add to supply</label>
+        <input id="qty-add" type="number" name="qty_add" min="1" class="input input--small" placeholder="0">
+      </div>
+      <button type="submit" class="btn btn--primary">Log refill</button>
+    </form>
+  </section>
+
+  <!-- Details (autosave) -->
+  <section class="detail-section" aria-labelledby="details-heading">
+    <h2 id="details-heading">Details</h2>
+
+    <div class="form-group">
+      <label for="ed-name">Name</label>
+      <input
+        id="ed-name"
+        type="text"
+        class="input"
+        required
+        data-bind-name
+        data-on-input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="ed-strength">Strength</label>
+      <input
+        id="ed-strength"
+        type="text"
+        class="input"
+        data-bind-strength
+        data-on-input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="ed-form">Form</label>
+      <input
+        id="ed-form"
+        type="text"
+        class="input"
+        placeholder="e.g. tablet, capsule"
+        data-bind-form
+        data-on-input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="ed-qty">Quantity on hand</label>
+      <input
+        id="ed-qty"
+        type="number"
+        class="input"
+        min="0"
+        data-bind-total-quantity
+        data-on-input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="ed-threshold">Refill alert (days)</label>
+      <input
+        id="ed-threshold"
+        type="number"
+        class="input"
+        min="1"
+        data-bind-refill-threshold
+        data-on-input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+      >
+    </div>
+  </section>
+
+  <!-- Schedule -->
+  <section class="detail-section" aria-labelledby="schedule-heading">
+    <h2 id="schedule-heading">Schedule</h2>
+    <% if (it.slots.length === 0) { %>
+      <p class="detail-empty">No time slots set up yet. Add them in <a href="/app/settings">Settings</a>.</p>
+    <% } else { %>
+      <form action="/api/medications/<%= it.med.id %>/schedule" method="POST">
+        <fieldset class="slots-fieldset">
+          <legend>When is this medication taken?</legend>
+          <div class="slots-grid">
+            <% it.slots.forEach(function(slot) { %>
+            <%
+              var scheduled = it.scheduleMap[slot.id];
+              var isChecked = !!scheduled;
+              var doseQty = scheduled ? scheduled.doseQty : 1;
+            %>
+            <div class="slot-row">
+              <label class="slot-check">
+                <input
+                  type="checkbox"
+                  name="slot_<%= slot.id %>"
+                  value="1"
+                  <%= isChecked ? 'checked' : '' %>
+                >
+                <span><%= slot.label %></span>
+              </label>
+              <div class="slot-dose">
+                <label for="dose_<%= slot.id %>">Dose qty</label>
+                <input
+                  id="dose_<%= slot.id %>"
+                  type="number"
+                  name="dose_<%= slot.id %>"
+                  min="1"
+                  value="<%= doseQty %>"
+                  class="input input--small"
+                >
+              </div>
+            </div>
+            <% }); %>
+          </div>
+        </fieldset>
+        <div class="form-actions detail-schedule-actions">
+          <button type="submit" class="btn btn--primary">Save schedule</button>
+        </div>
+      </form>
+    <% } %>
+  </section>
+
+  <!-- Remove -->
+  <section class="detail-section detail-section--danger" aria-labelledby="remove-heading">
+    <h2 id="remove-heading">Remove medication</h2>
+    <p>This removes the medication from your grid and supply tracking.</p>
+    <form action="/api/medications/<%= it.med.id %>/deactivate" method="POST">
+      <button
+        type="submit"
+        class="btn btn--danger"
+        aria-describedby="deactivate-warn"
+      >Remove medication</button>
+    </form>
+    <p id="deactivate-warn" class="sr-only">This will deactivate the medication and remove it from your grid.</p>
+  </section>
+
+</div>

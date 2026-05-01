@@ -362,6 +362,71 @@
     white-space: nowrap;
   }
 
+  /* ─── Detail page ────────────────────────────────────────── */
+
+  .medications-detail-page {
+    max-inline-size: 52rem;
+  }
+
+  .detail-section {
+    margin-block-end: var(--space-8);
+    padding-block-end: var(--space-8);
+    border-block-end: 1px solid var(--color-border);
+  }
+
+  .detail-section:last-child {
+    border-block-end: none;
+  }
+
+  .detail-section h2 {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-text);
+    margin-block-end: var(--space-4);
+  }
+
+  .detail-section--danger h2 {
+    color: var(--color-danger);
+  }
+
+  .supply-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    margin-block-end: var(--space-4);
+  }
+
+  .supply-count {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--font-size-lg);
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .refill-form {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  .refill-form .form-group {
+    flex: none;
+    min-inline-size: 10rem;
+  }
+
+  .detail-schedule-actions {
+    margin-block-start: var(--space-6);
+  }
+
+  .detail-empty {
+    color: var(--color-muted);
+    font-size: var(--font-size-base);
+  }
+
   /* ─── Reduced motion ──────────────────────────────────────── */
 
   @media (prefers-reduced-motion: reduce) {
