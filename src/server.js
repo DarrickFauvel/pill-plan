@@ -5,8 +5,11 @@ import cookieParser from 'cookie-parser';
 import { Eta } from 'eta';
 import { fileURLToPath } from 'url';
 import { dirname, join, relative } from 'path';
+import QRCode from 'qrcode';
 import authRoutes from './routes/auth.js';
-import { requireAuth } from './middleware/auth.js';
+import profilesRouter from './routes/profiles.js';
+import sseRouter from './routes/sse.js';
+import { requireAuth, loadAppContext } from './middleware/auth.js';
 import db from './db/client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -66,16 +69,39 @@ app.get('/signup', (req, res) =>
   })
 );
 
+// QR code for the site URL
+app.get('/qrcode.svg', async (req, res) => {
+  const url = process.env.SITE_URL ?? `${req.protocol}://${req.get('host')}`;
+  const svg = await QRCode.toString(url, {
+    type: 'svg',
+    color: { dark: '#1A2E2A', light: '#FFFFFF' },
+    margin: 2,
+    width: 256,
+  });
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.send(svg);
+});
+
 // Auth API
 app.use('/api/auth', authRoutes);
 
-// Protected app shell (routes added in later phases)
+// Protected app shell
 app.get('/app', requireAuth, (req, res) => res.redirect('/app/grid'));
 
-// Placeholder until grid route is built
-app.get('/app/grid', requireAuth, (req, res) =>
-  res.send('<h1>Grid coming soon</h1><form action="/api/auth/logout" method="POST"><button>Sign out</button></form>')
-);
+app.use('/app/profiles', requireAuth, loadAppContext, profilesRouter);
+
+app.get('/app/grid', requireAuth, loadAppContext, (req, res) => {
+  res.render('pages/grid', {
+    title: 'Grid',
+    path: '/app/grid',
+    user: req.user,
+    profile: req.profile,
+    profiles: req.profiles,
+    saveIndicator: true,
+  });
+});
+
+app.use('/api/sse', sseRouter);
 
 // Global error handler
 app.use(/** @type {import('express').ErrorRequestHandler} */ (err, req, res, _next) => {

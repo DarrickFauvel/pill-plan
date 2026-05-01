@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#6EC6A0">
+  <meta name="description" content="Your medication organizer">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/app.css">
+  <% if (it.extraCss) { %><link rel="stylesheet" href="<%= it.extraCss %>"><% } %>
+  <title><%= it.title ? it.title + ' — MediGrid' : 'MediGrid' %></title>
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <div class="app-shell">
+
+    <!-- Mobile-only top header -->
+    <header class="app-header" role="banner">
+      <a href="/app/grid" class="app-brand">MediGrid</a>
+
+      <!-- Profile switcher (mobile header) -->
+      <details class="profile-switcher" id="profile-switcher-header">
+        <summary
+          class="profile-switcher__trigger"
+          aria-label="Switch profile — active: <%= it.profile.name %>"
+          onclick="if(this.parentElement.open){this.parentElement.removeAttribute('open');event.preventDefault();}"
+        >
+          <span
+            class="profile-avatar"
+            style="--avatar-color: <%= it.profile.avatarColor %>;"
+            aria-hidden="true"
+          ><%= it.profile.name.charAt(0).toUpperCase() %></span>
+          <span class="profile-switcher__name"><%= it.profile.name %></span>
+          <svg class="profile-switcher__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </summary>
+        <div class="profile-switcher__menu" role="menu">
+          <% it.profiles.forEach(function(p) { %>
+          <form action="/app/profiles/switch/<%= p.id %>" method="POST" role="none">
+            <button
+              type="submit"
+              class="profile-option<%= p.id === it.profile.id ? ' profile-option--active' : '' %>"
+              role="menuitem"
+              aria-current="<%= p.id === it.profile.id ? 'true' : 'false' %>"
+            >
+              <span
+                class="profile-avatar"
+                style="--avatar-color: <%= p.avatarColor %>;"
+                aria-hidden="true"
+              ><%= p.name.charAt(0).toUpperCase() %></span>
+              <%= p.name %>
+            </button>
+          </form>
+          <% }); %>
+          <a href="/app/profiles/new" class="profile-option profile-option--new" role="menuitem">
+            + Add profile
+          </a>
+        </div>
+      </details>
+    </header>
+
+    <!-- Desktop sidebar (hidden on mobile) -->
+    <nav class="app-sidebar" aria-label="Main navigation">
+      <a href="/app/grid" class="app-brand">MediGrid</a>
+
+      <!-- Profile switcher (sidebar) -->
+      <details class="profile-switcher profile-switcher--sidebar" id="profile-switcher-sidebar">
+        <summary
+          class="profile-switcher__trigger"
+          aria-label="Switch profile — active: <%= it.profile.name %>"
+          onclick="if(this.parentElement.open){this.parentElement.removeAttribute('open');event.preventDefault();}"
+        >
+          <span
+            class="profile-avatar"
+            style="--avatar-color: <%= it.profile.avatarColor %>;"
+            aria-hidden="true"
+          ><%= it.profile.name.charAt(0).toUpperCase() %></span>
+          <span class="profile-switcher__name"><%= it.profile.name %></span>
+          <svg class="profile-switcher__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </summary>
+        <div class="profile-switcher__menu profile-switcher__menu--sidebar" role="menu">
+          <% it.profiles.forEach(function(p) { %>
+          <form action="/app/profiles/switch/<%= p.id %>" method="POST" role="none">
+            <button
+              type="submit"
+              class="profile-option<%= p.id === it.profile.id ? ' profile-option--active' : '' %>"
+              role="menuitem"
+              aria-current="<%= p.id === it.profile.id ? 'true' : 'false' %>"
+            >
+              <span
+                class="profile-avatar"
+                style="--avatar-color: <%= p.avatarColor %>;"
+                aria-hidden="true"
+              ><%= p.name.charAt(0).toUpperCase() %></span>
+              <%= p.name %>
+            </button>
+          </form>
+          <% }); %>
+          <a href="/app/profiles/new" class="profile-option profile-option--new" role="menuitem">
+            + Add profile
+          </a>
+        </div>
+      </details>
+
+      <ul class="app-nav" role="list">
+        <li>
+          <a
+            href="/app/grid"
+            class="app-nav__link<%= it.path === '/app/grid' ? ' app-nav__link--active' : '' %>"
+            aria-current="<%= it.path === '/app/grid' ? 'page' : 'false' %>"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>
+            </svg>
+            Grid
+          </a>
+        </li>
+        <li>
+          <a
+            href="/app/medications"
+            class="app-nav__link<%= it.path === '/app/medications' ? ' app-nav__link--active' : '' %>"
+            aria-current="<%= it.path === '/app/medications' ? 'page' : 'false' %>"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="M8.5 8.5 16 16"/>
+            </svg>
+            Medications
+          </a>
+        </li>
+        <li>
+          <a
+            href="/app/settings"
+            class="app-nav__link<%= it.path === '/app/settings' ? ' app-nav__link--active' : '' %>"
+            aria-current="<%= it.path === '/app/settings' ? 'page' : 'false' %>"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+            Settings
+          </a>
+        </li>
+      </ul>
+
+      <form action="/api/auth/logout" method="POST" class="app-sidebar__signout">
+        <button type="submit" class="btn btn--secondary btn--full">Sign out</button>
+      </form>
+    </nav>
+
+    <!-- Main content -->
+    <main id="main" class="app-main">
+      <%~ it.body %>
+    </main>
+
+    <!-- Mobile-only bottom nav -->
+    <nav class="app-bottom-nav" aria-label="Main navigation">
+      <a
+        href="/app/grid"
+        class="app-bottom-nav__item<%= it.path === '/app/grid' ? ' app-bottom-nav__item--active' : '' %>"
+        aria-current="<%= it.path === '/app/grid' ? 'page' : 'false' %>"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>
+        </svg>
+        <span>Grid</span>
+      </a>
+      <a
+        href="/app/medications"
+        class="app-bottom-nav__item<%= it.path === '/app/medications' ? ' app-bottom-nav__item--active' : '' %>"
+        aria-current="<%= it.path === '/app/medications' ? 'page' : 'false' %>"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="M8.5 8.5 16 16"/>
+        </svg>
+        <span>Medications</span>
+      </a>
+      <a
+        href="/app/settings"
+        class="app-bottom-nav__item<%= it.path === '/app/settings' ? ' app-bottom-nav__item--active' : '' %>"
+        aria-current="<%= it.path === '/app/settings' ? 'page' : 'false' %>"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span>Settings</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <div
+    id="save-indicator"
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+    data-signals='{"saveStatus":"idle"}'
+    data-show="$saveStatus !== 'idle'"
+    data-class='{"save-indicator--saving": $saveStatus === "saving", "save-indicator--saved": $saveStatus === "saved", "save-indicator--error": $saveStatus === "error"}'
+    class="save-indicator"
+  >
+    <span data-show="$saveStatus === 'saving'">
+      <span class="save-indicator__spinner" aria-hidden="true"></span>
+      Saving…
+    </span>
+    <span data-show="$saveStatus === 'saved'">Saved</span>
+    <span data-show="$saveStatus === 'error'">Not saved — check your connection</span>
+  </div>
+
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@starfederation/datastar@latest/dist/datastar.min.js"></script>
+  <script type="module" src="/js/app.js"></script>
+  <%~ it.scripts ?? '' %>
+</body>
+</html>

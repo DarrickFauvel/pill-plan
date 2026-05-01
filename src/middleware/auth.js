@@ -28,3 +28,44 @@ export async function requireAuth(req, res, next) {
   req.user = { id: String(rows[0].user_id), email: String(rows[0].email) };
   next();
 }
+
+/**
+ * Loads all profiles for the authenticated user and resolves the active profile
+ * from the `pid` cookie (falling back to the first profile).
+ * Sets req.profile and req.profiles; refreshes the `pid` cookie.
+ *
+ * Must run after requireAuth.
+ *
+ * @param {import('express').Request}  req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+export async function loadAppContext(req, res, next) {
+  const { rows } = await db.execute({
+    sql: `SELECT id, name, avatar_color
+          FROM profiles
+          WHERE user_id = ?
+          ORDER BY created_at ASC`,
+    args: [req.user.id],
+  });
+
+  /** @type {Array<{id: string, name: string, avatarColor: string}>} */
+  const profiles = rows.map((r) => ({
+    id: String(r.id),
+    name: String(r.name),
+    avatarColor: String(r.avatar_color),
+  }));
+
+  const pidCookie = req.cookies?.pid;
+  const active = profiles.find((p) => p.id === pidCookie) ?? profiles[0];
+
+  res.cookie('pid', active.id, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+  });
+
+  req.profile = active;
+  req.profiles = profiles;
+  next();
+}
