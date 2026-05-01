@@ -55,6 +55,22 @@ router.post('/signup', async (req, res) => {
       sql: 'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)',
       args: [sessionId, userId, expiresAt],
     },
+    {
+      sql: 'INSERT INTO time_slots (id, profile_id, label, sort_order) VALUES (?, ?, ?, ?)',
+      args: [randomUUID(), profileId, 'Morning', 0],
+    },
+    {
+      sql: 'INSERT INTO time_slots (id, profile_id, label, sort_order) VALUES (?, ?, ?, ?)',
+      args: [randomUUID(), profileId, 'Noon', 1],
+    },
+    {
+      sql: 'INSERT INTO time_slots (id, profile_id, label, sort_order) VALUES (?, ?, ?, ?)',
+      args: [randomUUID(), profileId, 'Evening', 2],
+    },
+    {
+      sql: 'INSERT INTO time_slots (id, profile_id, label, sort_order) VALUES (?, ?, ?, ?)',
+      args: [randomUUID(), profileId, 'Bedtime', 3],
+    },
   ], 'write');
 
   setSessionCookie(res, sessionId);

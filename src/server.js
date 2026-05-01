@@ -9,6 +9,7 @@ import QRCode from 'qrcode';
 import authRoutes from './routes/auth.js';
 import profilesRouter from './routes/profiles.js';
 import sseRouter from './routes/sse.js';
+import medicationsRouter from './routes/medications.js';
 import { requireAuth, loadAppContext } from './middleware/auth.js';
 import db from './db/client.js';
 
@@ -102,6 +103,8 @@ app.get('/app/grid', requireAuth, loadAppContext, (req, res) => {
 });
 
 app.use('/api/sse', sseRouter);
+
+app.use('/', medicationsRouter);
 
 // Global error handler
 app.use(/** @type {import('express').ErrorRequestHandler} */ (err, req, res, _next) => {

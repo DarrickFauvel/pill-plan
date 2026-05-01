@@ -1,0 +1,112 @@
+<% layout('../layouts/app') %>
+<div
+  class="medications-new-page"
+  data-signals='{"medQuery":"","medRxcui":"","medName":"","medStrength":"","medForm":""}'
+>
+
+  <header class="page-header">
+    <a href="/app/medications" class="back-link">← Medications</a>
+    <h1>Add medication</h1>
+  </header>
+
+  <% if (it.error) { %>
+    <div class="alert alert--error" role="alert">
+      <% if (it.error === 'name-required') { %>Please enter a medication name.<% } else { %>Something went wrong. Please try again.<% } %>
+    </div>
+  <% } %>
+
+  <!-- RxNorm search -->
+  <div class="search-field form-group">
+    <label for="med-search">Search by name</label>
+    <input
+      id="med-search"
+      type="search"
+      class="input"
+      autocomplete="off"
+      placeholder="e.g. Metformin"
+      data-bind-med-query
+      data-on-input__debounce.400ms="$medQuery.length >= 2 && @get('/api/meds/search?q=' + encodeURIComponent($medQuery))"
+    >
+    <div
+      id="med-results"
+      class="med-results"
+      aria-live="polite"
+      role="listbox"
+      aria-label="Medication suggestions"
+    ></div>
+  </div>
+
+  <!-- Selected medication preview -->
+  <div class="selected-med" data-show="$medRxcui !== ''">
+    <p class="selected-med__label">Selected:</p>
+    <p class="selected-med__name" data-text="$medName + ($medStrength ? ' ' + $medStrength : '') + ($medForm ? ' (' + $medForm + ')' : '')"></p>
+    <button
+      type="button"
+      class="btn-link"
+      aria-label="Change selected medication"
+      data-on-click="$medRxcui='';$medName='';$medStrength='';$medForm='';$medQuery=''"
+    >Change</button>
+  </div>
+
+  <form action="/api/medications" method="POST" class="med-form">
+    <input type="hidden" name="rxcui" data-bind-med-rxcui>
+    <input type="hidden" name="strength" data-bind-med-strength>
+    <input type="hidden" name="form" data-bind-med-form>
+
+    <!-- Manual name field — always present; pre-filled via signal when RxNorm match selected -->
+    <div class="form-group">
+      <label for="med-name-manual">Medication name</label>
+      <input
+        id="med-name-manual"
+        type="text"
+        name="name"
+        class="input"
+        placeholder="Medication name"
+        required
+        data-bind-med-name
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="med-qty">Quantity on hand (pills / doses)</label>
+      <input id="med-qty" type="number" name="total_quantity" class="input" min="0" value="0" required>
+    </div>
+
+    <div class="form-group">
+      <label for="med-threshold">Refill alert (days before running out)</label>
+      <input id="med-threshold" type="number" name="refill_threshold" class="input" min="1" value="7" required>
+    </div>
+
+    <!-- Time slots -->
+    <fieldset class="slots-fieldset">
+      <legend>When is this medication taken?</legend>
+      <div class="slots-grid">
+        <% it.slots.forEach(function(slot) { %>
+        <div class="slot-row">
+          <label class="slot-check">
+            <input type="checkbox" name="slot_<%= slot.id %>" value="1">
+            <span><%= slot.label %></span>
+          </label>
+          <div class="slot-dose">
+            <label for="dose_<%= slot.id %>">Dose qty</label>
+            <input
+              id="dose_<%= slot.id %>"
+              type="number"
+              name="dose_<%= slot.id %>"
+              min="1"
+              value="1"
+              class="input input--small"
+            >
+          </div>
+        </div>
+        <% }); %>
+      </div>
+    </fieldset>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">Save medication</button>
+      <a href="/app/medications" class="btn btn--secondary">Cancel</a>
+    </div>
+  </form>
+
+</div>

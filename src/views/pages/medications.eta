@@ -1,0 +1,54 @@
+<% layout('../layouts/app') %>
+<div class="medications-page">
+
+  <header class="page-header">
+    <h1>Medications</h1>
+    <a href="/app/medications/new" class="btn btn--primary">Add medication</a>
+  </header>
+
+  <% if (it.meds.length === 0) { %>
+    <div class="empty-state">
+      <p class="empty-state__icon" aria-hidden="true">💊</p>
+      <p class="empty-state__heading">No medications yet</p>
+      <p class="empty-state__body">Add your first medication to start tracking your supply and refill schedule.</p>
+      <a href="/app/medications/new" class="btn btn--primary">Add medication</a>
+    </div>
+  <% } else { %>
+    <ul class="med-list" role="list">
+      <% it.meds.forEach(function(med) { %>
+        <li class="med-card">
+          <div class="med-card__info">
+            <h2 class="med-card__name"><%= med.name %></h2>
+            <% if (med.strength || med.form) { %>
+              <p class="med-card__meta"><%= med.strength %><% if (med.strength && med.form) { %> · <% } %><%= med.form %></p>
+            <% } %>
+          </div>
+
+          <div class="med-card__stats">
+            <% if (med.daysRemaining !== null) { %>
+              <span class="days-badge<%= med.needsRefill ? ' days-badge--warning' : '' %>">
+                <%= med.daysRemaining %> day<%= med.daysRemaining !== 1 ? 's' : '' %> left
+              </span>
+            <% } %>
+          </div>
+
+          <div class="med-card__actions">
+            <a href="/app/medications/<%= med.id %>" class="btn btn--secondary">Edit</a>
+            <form action="/api/medications/<%= med.id %>/deactivate" method="POST" style="display:contents">
+              <button
+                type="submit"
+                class="btn btn--danger"
+                aria-describedby="deactivate-warning-<%= med.id %>"
+              >Remove</button>
+            </form>
+          </div>
+
+          <p id="deactivate-warning-<%= med.id %>" class="sr-only">
+            This will deactivate the medication and remove it from your grid.
+          </p>
+        </li>
+      <% }); %>
+    </ul>
+  <% } %>
+
+</div>
