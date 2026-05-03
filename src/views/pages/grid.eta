@@ -1,10 +1,147 @@
 <% layout('../layouts/app') %>
+<div
+  class="grid-page"
+  data-signals='{"toggleMedId":"","toggleSlotId":"","toggleDate":"","toggleError":""}'
+>
 
-<div class="grid-page">
-  <header class="page-header">
-    <h1>The Grid</h1>
+  <header class="grid-header">
+    <a
+      href="/app/grid?month=<%= it.grid.prevMonth %>"
+      class="grid-nav-btn"
+      aria-label="Previous month"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
+    <h1 class="grid-month-title"><%= it.grid.monthLabel %></h1>
+    <a
+      href="/app/grid?month=<%= it.grid.nextMonth %>"
+      class="grid-nav-btn"
+      aria-label="Next month"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </a>
   </header>
-  <p style="color: var(--color-muted); padding: var(--space-6);">
-    Grid coming soon — <%= it.profile.name %>'s medications will appear here.
-  </p>
+
+  <% var hasAnyMeds = it.grid.slots.some(function(s) { return s.meds.length > 0; }); %>
+
+  <% if (!hasAnyMeds) { %>
+  <div class="grid-empty">
+    <p class="grid-empty__title">No medications scheduled</p>
+    <p>Add medications and set their time slots to start tracking doses.</p>
+    <a href="/app/medications/new" class="btn btn--primary">Add medication</a>
+  </div>
+  <% } else { %>
+
+  <div class="grid-scroll-container" id="grid-scroll">
+    <table
+      role="grid"
+      class="grid-table"
+      aria-label="Medication dose grid for <%= it.grid.monthLabel %>"
+    >
+      <thead>
+        <tr>
+          <th
+            scope="col"
+            class="grid-th grid-th--label"
+            role="columnheader"
+          >Medication</th>
+          <% it.grid.days.forEach(function(day) { %>
+          <th
+            scope="col"
+            class="grid-th grid-th--day<%= day.isToday ? ' grid-th--today' : '' %>"
+            role="columnheader"
+            id="col-<%= day.date %>"
+          >
+            <span class="grid-day-num" aria-hidden="true"><%= day.dayNum %></span>
+            <span class="grid-day-name" aria-hidden="true"><%= day.dayLabel.charAt(0) %></span>
+            <span class="sr-only"><%= day.dayLabel %> <%= day.dayNum %></span>
+          </th>
+          <% }); %>
+        </tr>
+      </thead>
+      <tbody>
+        <% it.grid.slots.forEach(function(slot) { %>
+        <% if (slot.meds.length > 0) { %>
+
+        <!-- Slot group header -->
+        <tr class="grid-slot-row" aria-hidden="true">
+          <th class="grid-th grid-th--slot" scope="rowgroup"><%= slot.label %></th>
+          <% it.grid.days.forEach(function() { %>
+          <td class="grid-td grid-td--slot-fill"></td>
+          <% }); %>
+        </tr>
+
+        <!-- Medication rows -->
+        <% slot.meds.forEach(function(med) { %>
+        <tr>
+          <th scope="row" class="grid-th grid-th--med">
+            <a href="/app/medications/<%= med.id %>" class="grid-med-link">
+              <span class="grid-med-name"><%= med.name %></span>
+              <% if (med.strength) { %><span class="grid-med-strength"><%= med.strength %></span><% } %>
+            </a>
+          </th>
+          <% it.grid.days.forEach(function(day) { %>
+          <%
+            var dayOfWeek   = new Date(day.date + 'T12:00:00').getDay();
+            var isScheduled = med.scheduledDays.indexOf(dayOfWeek) !== -1;
+            var entry       = med.entries[day.date];
+            var isTaken     = !!(entry && entry.status === 'taken');
+            var cid         = 'gc-' + med.id.replace(/-/g,'') + '-' + slot.id.replace(/-/g,'') + '-' + day.date.replace(/-/g,'');
+            var ariaLabel   = med.name + ', ' + slot.label + ', ' + day.dayLabel + ' ' + day.dayNum + (isTaken ? ', taken' : ', not taken');
+            var clickAction = "$toggleMedId='" + med.id + "';$toggleSlotId='" + slot.id + "';$toggleDate='" + day.date + "';@post('/api/grid/toggle')";
+          %>
+          <td
+            role="gridcell"
+            class="grid-td<%= day.isToday ? ' grid-td--today' : '' %><%= day.isPast && isScheduled && !isTaken ? ' grid-td--missed' : '' %>"
+            headers="col-<%= day.date %>"
+          >
+            <% if (isScheduled) { %>
+            <button
+              id="<%= cid %>"
+              class="grid-cell<%= isTaken ? ' grid-cell--taken' : '' %>"
+              data-on-click="<%= clickAction %>"
+              aria-label="<%= ariaLabel %>"
+              aria-pressed="<%= isTaken ? 'true' : 'false' %>"
+            ></button>
+            <% } else { %>
+            <span class="grid-cell grid-cell--empty" aria-hidden="true"></span>
+            <% } %>
+          </td>
+          <% }); %>
+        </tr>
+        <% }); %>
+
+        <% } %>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <% var hasToday = it.grid.days.some(function(d) { return d.isToday; }); %>
+  <% if (hasToday) { %>
+  <div class="grid-footer">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      onclick="document.querySelector('.grid-th--today')?.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'})"
+    >Today</button>
+  </div>
+  <% } %>
+
+  <% } %>
+
 </div>
+
+<script>
+  // Scroll today's column into view on load
+  (function () {
+    var todayCol = document.querySelector('.grid-th--today');
+    if (todayCol) {
+      todayCol.scrollIntoView({ behavior: 'instant', inline: 'center', block: 'nearest' });
+    }
+  })();
+</script>

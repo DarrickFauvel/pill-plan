@@ -1,0 +1,150 @@
+@layer settings {
+
+  .settings-page {
+    max-width: 40rem;
+    padding: var(--space-4);
+  }
+
+  /* ── Section ─────────────────────────────────────────────── */
+
+  .settings-section {
+    margin-block-start: var(--space-6);
+  }
+
+  .settings-section h2 {
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    margin-block-end: var(--space-1);
+  }
+
+  .settings-section__desc {
+    color: var(--color-muted);
+    margin-block-end: var(--space-4);
+  }
+
+  .settings-empty {
+    color: var(--color-muted);
+    margin-block-end: var(--space-4);
+  }
+
+  /* ── Slot list ───────────────────────────────────────────── */
+
+  .slot-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-block-end: var(--space-4);
+    padding: 0;
+  }
+
+  .slot-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .slot-item__field {
+    flex: 1;
+    margin: 0;
+  }
+
+  /* ── Delete action ───────────────────────────────────────── */
+
+  .slot-delete {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .slot-delete__trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--tap-min);
+    height: var(--tap-min);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-muted);
+    cursor: pointer;
+    touch-action: manipulation;
+    list-style: none;
+  }
+
+  .slot-delete__trigger::-webkit-details-marker {
+    display: none;
+  }
+
+  .slot-delete__trigger:hover {
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  }
+
+  .slot-delete__trigger:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  .slot-delete__panel {
+    position: absolute;
+    inset-inline-end: 0;
+    inset-block-start: calc(var(--tap-min) + var(--space-1));
+    z-index: 10;
+    width: 18rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+
+  .slot-delete__warning {
+    font-size: var(--font-size-sm);
+    margin-block-end: var(--space-3);
+    color: var(--color-text);
+  }
+
+  .slot-delete__actions {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  /* ── Add slot form ───────────────────────────────────────── */
+
+  .add-slot-form {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-end;
+  }
+
+  .add-slot-form__field {
+    flex: 1;
+    margin: 0;
+  }
+
+  .add-slot-form__btn {
+    flex-shrink: 0;
+    align-self: flex-end;
+  }
+
+  /* ── Reduced motion ──────────────────────────────────────── */
+
+  @media (prefers-reduced-motion: reduce) {
+    .slot-delete__panel {
+      transition: none;
+    }
+  }
+
+  /* ── High contrast ───────────────────────────────────────── */
+
+  @media (prefers-contrast: more) {
+    .slot-delete__trigger {
+      border-width: 2px;
+    }
+
+    .slot-delete__panel {
+      border-width: 2px;
+    }
+  }
+
+}

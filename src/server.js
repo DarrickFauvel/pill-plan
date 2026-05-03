@@ -10,6 +10,8 @@ import authRoutes from './routes/auth.js';
 import profilesRouter from './routes/profiles.js';
 import sseRouter from './routes/sse.js';
 import medicationsRouter from './routes/medications.js';
+import gridRouter from './routes/grid.js';
+import settingsRouter from './routes/settings.js';
 import { requireAuth, loadAppContext } from './middleware/auth.js';
 import db from './db/client.js';
 
@@ -91,16 +93,9 @@ app.get('/app', requireAuth, (req, res) => res.redirect('/app/grid'));
 
 app.use('/app/profiles', requireAuth, loadAppContext, profilesRouter);
 
-app.get('/app/grid', requireAuth, loadAppContext, (req, res) => {
-  res.render('pages/grid', {
-    title: 'Grid',
-    path: '/app/grid',
-    user: req.user,
-    profile: req.profile,
-    profiles: req.profiles,
-    saveIndicator: true,
-  });
-});
+app.use('/', gridRouter);
+
+app.use('/', settingsRouter);
 
 app.use('/api/sse', sseRouter);
 

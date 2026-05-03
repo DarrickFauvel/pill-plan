@@ -1,2 +1,424 @@
-/* Grid-specific styles — built in a later phase */
-@layer grid {}
+@layer grid {
+
+  /* ── Page shell ──────────────────────────────────────────── */
+
+  .grid-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* ── Month navigation header ─────────────────────────────── */
+
+  .grid-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    background: var(--color-surface);
+  }
+
+  .grid-month-title {
+    flex: 1;
+    text-align: center;
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .grid-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    text-decoration: none;
+    touch-action: manipulation;
+    flex-shrink: 0;
+  }
+
+  .grid-nav-btn:hover {
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  }
+
+  .grid-nav-btn:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  /* ── Scroll wrapper ──────────────────────────────────────── */
+
+  .grid-scroll-container {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Table ───────────────────────────────────────────────── */
+
+  .grid-table {
+    border-collapse: collapse;
+    width: max-content;
+    min-width: 100%;
+    table-layout: fixed;
+  }
+
+  /* Column sizing */
+  .grid-th--label,
+  .grid-th--med {
+    width: 10rem;
+    min-width: 10rem;
+    max-width: 14rem;
+  }
+
+  .grid-th--day,
+  .grid-td {
+    width: 3rem;
+    min-width: 3rem;
+  }
+
+  /* ── Sticky positioning ──────────────────────────────────── */
+
+  .grid-th--label {
+    position: sticky;
+    left: 0;
+    top: 0;
+    z-index: 4;
+    background: var(--color-surface);
+  }
+
+  .grid-th--day {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--color-surface);
+  }
+
+  .grid-th--med,
+  .grid-th--slot {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--color-surface);
+  }
+
+  /* Shadow on sticky label column to show scroll */
+  .grid-th--med::after,
+  .grid-th--slot::after,
+  .grid-th--label::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: -0.75rem;
+    width: 0.75rem;
+    background: linear-gradient(to right, rgba(0,0,0,0.06), transparent);
+    pointer-events: none;
+  }
+
+  /* ── Header cells ────────────────────────────────────────── */
+
+  .grid-th {
+    padding: var(--space-2) var(--space-1);
+    text-align: center;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-muted);
+    border-bottom: 2px solid var(--color-border);
+    white-space: nowrap;
+  }
+
+  .grid-th--label {
+    text-align: left;
+    padding-inline: var(--space-3);
+    color: var(--color-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .grid-th--today {
+    color: var(--color-primary);
+  }
+
+  .grid-day-num {
+    display: block;
+    font-size: var(--font-size-sm);
+    line-height: 1.2;
+  }
+
+  .grid-day-name {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    opacity: 0.8;
+  }
+
+  /* ── Slot header rows ────────────────────────────────────── */
+
+  .grid-slot-row .grid-th--slot {
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+    border-top: 2px solid var(--color-border);
+    border-bottom: none;
+    text-align: left;
+  }
+
+  .grid-td--slot-fill {
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+    border-top: 2px solid var(--color-border);
+    padding: 0;
+  }
+
+  /* ── Med label cells ─────────────────────────────────────── */
+
+  .grid-th--med {
+    padding: var(--space-2) var(--space-3);
+    text-align: left;
+    font-weight: 400;
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  .grid-med-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1em;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .grid-med-link:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+    border-radius: var(--radius-sm);
+  }
+
+  .grid-med-name {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    line-height: 1.2;
+    /* Truncate long names */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 9rem;
+  }
+
+  .grid-med-strength {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    line-height: 1.2;
+  }
+
+  /* ── Day data cells ──────────────────────────────────────── */
+
+  .grid-td {
+    padding: var(--space-1);
+    border-bottom: 1px solid var(--color-border);
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .grid-td--today {
+    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  }
+
+  .grid-td--missed {
+    background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+  }
+
+  /* ── Cell buttons ────────────────────────────────────────── */
+
+  .grid-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--color-border);
+    background: transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background var(--transition), border-color var(--transition), transform var(--transition);
+    margin: 0 auto;
+  }
+
+  .grid-cell:hover {
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  }
+
+  .grid-cell:active {
+    transform: scale(0.9);
+  }
+
+  .grid-cell:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  /* Taken state — filled with checkmark */
+  .grid-cell--taken {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .grid-cell--taken:hover {
+    background: color-mix(in srgb, var(--color-primary) 85%, black);
+    border-color: color-mix(in srgb, var(--color-primary) 85%, black);
+  }
+
+  /* Checkmark via CSS */
+  .grid-cell--taken::after {
+    content: '';
+    display: block;
+    width: 0.65rem;
+    height: 0.4rem;
+    border-left: 2.5px solid white;
+    border-bottom: 2.5px solid white;
+    transform: rotate(-45deg) translateY(-1px);
+    flex-shrink: 0;
+  }
+
+  /* Unscheduled — hatched pattern */
+  .grid-cell--empty {
+    display: block;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin: 0 auto;
+    border-radius: var(--radius-sm);
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 3px,
+      color-mix(in srgb, var(--color-border) 60%, transparent) 3px,
+      color-mix(in srgb, var(--color-border) 60%, transparent) 4px
+    );
+  }
+
+  /* ── Empty state ─────────────────────────────────────────── */
+
+  .grid-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-12) var(--space-6);
+    text-align: center;
+    color: var(--color-muted);
+  }
+
+  .grid-empty__title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .grid-empty p {
+    margin: 0;
+    max-width: 30ch;
+  }
+
+  /* ── Footer: "Today" scroll shortcut ────────────────────── */
+
+  .grid-footer {
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--color-surface);
+  }
+
+  /* ── Print ───────────────────────────────────────────────── */
+
+  @media print {
+    .grid-header .grid-nav-btn,
+    .grid-footer {
+      display: none;
+    }
+
+    .grid-scroll-container {
+      overflow: visible;
+    }
+
+    .grid-table {
+      width: 100%;
+    }
+
+    .grid-cell--taken::after {
+      border-left-color: black;
+      border-bottom-color: black;
+    }
+
+    .grid-th--med::after,
+    .grid-th--slot::after,
+    .grid-th--label::after {
+      display: none;
+    }
+  }
+
+  /* ── Reduced motion ──────────────────────────────────────── */
+
+  @media (prefers-reduced-motion: reduce) {
+    .grid-cell {
+      transition: none;
+    }
+
+    .grid-cell:active {
+      transform: none;
+    }
+  }
+
+  /* ── Dark mode ───────────────────────────────────────────── */
+
+  @media (prefers-color-scheme: dark) {
+    .grid-th--label,
+    .grid-th--day,
+    .grid-th--med {
+      background: var(--color-surface);
+    }
+
+    .grid-slot-row .grid-th--slot,
+    .grid-td--slot-fill {
+      background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+    }
+
+    .grid-th--med::after,
+    .grid-th--slot::after,
+    .grid-th--label::after {
+      background: linear-gradient(to right, rgba(0,0,0,0.3), transparent);
+    }
+  }
+
+  /* ── High contrast ───────────────────────────────────────── */
+
+  @media (prefers-contrast: more) {
+    .grid-cell {
+      border-width: 3px;
+    }
+
+    .grid-cell--empty {
+      background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 3px,
+        var(--color-border) 3px,
+        var(--color-border) 4px
+      );
+    }
+  }
+
+}

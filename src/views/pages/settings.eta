@@ -1,0 +1,97 @@
+<% layout('../layouts/app') %>
+<div
+  class="settings-page"
+  data-signals='<%~ it.signals %>'
+>
+
+  <header class="page-header">
+    <h1>Settings</h1>
+  </header>
+
+  <section class="settings-section" aria-labelledby="slots-heading">
+    <h2 id="slots-heading">Time slots</h2>
+    <p class="settings-section__desc">
+      Time slots define when you take your medications — they appear as rows in your grid.
+    </p>
+
+    <% if (it.slots.length === 0) { %>
+    <p class="settings-empty">No time slots yet. Add one below.</p>
+    <% } %>
+
+    <ul class="slot-list" role="list">
+      <% it.slots.forEach(function(slot) { %>
+      <%
+        var sigKey  = 'label' + slot.id.replace(/-/g, '');
+        var sigRef  = '$' + sigKey;
+        var postUrl = '/api/settings/slots/' + slot.id;
+        var delUrl  = '/api/settings/slots/' + slot.id + '/delete';
+      %>
+      <li class="slot-item" id="slot-<%= slot.id %>">
+        <div class="form-group slot-item__field">
+          <label for="slot-label-<%= slot.id %>" class="sr-only">Time slot name</label>
+          <input
+            id="slot-label-<%= slot.id %>"
+            type="text"
+            class="input"
+            data-bind="<%= sigRef %>"
+            data-on-input__debounce.1000ms="@post('<%= postUrl %>')"
+            aria-label="Time slot name"
+          >
+        </div>
+
+        <details class="slot-delete">
+          <summary
+            class="slot-delete__trigger"
+            aria-label="Remove <%= slot.label %> slot"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+          </summary>
+          <div class="slot-delete__panel" role="region" aria-label="Confirm removal">
+            <p class="slot-delete__warning" id="del-warn-<%= slot.id %>">
+              Remove "<span data-text="<%= sigRef %>"><%= slot.label %></span>"?
+              Any medications scheduled for this slot will be unscheduled.
+            </p>
+            <div class="slot-delete__actions">
+              <form action="<%= delUrl %>" method="POST">
+                <button
+                  type="submit"
+                  class="btn btn--danger btn--sm"
+                  aria-describedby="del-warn-<%= slot.id %>"
+                >Remove</button>
+              </form>
+              <button
+                type="button"
+                class="btn btn--secondary btn--sm"
+                onclick="this.closest('details').removeAttribute('open')"
+              >Cancel</button>
+            </div>
+          </div>
+        </details>
+      </li>
+      <% }); %>
+    </ul>
+
+    <form
+      action="/api/settings/slots"
+      method="POST"
+      class="add-slot-form"
+      aria-label="Add time slot"
+    >
+      <div class="form-group add-slot-form__field">
+        <label for="new-slot-label">Add a time slot</label>
+        <input
+          id="new-slot-label"
+          type="text"
+          name="newSlotLabel"
+          class="input"
+          placeholder="e.g. With lunch"
+          autocomplete="off"
+        >
+      </div>
+      <button type="submit" class="btn btn--primary add-slot-form__btn">Add</button>
+    </form>
+  </section>
+
+</div>
