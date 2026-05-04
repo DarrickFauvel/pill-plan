@@ -60,6 +60,11 @@
           <a href="/app/profiles/new" class="profile-option profile-option--new" role="menuitem">
             + Add profile
           </a>
+          <form action="/api/auth/logout" method="POST" role="none">
+            <button type="submit" class="profile-option profile-option--signout" role="menuitem">
+              Sign out
+            </button>
+          </form>
         </div>
       </details>
     </header>
