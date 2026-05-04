@@ -487,6 +487,7 @@ router.post('/api/medications/:id/schedule', requireAuth, loadAppContext, async 
 
   await db.batch(statements, 'write');
 
+  if (req.headers['x-fetch'] === '1') return res.status(204).end();
   res.redirect(`/app/medications/${id}`);
 });
 

@@ -509,6 +509,23 @@
     min-inline-size: 10rem;
   }
 
+  .schedule-save-status {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    min-block-size: 1.5em;
+    margin: 0;
+    text-align: right;
+  }
+
+  .schedule-save-status[data-state="saved"] {
+    color: var(--color-primary);
+    animation: save-fade-out 0.35s ease-out 2s forwards;
+  }
+
+  .schedule-save-status[data-state="error"] {
+    color: var(--color-danger);
+  }
+
   .detail-schedule-actions {
     margin-block-start: var(--space-6);
   }

@@ -162,8 +162,8 @@
             <% }); %>
           </div>
         </fieldset>
-        <div class="form-actions detail-schedule-actions">
-          <button type="submit" class="btn btn--primary">Save schedule</button>
+        <div class="detail-schedule-actions">
+          <p class="schedule-save-status" role="status" aria-live="polite" aria-atomic="true"></p>
         </div>
       </form>
     <% } %>
@@ -186,6 +186,7 @@
 </div>
 
 <script>
+  // ── Days-of-week "All" toggle ──────────────────────────────
   document.querySelectorAll('.day-toggle--all').forEach((btn) => {
     const slotId = btn.dataset.slotId;
     const boxes  = /** @type {NodeListOf<HTMLInputElement>} */ (
@@ -200,8 +201,43 @@
       const allChecked = [...boxes].every((b) => b.checked);
       boxes.forEach((b) => { b.checked = !allChecked; });
       sync();
+      btn.closest('form')?.dispatchEvent(new Event('change'));
     });
 
     boxes.forEach((b) => b.addEventListener('change', sync));
   });
+
+  // ── Schedule autosave ──────────────────────────────────────
+  const schedForm   = /** @type {HTMLFormElement|null} */ (document.querySelector('form[action*="/schedule"]'));
+  const schedStatus = /** @type {HTMLElement|null} */ (document.querySelector('.schedule-save-status'));
+
+  if (schedForm && schedStatus) {
+    /** @type {ReturnType<typeof setTimeout>|null} */
+    let schedTimer = null;
+
+    const saveSchedule = async () => {
+      schedStatus.textContent = 'Saving…';
+      schedStatus.dataset.state = 'saving';
+      try {
+        const resp = await fetch(schedForm.action, {
+          method: 'POST',
+          body:    new URLSearchParams(/** @type {any} */ (new FormData(schedForm))),
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'x-fetch': '1' },
+        });
+        if (!resp.ok) throw new Error();
+        schedStatus.textContent = 'Saved';
+        schedStatus.dataset.state = 'saved';
+      } catch {
+        schedStatus.textContent = 'Not saved';
+        schedStatus.dataset.state = 'error';
+      }
+    };
+
+    schedForm.addEventListener('change', () => {
+      clearTimeout(schedTimer);
+      schedStatus.textContent = '';
+      delete schedStatus.dataset.state;
+      schedTimer = setTimeout(saveSchedule, 600);
+    });
+  }
 </script>
