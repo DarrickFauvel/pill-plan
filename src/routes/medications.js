@@ -347,10 +347,12 @@ router.get('/app/medications/:id', requireAuth, loadAppContext, async (req, res)
     sortOrder: Number(r.sort_order),
   }));
 
-  /** @type {Record<string, {doseQty: number}>} */
+  /** @type {Record<string, {doseQty: number, days: number[]}>} */
   const scheduleMap = {};
   for (const s of schedules) {
-    scheduleMap[s.slotId] = { doseQty: s.doseQty };
+    let days;
+    try { days = JSON.parse(s.days); } catch { days = [0,1,2,3,4,5,6]; }
+    scheduleMap[s.slotId] = { doseQty: s.doseQty, days };
   }
 
   const scheduleRaw = schedules.length
@@ -458,7 +460,7 @@ router.post('/api/medications/:id/schedule', requireAuth, loadAppContext, async 
 
   const validSlotIds = new Set(slotRows.rows.map((r) => String(r.id)));
 
-  /** @type {Array<{slotId: string, doseQty: number}>} */
+  /** @type {Array<{slotId: string, doseQty: number, days: number[]}>} */
   const scheduleEntries = [];
 
   for (const [key, val] of Object.entries(body)) {
@@ -467,7 +469,8 @@ router.post('/api/medications/:id/schedule', requireAuth, loadAppContext, async 
     const slotId = key.slice(5);
     if (!validSlotIds.has(slotId)) continue;
     const doseQty = Math.max(1, parseInt(body[`dose_${slotId}`], 10) || 1);
-    scheduleEntries.push({ slotId, doseQty });
+    const days = [0,1,2,3,4,5,6].filter((d) => body[`day_${slotId}_${d}`] === '1');
+    scheduleEntries.push({ slotId, doseQty, days: days.length ? days : [0,1,2,3,4,5,6] });
   }
 
   /** @type {Array<{sql: string, args: Array<string|number>}>} */
@@ -476,9 +479,9 @@ router.post('/api/medications/:id/schedule', requireAuth, loadAppContext, async 
       sql: 'DELETE FROM schedules WHERE med_id = ?',
       args: [id],
     },
-    ...scheduleEntries.map(({ slotId, doseQty }) => ({
+    ...scheduleEntries.map(({ slotId, doseQty, days }) => ({
       sql: 'INSERT INTO schedules (id, med_id, slot_id, days, dose_qty) VALUES (?, ?, ?, ?, ?)',
-      args: [randomUUID(), id, slotId, '[0,1,2,3,4,5,6]', doseQty],
+      args: [randomUUID(), id, slotId, JSON.stringify(days), doseQty],
     })),
   ];
 
