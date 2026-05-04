@@ -63,6 +63,35 @@ function cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, da
 
 
 /* ─────────────────────────────────────────────────────────────
+   Print page  GET /app/grid/print
+   (registered before /app/grid to avoid path ambiguity)
+   ───────────────────────────────────────────────────────────── */
+
+router.get('/app/grid/print', requireAuth, loadAppContext, async (req, res) => {
+  const monthParam = String(req.query.month ?? '');
+
+  let year, month;
+  if (/^\d{4}-\d{2}$/.test(monthParam)) {
+    const [y, m] = monthParam.split('-').map(Number);
+    year  = y;
+    month = m - 1;
+  } else {
+    const now = new Date();
+    year  = now.getFullYear();
+    month = now.getMonth();
+  }
+
+  const grid = await buildMonthGrid(req.profile.id, year, month);
+
+  res.render('pages/grid-print', {
+    title:   `${grid.monthLabel} — ${req.profile.name}`,
+    profile: req.profile,
+    grid,
+  });
+});
+
+
+/* ─────────────────────────────────────────────────────────────
    Grid page  GET /app/grid
    ───────────────────────────────────────────────────────────── */
 

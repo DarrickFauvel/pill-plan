@@ -1,0 +1,214 @@
+@page {
+  size: landscape;
+  margin: 1.5cm;
+}
+
+@layer print-layout {
+
+  /* ── Page shell ──────────────────────────────────────────── */
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  .print-page {
+    max-width: 100%;
+    padding: var(--space-4);
+  }
+
+  /* ── Header ──────────────────────────────────────────────── */
+
+  .print-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-block-end: var(--space-4);
+    padding-block-end: var(--space-3);
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .print-header__title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .print-header__profile {
+    color: var(--color-muted);
+    margin: var(--space-1) 0 0;
+    font-size: var(--font-size-sm);
+  }
+
+  .print-header__actions {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  /* ── Table wrapper ───────────────────────────────────────── */
+
+  .print-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Compact column sizing for print ─────────────────────── */
+
+  .print-table .grid-th--label,
+  .print-table .grid-th--med {
+    width: 9rem;
+    min-width: 9rem;
+    max-width: 9rem;
+  }
+
+  .print-table .grid-th--day,
+  .print-table .grid-td {
+    width: 2.25rem;
+    min-width: 2.25rem;
+  }
+
+  /* Med name: allow wrapping on print page (not truncated) */
+  .print-table .grid-med-name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    max-width: none;
+  }
+
+  /* ── Print cells ─────────────────────────────────────────── */
+
+  .print-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-border);
+    margin: 0 auto;
+  }
+
+  .print-cell--taken {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .print-cell--taken::after {
+    content: '';
+    display: block;
+    width: 0.55rem;
+    height: 0.35rem;
+    border-left: 2px solid white;
+    border-bottom: 2px solid white;
+    transform: rotate(-45deg) translateY(-1px);
+    flex-shrink: 0;
+  }
+
+  .print-cell--skip {
+    border-color: transparent;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 3px,
+      color-mix(in srgb, var(--color-border) 50%, transparent) 3px,
+      color-mix(in srgb, var(--color-border) 50%, transparent) 4px
+    );
+  }
+
+  /* ── Legend (screen only) ────────────────────────────────── */
+
+  .print-legend {
+    display: flex;
+    gap: var(--space-6);
+    align-items: center;
+    margin-block-start: var(--space-4);
+    padding-block-start: var(--space-3);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+  }
+
+  .print-legend__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  /* ── Empty state ─────────────────────────────────────────── */
+
+  .print-empty {
+    color: var(--color-muted);
+    padding: var(--space-6) 0;
+  }
+
+  /* ── Print media overrides ───────────────────────────────── */
+
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+
+    .print-page {
+      padding: 0;
+    }
+
+    /* Release sticky positioning so all columns render */
+    .grid-th--label,
+    .grid-th--day,
+    .grid-th--med,
+    .grid-th--slot {
+      position: static;
+    }
+
+    .print-table .grid-th--label,
+    .print-table .grid-th--med {
+      width: 7rem;
+      min-width: 7rem;
+      max-width: 7rem;
+    }
+
+    .print-table .grid-th--day,
+    .print-table .grid-td {
+      width: 1.5rem;
+      min-width: 1.5rem;
+    }
+
+    .print-cell {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .print-cell--taken {
+      background: black;
+      border-color: black;
+    }
+
+    .grid-td--missed {
+      background: none;
+    }
+
+    .refill-banner {
+      margin-block-end: var(--space-3);
+    }
+  }
+
+  /* ── High contrast ───────────────────────────────────────── */
+
+  @media (prefers-contrast: more) {
+    .print-cell {
+      border-width: 2px;
+    }
+  }
+
+  /* ── Reduced motion ──────────────────────────────────────── */
+
+  @media (prefers-reduced-motion: reduce) {
+    .print-cell {
+      transition: none;
+    }
+  }
+
+}

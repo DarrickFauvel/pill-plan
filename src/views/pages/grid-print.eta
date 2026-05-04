@@ -1,0 +1,120 @@
+<% layout('../layouts/print') %>
+<div class="print-page">
+
+  <header class="print-header">
+    <div class="print-header__meta">
+      <h1 class="print-header__title"><%= it.grid.monthLabel %></h1>
+      <p class="print-header__profile"><%= it.profile.name %></p>
+    </div>
+    <div class="print-header__actions no-print">
+      <a href="/app/grid?month=<%= it.grid.prevMonth.slice(0,7) + '-01' === it.grid.prevMonth ? it.grid.prevMonth : it.grid.prevMonth %>" class="btn btn--secondary btn--sm">← Back</a>
+      <button type="button" class="btn btn--primary btn--sm" onclick="window.print()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/>
+        </svg>
+        Print
+      </button>
+    </div>
+  </header>
+
+  <% if (it.grid.refillAlerts.length > 0) { %>
+  <div class="refill-banner" role="alert">
+    <svg class="refill-banner__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    <div class="refill-banner__body">
+      <strong class="refill-banner__title">Refill needed</strong>
+      <ul class="refill-banner__list" role="list">
+        <% it.grid.refillAlerts.forEach(function(med) { %>
+        <li><%= med.name %> — <%= med.daysRemaining %> day<%= med.daysRemaining === 1 ? '' : 's' %> left</li>
+        <% }); %>
+      </ul>
+    </div>
+  </div>
+  <% } %>
+
+  <% var hasAnyMeds = it.grid.slots.some(function(s) { return s.meds.length > 0; }); %>
+
+  <% if (!hasAnyMeds) { %>
+  <p class="print-empty">No medications scheduled for this month.</p>
+  <% } else { %>
+
+  <div class="print-scroll">
+    <table
+      role="grid"
+      class="grid-table print-table"
+      aria-label="Medication dose grid for <%= it.grid.monthLabel %>"
+    >
+      <thead>
+        <tr>
+          <th scope="col" class="grid-th grid-th--label" role="columnheader">Medication</th>
+          <% it.grid.days.forEach(function(day) { %>
+          <th
+            scope="col"
+            class="grid-th grid-th--day<%= day.isToday ? ' grid-th--today' : '' %>"
+            role="columnheader"
+            id="pcol-<%= day.date %>"
+          >
+            <span class="grid-day-num" aria-hidden="true"><%= day.dayNum %></span>
+            <span class="grid-day-name" aria-hidden="true"><%= day.dayLabel.charAt(0) %></span>
+            <span class="sr-only"><%= day.dayLabel %> <%= day.dayNum %></span>
+          </th>
+          <% }); %>
+        </tr>
+      </thead>
+      <tbody>
+        <% it.grid.slots.forEach(function(slot) { %>
+        <% if (slot.meds.length > 0) { %>
+
+        <tr class="grid-slot-row" aria-hidden="true">
+          <th class="grid-th grid-th--slot" scope="rowgroup"><%= slot.label %></th>
+          <% it.grid.days.forEach(function() { %>
+          <td class="grid-td grid-td--slot-fill"></td>
+          <% }); %>
+        </tr>
+
+        <% slot.meds.forEach(function(med) { %>
+        <tr>
+          <th scope="row" class="grid-th grid-th--med">
+            <span class="grid-med-name"><%= med.name %></span>
+            <% if (med.strength) { %><span class="grid-med-strength"><%= med.strength %></span><% } %>
+          </th>
+          <% it.grid.days.forEach(function(day) { %>
+          <%
+            var dayOfWeek   = new Date(day.date + 'T12:00:00').getDay();
+            var isScheduled = med.scheduledDays.indexOf(dayOfWeek) !== -1;
+            var entry       = med.entries[day.date];
+            var isTaken     = !!(entry && entry.status === 'taken');
+            var ariaLabel   = med.name + ', ' + slot.label + ', ' + day.dayLabel + ' ' + day.dayNum + (isTaken ? ', taken' : ', not taken');
+          %>
+          <td
+            role="gridcell"
+            class="grid-td<%= day.isToday ? ' grid-td--today' : '' %><%= day.isPast && isScheduled && !isTaken ? ' grid-td--missed' : '' %>"
+            headers="pcol-<%= day.date %>"
+            aria-label="<%= ariaLabel %>"
+          >
+            <% if (isScheduled) { %>
+            <span class="print-cell<%= isTaken ? ' print-cell--taken' : '' %>" aria-hidden="true"></span>
+            <% } else { %>
+            <span class="print-cell print-cell--skip" aria-hidden="true"></span>
+            <% } %>
+          </td>
+          <% }); %>
+        </tr>
+        <% }); %>
+
+        <% } %>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <footer class="print-legend no-print">
+    <span class="print-legend__item"><span class="print-cell print-cell--taken" aria-hidden="true"></span> Taken</span>
+    <span class="print-legend__item"><span class="print-cell" aria-hidden="true"></span> Not yet taken</span>
+    <span class="print-legend__item"><span class="print-cell print-cell--skip" aria-hidden="true"></span> Not scheduled</span>
+  </footer>
+
+  <% } %>
+
+</div>
