@@ -33,8 +33,8 @@
             id="slot-label-<%= slot.id %>"
             type="text"
             class="input"
-            data-bind="<%= sigRef %>"
-            data-on-input__debounce.1000ms="@post('<%= postUrl %>')"
+            data-bind:<%= sigKey %>
+            data-on:input__debounce.1000ms="@post('<%= postUrl %>')"
             aria-label="Time slot name"
           >
         </div>

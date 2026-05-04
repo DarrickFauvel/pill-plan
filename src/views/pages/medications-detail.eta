@@ -1,7 +1,7 @@
 <% layout('../layouts/app') %>
 <div
   class="medications-detail-page"
-  data-signals='<%~ JSON.stringify({saveStatus:"idle",name:it.med.name,strength:it.med.strength,form:it.med.form,instructions:it.med.instructions,total_quantity:it.med.totalQuantity,refill_threshold:it.med.refillThreshold}) %>'
+  data-signals='<%~ JSON.stringify({saveStatus:"idle",name:it.med.name,strengthValue:it.strengthValue,strengthUnit:it.strengthUnit,strengthUnitCustom:it.strengthUnitCustom,form:it.med.form,instructions:it.med.instructions,totalQuantity:it.med.totalQuantity,refillThreshold:it.med.refillThreshold}) %>'
 >
 
   <header class="page-header">
@@ -14,7 +14,7 @@
     <h2 id="supply-heading">Current supply</h2>
     <div class="supply-row">
       <p class="supply-count">
-        <span data-text="$total_quantity"></span> on hand
+        <span data-text="$totalQuantity"></span> on hand
         <% if (it.daysRemaining !== null) { %>
           <span class="days-badge<%= it.needsRefill ? ' days-badge--warning' : '' %>">
             <%= it.daysRemaining %> day<%= it.daysRemaining === 1 ? '' : 's' %> left
@@ -42,20 +42,55 @@
         type="text"
         class="input"
         required
-        data-bind-name
-        data-on-input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+        data-bind:name
+        data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
       >
     </div>
 
     <div class="form-group">
-      <label for="ed-strength">Strength</label>
-      <input
-        id="ed-strength"
-        type="text"
-        class="input"
-        data-bind-strength
-        data-on-input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
-      >
+      <label>Strength</label>
+      <div class="strength-split" role="group">
+        <label for="ed-strength-value" class="sr-only">Strength value</label>
+        <input
+          id="ed-strength-value"
+          type="number"
+          class="input strength-split__value"
+          step="any"
+          min="0"
+          placeholder="e.g. 5"
+          data-bind:strengthValue
+          data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+        >
+        <label for="ed-strength-unit" class="sr-only">Unit</label>
+        <select
+          id="ed-strength-unit"
+          class="input strength-split__unit"
+          data-bind:strengthUnit
+          data-on:change__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+        >
+          <option value="">— unit —</option>
+          <option value="MG">MG</option>
+          <option value="MCG">MCG</option>
+          <option value="G">G</option>
+          <option value="IU">IU</option>
+          <option value="MEQ">MEQ</option>
+          <option value="MG/ML">MG/ML</option>
+          <option value="MCG/ML">MCG/ML</option>
+          <option value="%">%</option>
+          <option value="other">Other…</option>
+        </select>
+        <div data-show="$strengthUnit === 'other'">
+          <label for="ed-strength-unit-custom" class="sr-only">Custom unit name</label>
+          <input
+            id="ed-strength-unit-custom"
+            type="text"
+            class="input"
+            placeholder="Unit name"
+            data-bind:strengthUnitCustom
+            data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+          >
+        </div>
+      </div>
     </div>
 
     <div class="form-group">
@@ -65,8 +100,8 @@
         type="text"
         class="input"
         placeholder="e.g. tablet, capsule"
-        data-bind-form
-        data-on-input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+        data-bind:form
+        data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
       >
     </div>
 
@@ -77,8 +112,8 @@
         type="number"
         class="input"
         min="0"
-        data-bind-total-quantity
-        data-on-input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+        data-bind:totalQuantity
+        data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
       >
     </div>
 
@@ -89,8 +124,8 @@
         type="number"
         class="input"
         min="1"
-        data-bind-refill-threshold
-        data-on-input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+        data-bind:refillThreshold
+        data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
       >
     </div>
   </section>
@@ -173,17 +208,33 @@
   <section class="detail-section detail-section--danger" aria-labelledby="remove-heading">
     <h2 id="remove-heading">Remove medication</h2>
     <p>This removes the medication from your grid and supply tracking.</p>
-    <form action="/api/medications/<%= it.med.id %>/deactivate" method="POST">
-      <button
-        type="submit"
-        class="btn btn--danger"
-        aria-describedby="deactivate-warn"
-      >Remove medication</button>
-    </form>
-    <p id="deactivate-warn" class="sr-only">This will deactivate the medication and remove it from your grid.</p>
+    <button
+      type="button"
+      class="btn btn--danger"
+      onclick="document.getElementById('remove-modal').showModal()"
+    >Remove medication</button>
   </section>
 
 </div>
+
+<dialog id="remove-modal" class="confirm-modal" aria-labelledby="confirm-modal-title">
+  <div class="confirm-modal__inner">
+    <h2 id="confirm-modal-title" class="confirm-modal__title">Remove medication?</h2>
+    <p class="confirm-modal__body">
+      <strong><%= it.med.name %></strong> will be removed from your grid and supply tracking. This cannot be undone.
+    </p>
+    <div class="confirm-modal__actions">
+      <button
+        type="button"
+        class="btn btn--secondary"
+        onclick="document.getElementById('remove-modal').close()"
+      >Cancel</button>
+      <form action="/api/medications/<%= it.med.id %>/deactivate" method="POST" style="display:contents">
+        <button type="submit" class="btn btn--danger">Yes, remove</button>
+      </form>
+    </div>
+  </div>
+</dialog>
 
 <script>
   // ── Days-of-week "All" toggle ──────────────────────────────
@@ -240,4 +291,10 @@
       schedTimer = setTimeout(saveSchedule, 600);
     });
   }
+
+  // ── Remove modal — close on backdrop click ─────────────────
+  document.getElementById('remove-modal')?.addEventListener('click', (e) => {
+    const modal = /** @type {HTMLDialogElement} */ (e.currentTarget);
+    if (e.target === modal) modal.close();
+  });
 </script>

@@ -8,7 +8,7 @@ const HEARTBEAT_INTERVAL_MS = 30_000;
 /**
  * GET /
  * Persistent SSE connection. Clients connect once per session; the server
- * pushes datastar-merge-signals and datastar-merge-fragments events as needed.
+ * pushes datastar-patch-signals and datastar-patch-elements events as needed.
  */
 router.get('/', requireAuth, (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');

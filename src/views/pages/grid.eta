@@ -134,7 +134,7 @@
             <button
               id="<%= cid %>"
               class="grid-cell<%= isTaken ? ' grid-cell--taken' : '' %>"
-              data-on-click="<%= clickAction %>"
+              data-on:click="<%= clickAction %>"
               aria-label="<%= ariaLabel %>"
               aria-pressed="<%= isTaken ? 'true' : 'false' %>"
             ></button>

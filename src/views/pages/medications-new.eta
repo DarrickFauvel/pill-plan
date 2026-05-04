@@ -1,7 +1,7 @@
 <% layout('../layouts/app') %>
 <div
   class="medications-new-page"
-  data-signals='{"medQuery":"","medRxcui":"","medName":"","medStrength":"","medForm":""}'
+  data-signals='{"medQuery":"","medRxcui":"","medName":"","medStrengthValue":"","medStrengthUnit":"","medStrengthUnitCustom":"","medForm":""}'
 >
 
   <header class="page-header">
@@ -24,8 +24,8 @@
       class="input"
       autocomplete="off"
       placeholder="e.g. Metformin"
-      data-bind-med-query
-      data-on-input__debounce.400ms="$medQuery.length >= 2 && @get('/api/meds/search?q=' + encodeURIComponent($medQuery))"
+      data-bind:medQuery
+      data-on:input__debounce.400ms="$medQuery.length >= 2 && @get('/api/meds/search?q=' + encodeURIComponent($medQuery))"
     >
     <div
       id="med-results"
@@ -39,19 +39,18 @@
   <!-- Selected medication preview -->
   <div class="selected-med" data-show="$medRxcui !== ''">
     <p class="selected-med__label">Selected:</p>
-    <p class="selected-med__name" data-text="$medName + ($medStrength ? ' ' + $medStrength : '') + ($medForm ? ' (' + $medForm + ')' : '')"></p>
+    <p class="selected-med__name" data-text="$medName + ($medStrengthValue ? ' ' + $medStrengthValue + ' ' + ($medStrengthUnit === 'other' ? $medStrengthUnitCustom : $medStrengthUnit) : '') + ($medForm ? ' (' + $medForm + ')' : '')"></p>
     <button
       type="button"
       class="btn-link"
       aria-label="Change selected medication"
-      data-on-click="$medRxcui='';$medName='';$medStrength='';$medForm='';$medQuery=''"
+      data-on:click="$medRxcui='';$medName='';$medStrengthValue='';$medStrengthUnit='';$medStrengthUnitCustom='';$medForm='';$medQuery=''"
     >Change</button>
   </div>
 
   <form action="/api/medications" method="POST" class="med-form">
-    <input type="hidden" name="rxcui" data-bind-med-rxcui>
-    <input type="hidden" name="strength" data-bind-med-strength>
-    <input type="hidden" name="form" data-bind-med-form>
+    <input type="hidden" name="rxcui" data-bind:medRxcui>
+    <input type="hidden" name="form" data-bind:medForm>
 
     <!-- Manual name field — always present; pre-filled via signal when RxNorm match selected -->
     <div class="form-group">
@@ -63,18 +62,64 @@
         class="input"
         placeholder="Medication name"
         required
-        data-bind-med-name
+        data-bind:medName
       >
     </div>
 
     <div class="form-group">
+      <label>Strength</label>
+      <div class="strength-split" role="group">
+        <label for="new-strength-value" class="sr-only">Strength value</label>
+        <input
+          id="new-strength-value"
+          type="number"
+          name="strengthValue"
+          class="input strength-split__value"
+          step="any"
+          min="0"
+          placeholder="e.g. 5"
+          data-bind:medStrengthValue
+        >
+        <label for="new-strength-unit" class="sr-only">Unit</label>
+        <select
+          id="new-strength-unit"
+          name="strengthUnit"
+          class="input strength-split__unit"
+          data-bind:medStrengthUnit
+        >
+          <option value="">— unit —</option>
+          <option value="MG">MG</option>
+          <option value="MCG">MCG</option>
+          <option value="G">G</option>
+          <option value="IU">IU</option>
+          <option value="MEQ">MEQ</option>
+          <option value="MG/ML">MG/ML</option>
+          <option value="MCG/ML">MCG/ML</option>
+          <option value="%">%</option>
+          <option value="other">Other…</option>
+        </select>
+        <div data-show="$medStrengthUnit === 'other'">
+          <label for="new-strength-unit-custom" class="sr-only">Custom unit name</label>
+          <input
+            id="new-strength-unit-custom"
+            type="text"
+            name="strengthUnitCustom"
+            class="input"
+            placeholder="Unit name"
+            data-bind:medStrengthUnitCustom
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
       <label for="med-qty">Quantity on hand (pills / doses)</label>
-      <input id="med-qty" type="number" name="total_quantity" class="input" min="0" value="0" required>
+      <input id="med-qty" type="number" name="totalQuantity" class="input" min="0" value="0" required>
     </div>
 
     <div class="form-group">
       <label for="med-threshold">Refill alert (days before running out)</label>
-      <input id="med-threshold" type="number" name="refill_threshold" class="input" min="1" value="7" required>
+      <input id="med-threshold" type="number" name="refillThreshold" class="input" min="1" value="7" required>
     </div>
 
     <!-- Time slots -->
@@ -110,3 +155,56 @@
   </form>
 
 </div>
+
+<script>
+  const searchInput   = /** @type {HTMLInputElement|null} */ (document.getElementById('med-search'));
+  const results       = document.getElementById('med-results');
+  const strengthInput = /** @type {HTMLInputElement|null} */ (document.getElementById('new-strength-value'));
+
+  searchInput?.focus();
+
+  const nameLabel = document.querySelector('label[for="med-name-manual"]');
+
+  /** Scroll to the name label and focus the strength value field after Datastar applies signals. */
+  function focusAfterSelect() {
+    nameLabel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => strengthInput?.focus(), 80);
+  }
+
+  // Tab into results from search input focuses the first option
+  searchInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const first = /** @type {HTMLButtonElement|null} */ (results?.querySelector('button'));
+      first?.focus();
+    }
+  });
+
+  // Keyboard navigation within the results list
+  results?.addEventListener('keydown', (e) => {
+    const btn = /** @type {HTMLButtonElement|null} */ (/** @type {Element} */ (e.target).closest('button'));
+    if (!btn) return;
+
+    if (e.key === 'Tab' && !e.shiftKey) {
+      // Tab selects the focused option then moves to the strength field
+      e.preventDefault();
+      btn.click();
+      focusAfterSelect();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = /** @type {HTMLButtonElement|null} */ (btn.nextElementSibling);
+      next ? next.focus() : btn.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = /** @type {HTMLButtonElement|null} */ (btn.previousElementSibling);
+      prev ? prev.focus() : searchInput?.focus();
+    } else if (e.key === 'Escape') {
+      searchInput?.focus();
+    }
+  });
+
+  // Click or Enter on a result also lands on the strength field
+  results?.addEventListener('click', (e) => {
+    if (/** @type {Element} */ (e.target).closest('button')) focusAfterSelect();
+  });
+</script>

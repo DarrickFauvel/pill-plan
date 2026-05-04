@@ -120,13 +120,13 @@ router.post('/api/settings/slots/:id', requireAuth, loadAppContext, async (req, 
     args: [id, req.profile.id],
   });
   if (!check.rows.length) {
-    res.write('event: datastar-merge-signals\ndata: signals {"saveStatus":"error"}\n\n');
+    res.write('event: datastar-patch-signals\ndata: signals {"saveStatus":"error"}\n\n');
     return res.end();
   }
 
   const label = String(req.body[slotSignalKey(id)] ?? '').trim();
   if (!label) {
-    res.write('event: datastar-merge-signals\ndata: signals {"saveStatus":"error"}\n\n');
+    res.write('event: datastar-patch-signals\ndata: signals {"saveStatus":"error"}\n\n');
     return res.end();
   }
 
@@ -135,7 +135,7 @@ router.post('/api/settings/slots/:id', requireAuth, loadAppContext, async (req, 
     args: [label, id],
   });
 
-  res.write('event: datastar-merge-signals\ndata: signals {"saveStatus":"saved"}\n\n');
+  res.write('event: datastar-patch-signals\ndata: signals {"saveStatus":"saved"}\n\n');
   res.end();
 });
 

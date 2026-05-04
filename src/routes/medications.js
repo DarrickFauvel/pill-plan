@@ -51,6 +51,40 @@ function capFirst(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
+const STRENGTH_UNITS = ['MG', 'MCG', 'G', 'IU', 'MEQ', 'MG/ML', 'MCG/ML', '%'];
+
+/**
+ * Parse a strength string (e.g. "5 MG") into its numeric value and unit.
+ *
+ * @param {string} s
+ * @returns {{value: string, unit: string, unitCustom: string}}
+ */
+function parseStrength(s) {
+  const str = String(s ?? '').trim();
+  if (!str) return { value: '', unit: '', unitCustom: '' };
+  const match = str.match(/^([0-9]*\.?[0-9]+)\s*(.*)$/);
+  const val = match ? match[1] : '';
+  const rawUnit = (match ? match[2] : str).trim().toUpperCase();
+  if (!rawUnit) return { value: val, unit: '', unitCustom: '' };
+  if (STRENGTH_UNITS.includes(rawUnit)) return { value: val, unit: rawUnit, unitCustom: '' };
+  return { value: val, unit: 'other', unitCustom: rawUnit };
+}
+
+/**
+ * Combine split strength value and unit back into a single string for storage.
+ *
+ * @param {string} value
+ * @param {string} unit
+ * @param {string} unitCustom
+ * @returns {string | null}
+ */
+function combineStrength(value, unit, unitCustom) {
+  const v = String(value ?? '').trim();
+  const u = unit === 'other' ? String(unitCustom ?? '').trim() : String(unit ?? '').trim();
+  if (!v) return null;
+  return u ? `${v} ${u}` : v;
+}
+
 function calcDaysRemaining(totalQuantity, refillThreshold, scheduleRaw) {
   if (!scheduleRaw || totalQuantity <= 0) {
     return { daysRemaining: null, needsRefill: false };
@@ -91,10 +125,10 @@ router.get('/api/meds/search', requireAuth, loadAppContext, async (req, res) => 
   const q = String(req.query.q ?? '').trim();
 
   if (q.length < 2) {
-    res.write('event: datastar-merge-fragments\n');
-    res.write('data: merge morph\n');
+    res.write('event: datastar-patch-elements\n');
+    res.write('data: mode morph\n');
     res.write('data: selector #med-results\n');
-    res.write('data: fragments <div id="med-results" class="med-results"></div>\n');
+    res.write('data: elements <div id="med-results" class="med-results"></div>\n');
     res.write('\n');
     return res.end();
   }
@@ -104,14 +138,14 @@ router.get('/api/meds/search', requireAuth, loadAppContext, async (req, res) => 
   const buttons = results
     .map(
       (r) =>
-        `<button type="button" data-on-click="@get('/api/meds/details/${esc(r.rxcui)}')" aria-label="Select ${esc(r.name)}">${esc(r.name)}</button>`
+        `<button type="button" data-on:click="@get('/api/meds/details/${esc(r.rxcui)}')" aria-label="Select ${esc(r.name)}">${esc(r.name)}</button>`
     )
     .join('');
 
-  res.write('event: datastar-merge-fragments\n');
-  res.write('data: merge morph\n');
+  res.write('event: datastar-patch-elements\n');
+  res.write('data: mode morph\n');
   res.write('data: selector #med-results\n');
-  res.write(`data: fragments <div id="med-results" class="med-results" role="listbox" aria-label="Medication suggestions">${buttons}</div>\n`);
+  res.write(`data: elements <div id="med-results" class="med-results" role="listbox" aria-label="Medication suggestions">${buttons}</div>\n`);
   res.write('\n');
   res.end();
 });
@@ -129,27 +163,31 @@ router.get('/api/meds/details/:rxcui', requireAuth, loadAppContext, async (req, 
   const details = await getMedDetails(rxcui);
 
   if (!details) {
-    res.write('event: datastar-merge-signals\n');
-    res.write('data: signals {"medName":"","medRxcui":"","medStrength":"","medForm":""}\n');
+    res.write('event: datastar-patch-signals\n');
+    res.write('data: signals {"medName":"","medRxcui":"","medStrengthValue":"","medStrengthUnit":"","medStrengthUnitCustom":"","medForm":""}\n');
     res.write('\n');
     return res.end();
   }
 
+  const { value: strengthValue, unit: strengthUnit, unitCustom: strengthUnitCustom } = parseStrength(details.strength);
+
   const signals = JSON.stringify({
-    medName:     capFirst(details.name),
-    medRxcui:    details.rxcui,
-    medStrength: details.strength,
-    medForm:     details.form,
+    medName:              capFirst(details.name),
+    medRxcui:             details.rxcui,
+    medStrengthValue:     strengthValue,
+    medStrengthUnit:      strengthUnit,
+    medStrengthUnitCustom: strengthUnitCustom,
+    medForm:              details.form,
   });
 
-  res.write('event: datastar-merge-signals\n');
+  res.write('event: datastar-patch-signals\n');
   res.write(`data: signals ${signals}\n`);
   res.write('\n');
 
-  res.write('event: datastar-merge-fragments\n');
-  res.write('data: merge morph\n');
+  res.write('event: datastar-patch-elements\n');
+  res.write('data: mode morph\n');
   res.write('data: selector #med-results\n');
-  res.write('data: fragments <div id="med-results" class="med-results"></div>\n');
+  res.write('data: elements <div id="med-results" class="med-results"></div>\n');
   res.write('\n');
 
   res.end();
@@ -247,11 +285,11 @@ router.post('/api/medications', requireAuth, loadAppContext, async (req, res) =>
   }
 
   const rxcui = String(body.rxcui ?? '').trim() || null;
-  const strength = String(body.strength ?? '').trim() || null;
+  const strength = combineStrength(body.strengthValue, body.strengthUnit, body.strengthUnitCustom);
   const form = String(body.form ?? '').trim() || null;
   const instructions = String(body.instructions ?? '').trim() || null;
-  const totalQuantity = Math.max(0, parseInt(body.total_quantity, 10) || 0);
-  const refillThreshold = Math.max(1, parseInt(body.refill_threshold, 10) || 7);
+  const totalQuantity = Math.max(0, parseInt(body.totalQuantity, 10) || 0);
+  const refillThreshold = Math.max(1, parseInt(body.refillThreshold, 10) || 7);
 
   const medId = randomUUID();
   const now = new Date().toISOString();
@@ -373,12 +411,17 @@ router.get('/app/medications/:id', requireAuth, loadAppContext, async (req, res)
     scheduleRaw
   );
 
+  const { value: strengthValue, unit: strengthUnit, unitCustom: strengthUnitCustom } = parseStrength(med.strength);
+
   res.render('pages/medications-detail', {
     title: med.name,
     path: '/app/medications',
     profile: req.profile,
     profiles: req.profiles,
     med,
+    strengthValue,
+    strengthUnit,
+    strengthUnitCustom,
     slots,
     schedules,
     scheduleMap,
@@ -405,7 +448,7 @@ router.post('/api/medications/:id', requireAuth, loadAppContext, async (req, res
   sseHeaders(res);
 
   if (!ownerCheck.rows.length) {
-    res.write('event: datastar-merge-signals\n');
+    res.write('event: datastar-patch-signals\n');
     res.write('data: signals {"saveStatus":"error"}\n');
     res.write('\n');
     return res.end();
@@ -415,17 +458,17 @@ router.post('/api/medications/:id', requireAuth, loadAppContext, async (req, res
 
   const name = capFirst(String(body.name ?? '').trim());
   if (!name) {
-    res.write('event: datastar-merge-signals\n');
+    res.write('event: datastar-patch-signals\n');
     res.write('data: signals {"saveStatus":"error"}\n');
     res.write('\n');
     return res.end();
   }
 
-  const strength = String(body.strength ?? '').trim() || null;
+  const strength = combineStrength(body.strengthValue, body.strengthUnit, body.strengthUnitCustom);
   const form = String(body.form ?? '').trim() || null;
   const instructions = String(body.instructions ?? '').trim() || null;
-  const totalQuantity = Math.max(0, parseInt(body.total_quantity, 10) || 0);
-  const refillThreshold = Math.max(1, parseInt(body.refill_threshold, 10) || 7);
+  const totalQuantity = Math.max(0, parseInt(body.totalQuantity, 10) || 0);
+  const refillThreshold = Math.max(1, parseInt(body.refillThreshold, 10) || 7);
 
   await db.execute({
     sql: `UPDATE medications
@@ -435,7 +478,7 @@ router.post('/api/medications/:id', requireAuth, loadAppContext, async (req, res
     args: [name, strength, form, instructions, totalQuantity, refillThreshold, id],
   });
 
-  res.write('event: datastar-merge-signals\n');
+  res.write('event: datastar-patch-signals\n');
   res.write('data: signals {"saveStatus":"saved"}\n');
   res.write('\n');
   res.end();
