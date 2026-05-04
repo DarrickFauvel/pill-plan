@@ -9,6 +9,65 @@
     min-height: 0;
   }
 
+  /* ── Refill alert banner ─────────────────────────────────── */
+
+  .refill-banner {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-3) var(--space-4);
+    background: color-mix(in srgb, var(--color-warning) 12%, var(--color-surface));
+    border-bottom: 2px solid var(--color-warning);
+    flex-shrink: 0;
+  }
+
+  .refill-banner__icon {
+    color: var(--color-warning);
+    flex-shrink: 0;
+    margin-block-start: 0.15em;
+  }
+
+  .refill-banner__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .refill-banner__title {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .refill-banner__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15em;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+  }
+
+  .refill-banner__link {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .refill-banner__link:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+    border-radius: 2px;
+  }
+
+  @media print {
+    .refill-banner {
+      border: 2px solid black;
+      background: none;
+    }
+  }
+
   /* ── Month navigation header ─────────────────────────────── */
 
   .grid-header {

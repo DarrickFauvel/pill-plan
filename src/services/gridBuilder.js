@@ -34,6 +34,13 @@ import db from '../db/client.js';
  */
 
 /**
+ * @typedef {Object} RefillAlert
+ * @property {string} id
+ * @property {string} name
+ * @property {number} daysRemaining
+ */
+
+/**
  * @typedef {Object} GridMonth
  * @property {number} year
  * @property {number} month     - 0-based
@@ -43,6 +50,7 @@ import db from '../db/client.js';
  * @property {GridDay[]} days
  * @property {GridSlot[]} slots
  * @property {string} todayStr  - YYYY-MM-DD
+ * @property {RefillAlert[]} refillAlerts
  */
 
 /**
@@ -108,7 +116,8 @@ export async function buildMonthGrid(profileId, year, month) {
       args: [profileId],
     }),
     db.execute({
-      sql: `SELECT m.id, m.name, m.strength, s.slot_id, s.days, s.dose_qty
+      sql: `SELECT m.id, m.name, m.strength, m.total_quantity, m.refill_threshold,
+                   s.slot_id, s.days, s.dose_qty
             FROM medications m
             JOIN schedules s ON s.med_id = m.id
             WHERE m.profile_id = ? AND m.active = 1
@@ -130,6 +139,9 @@ export async function buildMonthGrid(profileId, year, month) {
     entryIndex[key] = { entryId: String(e.id), status: String(e.status) };
   }
 
+  /** @type {Record<string, {name: string, totalQty: number, threshold: number, dailyDose: number}>} */
+  const medRefill = {};
+
   /** @type {Record<string, GridMed[]>} */
   const slotMedsMap = {};
   for (const row of medsRes.rows) {
@@ -142,6 +154,19 @@ export async function buildMonthGrid(profileId, year, month) {
     } catch {
       scheduledDays = [0, 1, 2, 3, 4, 5, 6];
     }
+
+    // Accumulate daily dose across all schedule rows for this med
+    const medId = String(row.id);
+    if (!medRefill[medId]) {
+      medRefill[medId] = {
+        name:      String(row.name),
+        totalQty:  Number(row.total_quantity ?? 0),
+        threshold: Number(row.refill_threshold ?? 7),
+        dailyDose: 0,
+      };
+    }
+    medRefill[medId].dailyDose +=
+      Number(row.dose_qty ?? 1) * (scheduledDays.length / 7);
 
     /** @type {Record<string, GridEntry>} */
     const medEntries = {};
@@ -162,10 +187,21 @@ export async function buildMonthGrid(profileId, year, month) {
 
   /** @type {GridSlot[]} */
   const slots = slotsRes.rows.map((r) => ({
-    id:   String(r.id),
+    id:    String(r.id),
     label: String(r.label),
-    meds: slotMedsMap[String(r.id)] ?? [],
+    meds:  slotMedsMap[String(r.id)] ?? [],
   }));
+
+  /** @type {RefillAlert[]} */
+  const refillAlerts = [];
+  for (const [medId, data] of Object.entries(medRefill)) {
+    if (data.totalQty <= 0 || data.dailyDose <= 0) continue;
+    const daysRemaining = Math.floor(data.totalQty / data.dailyDose);
+    if (daysRemaining <= data.threshold) {
+      refillAlerts.push({ id: medId, name: data.name, daysRemaining });
+    }
+  }
+  refillAlerts.sort((a, b) => a.daysRemaining - b.daysRemaining);
 
   return {
     year,
@@ -176,5 +212,6 @@ export async function buildMonthGrid(profileId, year, month) {
     days,
     slots,
     todayStr,
+    refillAlerts,
   };
 }
