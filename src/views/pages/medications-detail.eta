@@ -136,6 +136,14 @@
                 >
               </div>
               <div class="slot-days" role="group" aria-label="Days of week for <%= slot.label %>">
+                <button
+                  type="button"
+                  class="day-toggle day-toggle--all"
+                  aria-pressed="<%= scheduledDays.length === 7 ? 'true' : 'false' %>"
+                  aria-label="All days for <%= slot.label %>"
+                  data-slot-id="<%= slot.id %>"
+                >All</button>
+                <span class="slot-days__sep" role="separator" aria-orientation="vertical"></span>
                 <% dayLabels.forEach(function(lbl, d) { %>
                 <label class="day-toggle">
                   <input
@@ -176,3 +184,24 @@
   </section>
 
 </div>
+
+<script>
+  document.querySelectorAll('.day-toggle--all').forEach((btn) => {
+    const slotId = btn.dataset.slotId;
+    const boxes  = /** @type {NodeListOf<HTMLInputElement>} */ (
+      document.querySelectorAll(`input[name^="day_${slotId}_"]`)
+    );
+
+    const sync = () => {
+      btn.setAttribute('aria-pressed', [...boxes].every((b) => b.checked) ? 'true' : 'false');
+    };
+
+    btn.addEventListener('click', () => {
+      const allChecked = [...boxes].every((b) => b.checked);
+      boxes.forEach((b) => { b.checked = !allChecked; });
+      sync();
+    });
+
+    boxes.forEach((b) => b.addEventListener('change', sync));
+  });
+</script>

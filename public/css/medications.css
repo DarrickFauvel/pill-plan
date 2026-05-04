@@ -340,6 +340,31 @@
     transition: background var(--transition), border-color var(--transition), color var(--transition);
   }
 
+  .day-toggle--all {
+    width: auto;
+    padding-inline: var(--space-2);
+    font-weight: 700;
+  }
+
+  .day-toggle--all[aria-pressed="true"] {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+  }
+
+  .day-toggle--all[aria-pressed="true"]:hover {
+    background: color-mix(in srgb, var(--color-primary) 85%, black);
+    border-color: color-mix(in srgb, var(--color-primary) 85%, black);
+  }
+
+  .slot-days__sep {
+    width: 1px;
+    align-self: stretch;
+    background: var(--color-border);
+    margin-inline: var(--space-1);
+    flex-shrink: 0;
+  }
+
   .day-toggle:has(input:checked) {
     background: var(--color-primary);
     border-color: var(--color-primary);
