@@ -43,6 +43,14 @@ function esc(str) {
  * @param {string | null} scheduleRaw
  * @returns {{ daysRemaining: number | null, needsRefill: boolean }}
  */
+/**
+ * @param {string} s
+ * @returns {string}
+ */
+function capFirst(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
 function calcDaysRemaining(totalQuantity, refillThreshold, scheduleRaw) {
   if (!scheduleRaw || totalQuantity <= 0) {
     return { daysRemaining: null, needsRefill: false };
@@ -128,10 +136,10 @@ router.get('/api/meds/details/:rxcui', requireAuth, loadAppContext, async (req, 
   }
 
   const signals = JSON.stringify({
-    medName: details.name,
-    medRxcui: details.rxcui,
+    medName:     capFirst(details.name),
+    medRxcui:    details.rxcui,
     medStrength: details.strength,
-    medForm: details.form,
+    medForm:     details.form,
   });
 
   res.write('event: datastar-merge-signals\n');
@@ -233,7 +241,7 @@ router.get('/app/medications/new', requireAuth, loadAppContext, async (req, res)
 router.post('/api/medications', requireAuth, loadAppContext, async (req, res) => {
   const body = req.body;
 
-  const name = String(body.name ?? '').trim();
+  const name = capFirst(String(body.name ?? '').trim());
   if (!name) {
     return res.redirect('/app/medications/new?error=name-required');
   }
@@ -405,7 +413,7 @@ router.post('/api/medications/:id', requireAuth, loadAppContext, async (req, res
 
   const body = req.body;
 
-  const name = String(body.name ?? '').trim();
+  const name = capFirst(String(body.name ?? '').trim());
   if (!name) {
     res.write('event: datastar-merge-signals\n');
     res.write('data: signals {"saveStatus":"error"}\n');
