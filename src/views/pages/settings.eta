@@ -8,6 +8,89 @@
     <h1>Settings</h1>
   </header>
 
+  <!-- Organizer type -->
+  <section class="settings-section" aria-labelledby="organizer-heading">
+    <h2 id="organizer-heading">Organizer type</h2>
+    <p class="settings-section__desc">
+      What type of medication organizer do you use?
+    </p>
+
+    <fieldset class="organizer-picker">
+      <legend class="sr-only">Organizer type</legend>
+
+      <label class="organizer-option">
+        <input
+          type="radio"
+          name="organizerType"
+          value="7x4"
+          data-bind="organizerType"
+          data-on:change="@post('/api/settings/organizer-type')"
+        >
+        <span class="organizer-option__inner">
+          <span class="organizer-option__title">7-day × 4</span>
+          <span class="organizer-option__desc">Weekly organizer — morning, noon, evening, bedtime</span>
+        </span>
+      </label>
+
+      <label class="organizer-option">
+        <input
+          type="radio"
+          name="organizerType"
+          value="7x2"
+          data-bind="organizerType"
+          data-on:change="@post('/api/settings/organizer-type')"
+        >
+        <span class="organizer-option__inner">
+          <span class="organizer-option__title">7-day × 2</span>
+          <span class="organizer-option__desc">Weekly organizer — AM and PM only</span>
+        </span>
+      </label>
+
+      <label class="organizer-option">
+        <input
+          type="radio"
+          name="organizerType"
+          value="bottles"
+          data-bind="organizerType"
+          data-on:change="@post('/api/settings/organizer-type')"
+        >
+        <span class="organizer-option__inner">
+          <span class="organizer-option__title">Bottles by time</span>
+          <span class="organizer-option__desc">Individual pill bottles — no weekly organizer</span>
+        </span>
+      </label>
+    </fieldset>
+
+    <div class="organizer-preset" data-show="$organizerType !== 'bottles'">
+      <p class="organizer-preset__label">
+        Preset slots:
+        <span data-show="$organizerType === '7x4'">Morning, Noon, Evening, Bedtime</span>
+        <span data-show="$organizerType === '7x2'">Morning, Evening</span>
+      </p>
+      <confirm-dialog>
+        <button type="button" class="btn btn--secondary btn--sm" data-trigger>
+          Reset to preset slots
+        </button>
+        <dialog class="confirm-modal" aria-labelledby="preset-modal-title">
+          <div class="confirm-modal__inner">
+            <h2 id="preset-modal-title" class="confirm-modal__title">Reset time slots?</h2>
+            <p class="confirm-modal__body">
+              Your current time slots will be replaced with the preset for your organizer type.
+              Medications will be unscheduled and need to be reassigned. This cannot be undone.
+            </p>
+            <div class="confirm-modal__actions">
+              <button type="button" class="btn btn--secondary" data-close>Cancel</button>
+              <form action="/api/settings/preset-slots" method="POST" style="display:contents">
+                <button type="submit" class="btn btn--primary">Reset slots</button>
+              </form>
+            </div>
+          </div>
+        </dialog>
+      </confirm-dialog>
+    </div>
+  </section>
+
+  <!-- Time slots -->
   <section class="settings-section" aria-labelledby="slots-heading">
     <h2 id="slots-heading">Time slots</h2>
     <p class="settings-section__desc">

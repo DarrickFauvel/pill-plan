@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import db from '../db/client.js';
 import { requireAuth, loadAppContext } from '../middleware/auth.js';
-import { buildMonthGrid } from '../services/gridBuilder.js';
+import { buildMonthGrid, buildDayGrid } from '../services/gridBuilder.js';
 
 const router = Router();
 
@@ -61,6 +61,28 @@ function cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, da
   return `<button id="${id}" class="${cls}" data-on:click="${action}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"></button>`;
 }
 
+/**
+ * Build the take/taken button for the bottles day view.
+ *
+ * @param {string} id
+ * @param {string} medId
+ * @param {string} slotId
+ * @param {string} takenDate
+ * @param {string} medName
+ * @param {string} slotLabel
+ * @param {boolean} taken
+ * @returns {string}
+ */
+function bottlesCellHtml(id, medId, slotId, takenDate, medName, slotLabel, taken) {
+  const cls    = taken ? 'dose-btn dose-btn--taken' : 'dose-btn';
+  const label  = taken
+    ? `Mark not taken: ${esc(medName)}, ${esc(slotLabel)}`
+    : `Mark taken: ${esc(medName)}, ${esc(slotLabel)}`;
+  const action = `$toggleMedId='${esc(medId)}';$toggleSlotId='${esc(slotId)}';$toggleDate='${takenDate}';@post('/api/grid/toggle')`;
+  const text   = taken ? '&#x2713; Taken' : 'Take';
+  return `<button id="${id}" class="${cls}" data-on:click="${action}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}">${text}</button>`;
+}
+
 
 /* ─────────────────────────────────────────────────────────────
    Print page  GET /app/grid/print
@@ -96,6 +118,31 @@ router.get('/app/grid/print', requireAuth, loadAppContext, async (req, res) => {
    ───────────────────────────────────────────────────────────── */
 
 router.get('/app/grid', requireAuth, loadAppContext, async (req, res) => {
+  if (req.profile.organizerType === 'bottles') {
+    const dateParam = String(req.query.date ?? '');
+    let dateStr;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+      dateStr = dateParam;
+    } else {
+      const now = new Date();
+      const y   = now.getFullYear();
+      const m   = String(now.getMonth() + 1).padStart(2, '0');
+      const d   = String(now.getDate()).padStart(2, '0');
+      dateStr   = `${y}-${m}-${d}`;
+    }
+
+    const grid = await buildDayGrid(req.profile.id, dateStr);
+
+    return res.render('pages/grid-bottles', {
+      title:    grid.dateLabel,
+      path:     '/app/grid',
+      profile:  req.profile,
+      profiles: req.profiles,
+      grid,
+      extraCss: '/css/grid.css',
+    });
+  }
+
   const monthParam = String(req.query.month ?? '');
 
   let year, month;
@@ -186,7 +233,10 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
     taken = true;
   }
 
-  const html = cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken);
+  const isBottles = req.profile.organizerType === 'bottles';
+  const html = isBottles
+    ? bottlesCellHtml(id, medId, slotId, takenDate, medName, slotLabel, taken)
+    : cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken);
 
   res.write('event: datastar-patch-elements\n');
   res.write('data: mode outer\n');

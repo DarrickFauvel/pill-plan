@@ -1,0 +1,1 @@
+ALTER TABLE profiles ADD COLUMN organizer_type TEXT NOT NULL DEFAULT '7x4'

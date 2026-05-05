@@ -59,6 +59,13 @@
     inline-size: 100%;
   }
 
+  .btn--sm {
+    padding-block: 0.4em;
+    padding-inline: 0.9em;
+    font-size: var(--font-size-sm);
+    min-block-size: unset;
+  }
+
   .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;

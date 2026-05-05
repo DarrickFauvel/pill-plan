@@ -1,0 +1,99 @@
+<% layout('../layouts/app') %>
+<div
+  class="grid-bottles-page"
+  data-signals='{"toggleMedId":"","toggleSlotId":"","toggleDate":"","toggleError":""}'
+>
+
+  <header class="grid-bottles-header">
+    <a
+      href="/app/grid?date=<%= it.grid.prevDate %>"
+      class="grid-nav-btn"
+      aria-label="Previous day"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
+    <h1 class="grid-bottles-date"><%= it.grid.dateLabel %></h1>
+    <a
+      href="/app/grid?date=<%= it.grid.nextDate %>"
+      class="grid-nav-btn"
+      aria-label="Next day"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </a>
+  </header>
+
+  <% if (!it.grid.isToday) { %>
+  <div class="grid-bottles-today-bar">
+    <a href="/app/grid" class="btn btn--secondary btn--sm">Back to today</a>
+  </div>
+  <% } %>
+
+  <% if (it.grid.refillAlerts.length > 0) { %>
+  <div class="refill-banner" role="alert">
+    <svg class="refill-banner__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    <div class="refill-banner__body">
+      <strong class="refill-banner__title">Refill needed</strong>
+      <ul class="refill-banner__list" role="list">
+        <% it.grid.refillAlerts.forEach(function(med) { %>
+        <li>
+          <a href="/app/medications/<%= med.id %>" class="refill-banner__link"><%= med.name %></a>
+          — <%= med.daysRemaining %> day<%= med.daysRemaining === 1 ? '' : 's' %> left
+        </li>
+        <% }); %>
+      </ul>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (it.grid.slots.length === 0) { %>
+  <div class="grid-empty">
+    <p class="grid-empty__title">No medications scheduled for today</p>
+    <p>Add medications and set their time slots to start tracking doses.</p>
+    <a href="/app/medications/new" class="btn btn--primary">Add medication</a>
+  </div>
+  <% } else { %>
+
+  <div class="dose-list">
+    <% it.grid.slots.forEach(function(slot) { %>
+    <section class="dose-group" aria-labelledby="slot-<%= slot.id %>-heading">
+      <h2 id="slot-<%= slot.id %>-heading" class="dose-group__label"><%= slot.label %></h2>
+      <ul class="dose-items" role="list">
+        <% slot.meds.forEach(function(med) { %>
+        <%
+          var cid = 'gc-' + med.id.replace(/-/g,'') + '-' + slot.id.replace(/-/g,'') + '-' + it.grid.date.replace(/-/g,'');
+          var clickAction = "$toggleMedId='" + med.id + "';$toggleSlotId='" + slot.id + "';$toggleDate='" + it.grid.date + "';@post('/api/grid/toggle')";
+          var ariaLabel = med.taken ? 'Mark not taken: ' + med.name + ', ' + slot.label : 'Mark taken: ' + med.name + ', ' + slot.label;
+        %>
+        <li class="dose-item">
+          <div class="dose-item__info">
+            <a href="/app/medications/<%= med.id %>" class="dose-item__name"><%= med.name %></a>
+            <% if (med.strength) { %>
+            <span class="dose-item__strength"><%= med.strength %></span>
+            <% } %>
+            <% if (med.doseQty > 1) { %>
+            <span class="dose-item__qty"><%= med.doseQty %> doses</span>
+            <% } %>
+          </div>
+          <button
+            id="<%= cid %>"
+            class="dose-btn<%= med.taken ? ' dose-btn--taken' : '' %>"
+            data-on:click="<%= clickAction %>"
+            aria-label="<%= ariaLabel %>"
+            aria-pressed="<%= med.taken ? 'true' : 'false' %>"
+          ><%= med.taken ? '&#x2713; Taken' : 'Take' %></button>
+        </li>
+        <% }); %>
+      </ul>
+    </section>
+    <% }); %>
+  </div>
+
+  <% } %>
+
+</div>

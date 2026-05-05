@@ -40,6 +40,15 @@ function slotSignalKey(slotId) {
   return `label${slotId.replace(/-/g, '')}`;
 }
 
+/** @type {Record<string, string[]>} */
+const PRESET_SLOTS = {
+  '7x4':    ['Morning', 'Noon', 'Evening', 'Bedtime'],
+  '7x2':    ['Morning', 'Evening'],
+  'bottles': [],
+};
+
+const VALID_ORGANIZER_TYPES = new Set(['7x4', '7x2', 'bottles']);
+
 
 /* ─────────────────────────────────────────────────────────────
    Settings page  GET /app/settings
@@ -49,20 +58,71 @@ router.get('/app/settings', requireAuth, loadAppContext, async (req, res) => {
   const slots = await loadSlots(req.profile.id);
 
   /** @type {Record<string, string | number>} */
-  const signals = { saveStatus: 'idle', newSlotLabel: '' };
+  const signals = { saveStatus: 'idle', newSlotLabel: '', organizerType: req.profile.organizerType };
   for (const slot of slots) {
     signals[slotSignalKey(slot.id)] = slot.label;
   }
 
   res.render('pages/settings', {
-    title:    'Settings',
-    path:     '/app/settings',
-    profile:  req.profile,
-    profiles: req.profiles,
+    title:         'Settings',
+    path:          '/app/settings',
+    profile:       req.profile,
+    profiles:      req.profiles,
     slots,
-    signals:  JSON.stringify(signals),
-    extraCss: '/css/settings.css',
+    organizerType: req.profile.organizerType,
+    signals:       JSON.stringify(signals),
+    extraCss:      '/css/settings.css',
   });
+});
+
+
+/* ─────────────────────────────────────────────────────────────
+   Save organizer type  POST /api/settings/organizer-type
+   Datastar SSE — reads signal "organizerType" from body
+   ───────────────────────────────────────────────────────────── */
+
+router.post('/api/settings/organizer-type', requireAuth, loadAppContext, async (req, res) => {
+  sseHeaders(res);
+  const type = String(req.body.organizerType ?? '').trim();
+
+  if (!VALID_ORGANIZER_TYPES.has(type)) {
+    res.write('event: datastar-patch-signals\ndata: signals {"saveStatus":"error"}\n\n');
+    return res.end();
+  }
+
+  await db.execute({
+    sql:  'UPDATE profiles SET organizer_type = ? WHERE id = ?',
+    args: [type, req.profile.id],
+  });
+
+  res.write('event: datastar-patch-signals\ndata: signals {"saveStatus":"saved"}\n\n');
+  res.end();
+});
+
+
+/* ─────────────────────────────────────────────────────────────
+   Apply preset slots  POST /api/settings/preset-slots
+   Regular form POST — replaces time slots with the preset for
+   the profile's current organizer type.
+   ───────────────────────────────────────────────────────────── */
+
+router.post('/api/settings/preset-slots', requireAuth, loadAppContext, async (req, res) => {
+  const type = req.profile.organizerType;
+  const labels = PRESET_SLOTS[type] ?? [];
+
+  await db.execute({
+    sql:  'DELETE FROM time_slots WHERE profile_id = ?',
+    args: [req.profile.id],
+  });
+
+  for (let i = 0; i < labels.length; i++) {
+    await db.execute({
+      sql:  'INSERT INTO time_slots (id, profile_id, label, sort_order) VALUES (?, ?, ?, ?)',
+      args: [randomUUID(), req.profile.id, labels[i], i],
+    });
+  }
+
+  res.redirect('/app/settings');
 });
 
 

@@ -480,4 +480,121 @@
     }
   }
 
+  /* ── Bottles day view ────────────────────────────────────── */
+
+  .grid-bottles-page {
+    max-width: 40rem;
+    padding: var(--space-4);
+  }
+
+  .grid-bottles-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-block-end: var(--space-4);
+  }
+
+  .grid-bottles-date {
+    flex: 1;
+    text-align: center;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+  }
+
+  .grid-bottles-today-bar {
+    margin-block-end: var(--space-4);
+    text-align: center;
+  }
+
+  .dose-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .dose-group__label {
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-block-end: var(--space-2);
+  }
+
+  .dose-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: 0;
+    list-style: none;
+  }
+
+  .dose-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .dose-item__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15em;
+  }
+
+  .dose-item__name {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .dose-item__name:hover {
+    text-decoration: underline;
+  }
+
+  .dose-item__strength,
+  .dose-item__qty {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+  }
+
+  .dose-btn {
+    flex-shrink: 0;
+    min-inline-size: 5.5rem;
+    padding-block: 0.5em;
+    padding-inline: 1em;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+    text-align: center;
+    min-block-size: var(--tap-min);
+  }
+
+  .dose-btn:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  .dose-btn--taken {
+    background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  @media (prefers-contrast: more) {
+    .dose-btn {
+      border-width: 3px;
+    }
+  }
+
 }
