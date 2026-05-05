@@ -211,6 +211,13 @@
 
   .profile-switcher {
     position: relative;
+  }
+
+  .profile-switcher--sidebar {
+    inline-size: 100%;
+  }
+
+  .profile-switcher--sidebar .profile-switcher__trigger {
     inline-size: 100%;
   }
 
@@ -223,7 +230,6 @@
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-sm);
     cursor: pointer;
-    inline-size: 100%;
     color: var(--color-text);
     touch-action: manipulation;
     min-block-size: var(--tap-min);

@@ -1,15 +1,15 @@
 @layer tokens {
   :root {
     /* Colors */
-    --color-primary:   #6EC6A0;
-    --color-secondary: #7BB8D4;
-    --color-surface:   #F5FAFA;
+    --color-primary:   #5BA4D4;
+    --color-secondary: #8ECAE6;
+    --color-surface:   #F0F7FF;
     --color-card:      #FFFFFF;
-    --color-text:      #1A2E2A;
-    --color-muted:     #7A9A94;
+    --color-text:      #1A2840;
+    --color-muted:     #6A8FAD;
     --color-warning:   #F4A261;
     --color-danger:    #E76F51;
-    --color-border:    #D4E8E2;
+    --color-border:    #C8DCF0;
 
     /* Typography */
     --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -57,18 +57,18 @@
   @media (prefers-contrast: more) {
     :root {
       --color-text:   #000000;
-      --color-muted:  #3A5A54;
-      --color-border: #4A7A70;
+      --color-muted:  #2A4A68;
+      --color-border: #3A6080;
     }
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --color-surface: #0F1E1B;
-      --color-card:    #1A2E2A;
-      --color-text:    #E8F5F2;
-      --color-muted:   #9ABDB6;
-      --color-border:  #2A4A44;
+      --color-surface: #0F1825;
+      --color-card:    #192535;
+      --color-text:    #E8F2F8;
+      --color-muted:   #8AACC4;
+      --color-border:  #243850;
     }
   }
 }

@@ -5,7 +5,7 @@
   <nav class="landing-nav" aria-label="Main navigation">
     <a href="/" class="landing-nav__logo" aria-label="MediGrid home"><span class="logo-plus">+</span> MediGrid</a>
     <div class="landing-nav__actions">
-      <button class="qr-btn" aria-label="Show QR code to open MediGrid on another device" onclick="document.getElementById('qr-modal').showModal()">
+      <button class="qr-btn" onclick="document.getElementById('qr-modal').showModal()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <rect width="5" height="5" x="3" y="3" rx="1"/>
           <rect width="5" height="5" x="16" y="3" rx="1"/>
@@ -20,9 +20,9 @@
           <path d="M21 12v.01"/>
           <path d="M12 21v-1"/>
         </svg>
+        <span class="qr-btn__label">Share</span>
       </button>
       <a href="/login" class="btn btn--secondary">Sign in</a>
-      <a href="/signup" class="btn btn--primary">Get started</a>
     </div>
   </nav>
 </header>
