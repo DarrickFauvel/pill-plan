@@ -16,25 +16,28 @@
   <% } %>
 
   <!-- RxNorm search -->
-  <div class="search-field form-group">
-    <label for="med-search">Search by name</label>
-    <input
-      id="med-search"
-      type="search"
-      class="input"
-      autocomplete="off"
-      placeholder="e.g. Metformin"
-      data-bind:medQuery
-      data-on:input__debounce.400ms="$medQuery.length >= 2 && @get('/api/meds/search?q=' + encodeURIComponent($medQuery))"
-    >
-    <div
-      id="med-results"
-      class="med-results"
-      aria-live="polite"
-      role="listbox"
-      aria-label="Medication suggestions"
-    ></div>
-  </div>
+  <med-search next-focus="new-strength-value">
+    <div class="form-group search-field">
+      <label for="med-search">Search by name</label>
+      <input
+        id="med-search"
+        type="search"
+        class="input"
+        autocomplete="off"
+        autofocus
+        placeholder="e.g. Metformin"
+        data-bind="medQuery"
+        data-on:input__debounce.400ms="@post('/api/meds/search')"
+      >
+      <div
+        id="med-results"
+        class="med-results"
+        role="listbox"
+        aria-label="Medication suggestions"
+        aria-live="polite"
+      ></div>
+    </div>
+  </med-search>
 
   <!-- Selected medication preview -->
   <div class="selected-med" data-show="$medRxcui !== ''">
@@ -49,8 +52,8 @@
   </div>
 
   <form action="/api/medications" method="POST" class="med-form">
-    <input type="hidden" name="rxcui" data-bind:medRxcui>
-    <input type="hidden" name="form" data-bind:medForm>
+    <input type="hidden" name="rxcui" data-bind="medRxcui">
+    <input type="hidden" name="form" data-bind="medForm">
 
     <!-- Manual name field — always present; pre-filled via signal when RxNorm match selected -->
     <div class="form-group">
@@ -62,7 +65,7 @@
         class="input"
         placeholder="Medication name"
         required
-        data-bind:medName
+        data-bind="medName"
       >
     </div>
 
@@ -78,14 +81,15 @@
           step="any"
           min="0"
           placeholder="e.g. 5"
-          data-bind:medStrengthValue
+          data-bind="medStrengthValue"
+          data-on:blur="const v=String($medStrengthValue||'');if(v.startsWith('.'))$medStrengthValue='0'+v"
         >
         <label for="new-strength-unit" class="sr-only">Unit</label>
         <select
           id="new-strength-unit"
           name="strengthUnit"
           class="input strength-split__unit"
-          data-bind:medStrengthUnit
+          data-bind="medStrengthUnit"
         >
           <option value="">— unit —</option>
           <option value="MG">MG</option>
@@ -106,7 +110,7 @@
             name="strengthUnitCustom"
             class="input"
             placeholder="Unit name"
-            data-bind:medStrengthUnitCustom
+            data-bind="medStrengthUnitCustom"
           >
         </div>
       </div>
@@ -156,55 +160,3 @@
 
 </div>
 
-<script>
-  const searchInput   = /** @type {HTMLInputElement|null} */ (document.getElementById('med-search'));
-  const results       = document.getElementById('med-results');
-  const strengthInput = /** @type {HTMLInputElement|null} */ (document.getElementById('new-strength-value'));
-
-  searchInput?.focus();
-
-  const nameLabel = document.querySelector('label[for="med-name-manual"]');
-
-  /** Scroll to the name label and focus the strength value field after Datastar applies signals. */
-  function focusAfterSelect() {
-    nameLabel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setTimeout(() => strengthInput?.focus(), 80);
-  }
-
-  // Tab into results from search input focuses the first option
-  searchInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const first = /** @type {HTMLButtonElement|null} */ (results?.querySelector('button'));
-      first?.focus();
-    }
-  });
-
-  // Keyboard navigation within the results list
-  results?.addEventListener('keydown', (e) => {
-    const btn = /** @type {HTMLButtonElement|null} */ (/** @type {Element} */ (e.target).closest('button'));
-    if (!btn) return;
-
-    if (e.key === 'Tab' && !e.shiftKey) {
-      // Tab selects the focused option then moves to the strength field
-      e.preventDefault();
-      btn.click();
-      focusAfterSelect();
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const next = /** @type {HTMLButtonElement|null} */ (btn.nextElementSibling);
-      next ? next.focus() : btn.focus();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const prev = /** @type {HTMLButtonElement|null} */ (btn.previousElementSibling);
-      prev ? prev.focus() : searchInput?.focus();
-    } else if (e.key === 'Escape') {
-      searchInput?.focus();
-    }
-  });
-
-  // Click or Enter on a result also lands on the strength field
-  results?.addEventListener('click', (e) => {
-    if (/** @type {Element} */ (e.target).closest('button')) focusAfterSelect();
-  });
-</script>

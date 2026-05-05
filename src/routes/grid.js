@@ -189,8 +189,7 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
   const html = cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken);
 
   res.write('event: datastar-patch-elements\n');
-  res.write('data: mode morph\n');
-  res.write(`data: selector #${id}\n`);
+  res.write('data: mode outer\n');
   res.write(`data: elements ${html}\n\n`);
   res.end();
 });

@@ -34,18 +34,22 @@
 
           <div class="med-card__actions">
             <a href="/app/medications/<%= med.id %>" class="btn btn--secondary">Edit</a>
-            <form action="/api/medications/<%= med.id %>/deactivate" method="POST" style="display:contents">
-              <button
-                type="submit"
-                class="btn btn--danger"
-                aria-describedby="deactivate-warning-<%= med.id %>"
-              >Remove</button>
-            </form>
+            <confirm-dialog>
+              <button type="button" class="btn btn--danger" data-trigger>Remove</button>
+              <dialog class="confirm-modal" aria-labelledby="confirm-title-<%= med.id %>">
+                <div class="confirm-modal__inner">
+                  <h2 id="confirm-title-<%= med.id %>" class="confirm-modal__title">Remove <%= med.name %>?</h2>
+                  <p class="confirm-modal__body">This will remove the medication from your grid and supply tracking.</p>
+                  <div class="confirm-modal__actions">
+                    <button type="button" class="btn btn--secondary" data-close>Cancel</button>
+                    <form action="/api/medications/<%= med.id %>/deactivate" method="POST" style="display:contents">
+                      <button type="submit" class="btn btn--danger">Yes, remove</button>
+                    </form>
+                  </div>
+                </div>
+              </dialog>
+            </confirm-dialog>
           </div>
-
-          <p id="deactivate-warning-<%= med.id %>" class="sr-only">
-            This will deactivate the medication and remove it from your grid.
-          </p>
         </li>
       <% }); %>
     </ul>

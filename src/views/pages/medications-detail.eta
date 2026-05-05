@@ -42,7 +42,7 @@
         type="text"
         class="input"
         required
-        data-bind:name
+        data-bind="name"
         data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
       >
     </div>
@@ -58,14 +58,15 @@
           step="any"
           min="0"
           placeholder="e.g. 5"
-          data-bind:strengthValue
+          data-bind="strengthValue"
+          data-on:blur="const v=String($strengthValue||'');if(v.startsWith('.'))$strengthValue='0'+v"
           data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
         >
         <label for="ed-strength-unit" class="sr-only">Unit</label>
         <select
           id="ed-strength-unit"
           class="input strength-split__unit"
-          data-bind:strengthUnit
+          data-bind="strengthUnit"
           data-on:change__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
         >
           <option value="">— unit —</option>
@@ -86,7 +87,7 @@
             type="text"
             class="input"
             placeholder="Unit name"
-            data-bind:strengthUnitCustom
+            data-bind="strengthUnitCustom"
             data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
           >
         </div>
@@ -100,7 +101,7 @@
         type="text"
         class="input"
         placeholder="e.g. tablet, capsule"
-        data-bind:form
+        data-bind="form"
         data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
       >
     </div>
@@ -112,7 +113,7 @@
         type="number"
         class="input"
         min="0"
-        data-bind:totalQuantity
+        data-bind="totalQuantity"
         data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
       >
     </div>
@@ -124,7 +125,7 @@
         type="number"
         class="input"
         min="1"
-        data-bind:refillThreshold
+        data-bind="refillThreshold"
         data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
       >
     </div>
@@ -136,6 +137,7 @@
     <% if (it.slots.length === 0) { %>
       <p class="detail-empty">No time slots set up yet. Add them in <a href="/app/settings">Settings</a>.</p>
     <% } else { %>
+      <autosave-form debounce="600">
       <form action="/api/medications/<%= it.med.id %>/schedule" method="POST">
         <fieldset class="slots-fieldset">
           <legend>When is this medication taken?</legend>
@@ -170,37 +172,39 @@
                   class="input input--small"
                 >
               </div>
-              <div class="slot-days" role="group" aria-label="Days of week for <%= slot.label %>">
-                <button
-                  type="button"
-                  class="day-toggle day-toggle--all"
-                  aria-pressed="<%= scheduledDays.length === 7 ? 'true' : 'false' %>"
-                  aria-label="All days for <%= slot.label %>"
-                  data-slot-id="<%= slot.id %>"
-                >All</button>
-                <span class="slot-days__sep" role="separator" aria-orientation="vertical"></span>
-                <% dayLabels.forEach(function(lbl, d) { %>
-                <label class="day-toggle">
-                  <input
-                    type="checkbox"
-                    name="day_<%= slot.id %>_<%= d %>"
-                    value="1"
-                    class="sr-only"
-                    aria-label="<%= dayNames[d] %>"
-                    <%= scheduledDays.indexOf(d) !== -1 ? 'checked' : '' %>
-                  >
-                  <span aria-hidden="true"><%= lbl %></span>
-                </label>
-                <% }); %>
-              </div>
+              <days-picker>
+                <div class="slot-days" role="group" aria-label="Days of week for <%= slot.label %>">
+                  <button
+                    type="button"
+                    class="day-toggle day-toggle--all"
+                    aria-pressed="<%= scheduledDays.length === 7 ? 'true' : 'false' %>"
+                    aria-label="All days for <%= slot.label %>"
+                  >All</button>
+                  <span class="slot-days__sep" role="separator" aria-orientation="vertical"></span>
+                  <% dayLabels.forEach(function(lbl, d) { %>
+                  <label class="day-toggle">
+                    <input
+                      type="checkbox"
+                      name="day_<%= slot.id %>_<%= d %>"
+                      value="1"
+                      class="sr-only"
+                      aria-label="<%= dayNames[d] %>"
+                      <%= scheduledDays.indexOf(d) !== -1 ? 'checked' : '' %>
+                    >
+                    <span aria-hidden="true"><%= lbl %></span>
+                  </label>
+                  <% }); %>
+                </div>
+              </days-picker>
             </div>
             <% }); %>
           </div>
         </fieldset>
         <div class="detail-schedule-actions">
-          <p class="schedule-save-status" role="status" aria-live="polite" aria-atomic="true"></p>
+          <p data-save-status class="schedule-save-status" role="status" aria-live="polite" aria-atomic="true"></p>
         </div>
       </form>
+      </autosave-form>
     <% } %>
   </section>
 
@@ -208,93 +212,24 @@
   <section class="detail-section detail-section--danger" aria-labelledby="remove-heading">
     <h2 id="remove-heading">Remove medication</h2>
     <p>This removes the medication from your grid and supply tracking.</p>
-    <button
-      type="button"
-      class="btn btn--danger"
-      onclick="document.getElementById('remove-modal').showModal()"
-    >Remove medication</button>
+    <confirm-dialog>
+      <button type="button" class="btn btn--danger" data-trigger>Remove medication</button>
+      <dialog class="confirm-modal" aria-labelledby="confirm-modal-title">
+        <div class="confirm-modal__inner">
+          <h2 id="confirm-modal-title" class="confirm-modal__title">Remove medication?</h2>
+          <p class="confirm-modal__body">
+            <strong><%= it.med.name %></strong> will be removed from your grid and supply tracking. This cannot be undone.
+          </p>
+          <div class="confirm-modal__actions">
+            <button type="button" class="btn btn--secondary" data-close>Cancel</button>
+            <form action="/api/medications/<%= it.med.id %>/deactivate" method="POST" style="display:contents">
+              <button type="submit" class="btn btn--danger">Yes, remove</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
+    </confirm-dialog>
   </section>
 
 </div>
 
-<dialog id="remove-modal" class="confirm-modal" aria-labelledby="confirm-modal-title">
-  <div class="confirm-modal__inner">
-    <h2 id="confirm-modal-title" class="confirm-modal__title">Remove medication?</h2>
-    <p class="confirm-modal__body">
-      <strong><%= it.med.name %></strong> will be removed from your grid and supply tracking. This cannot be undone.
-    </p>
-    <div class="confirm-modal__actions">
-      <button
-        type="button"
-        class="btn btn--secondary"
-        onclick="document.getElementById('remove-modal').close()"
-      >Cancel</button>
-      <form action="/api/medications/<%= it.med.id %>/deactivate" method="POST" style="display:contents">
-        <button type="submit" class="btn btn--danger">Yes, remove</button>
-      </form>
-    </div>
-  </div>
-</dialog>
-
-<script>
-  // ── Days-of-week "All" toggle ──────────────────────────────
-  document.querySelectorAll('.day-toggle--all').forEach((btn) => {
-    const slotId = btn.dataset.slotId;
-    const boxes  = /** @type {NodeListOf<HTMLInputElement>} */ (
-      document.querySelectorAll(`input[name^="day_${slotId}_"]`)
-    );
-
-    const sync = () => {
-      btn.setAttribute('aria-pressed', [...boxes].every((b) => b.checked) ? 'true' : 'false');
-    };
-
-    btn.addEventListener('click', () => {
-      const allChecked = [...boxes].every((b) => b.checked);
-      boxes.forEach((b) => { b.checked = !allChecked; });
-      sync();
-      btn.closest('form')?.dispatchEvent(new Event('change'));
-    });
-
-    boxes.forEach((b) => b.addEventListener('change', sync));
-  });
-
-  // ── Schedule autosave ──────────────────────────────────────
-  const schedForm   = /** @type {HTMLFormElement|null} */ (document.querySelector('form[action*="/schedule"]'));
-  const schedStatus = /** @type {HTMLElement|null} */ (document.querySelector('.schedule-save-status'));
-
-  if (schedForm && schedStatus) {
-    /** @type {ReturnType<typeof setTimeout>|null} */
-    let schedTimer = null;
-
-    const saveSchedule = async () => {
-      schedStatus.textContent = 'Saving…';
-      schedStatus.dataset.state = 'saving';
-      try {
-        const resp = await fetch(schedForm.action, {
-          method: 'POST',
-          body:    new URLSearchParams(/** @type {any} */ (new FormData(schedForm))),
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'x-fetch': '1' },
-        });
-        if (!resp.ok) throw new Error();
-        schedStatus.textContent = 'Saved';
-        schedStatus.dataset.state = 'saved';
-      } catch {
-        schedStatus.textContent = 'Not saved';
-        schedStatus.dataset.state = 'error';
-      }
-    };
-
-    schedForm.addEventListener('change', () => {
-      clearTimeout(schedTimer);
-      schedStatus.textContent = '';
-      delete schedStatus.dataset.state;
-      schedTimer = setTimeout(saveSchedule, 600);
-    });
-  }
-
-  // ── Remove modal — close on backdrop click ─────────────────
-  document.getElementById('remove-modal')?.addEventListener('click', (e) => {
-    const modal = /** @type {HTMLDialogElement} */ (e.currentTarget);
-    if (e.target === modal) modal.close();
-  });
-</script>

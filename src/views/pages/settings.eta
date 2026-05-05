@@ -39,6 +39,7 @@
           >
         </div>
 
+        <details-menu>
         <details class="slot-delete">
           <summary
             class="slot-delete__trigger"
@@ -64,11 +65,12 @@
               <button
                 type="button"
                 class="btn btn--secondary btn--sm"
-                onclick="this.closest('details').removeAttribute('open')"
+                data-close
               >Cancel</button>
             </div>
           </div>
         </details>
+        </details-menu>
       </li>
       <% }); %>
     </ul>

@@ -23,11 +23,11 @@
       <a href="/app/grid" class="app-brand"><span class="logo-plus">+</span> MediGrid</a>
 
       <!-- Profile switcher (mobile header) -->
+      <details-menu>
       <details class="profile-switcher" id="profile-switcher-header">
         <summary
           class="profile-switcher__trigger"
           aria-label="Switch profile — active: <%= it.profile.name %>"
-          onclick="if(this.parentElement.open){this.parentElement.removeAttribute('open');event.preventDefault();}"
         >
           <span
             class="profile-avatar"
@@ -67,6 +67,7 @@
           </form>
         </div>
       </details>
+      </details-menu>
     </header>
 
     <!-- Desktop sidebar (hidden on mobile) -->
@@ -74,11 +75,11 @@
       <a href="/app/grid" class="app-brand"><span class="logo-plus">+</span> MediGrid</a>
 
       <!-- Profile switcher (sidebar) -->
+      <details-menu>
       <details class="profile-switcher profile-switcher--sidebar" id="profile-switcher-sidebar">
         <summary
           class="profile-switcher__trigger"
           aria-label="Switch profile — active: <%= it.profile.name %>"
-          onclick="if(this.parentElement.open){this.parentElement.removeAttribute('open');event.preventDefault();}"
         >
           <span
             class="profile-avatar"
@@ -113,6 +114,7 @@
           </a>
         </div>
       </details>
+      </details-menu>
 
       <ul class="app-nav" role="list">
         <li>

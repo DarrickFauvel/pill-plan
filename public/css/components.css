@@ -1,5 +1,15 @@
 @layer components {
 
+  /* ─── Custom elements — layout-transparent wrappers ───── */
+
+  confirm-dialog,
+  autosave-form,
+  details-menu,
+  days-picker,
+  med-search {
+    display: contents;
+  }
+
   /* ─── Buttons ──────────────────────────────────────────── */
 
   .btn {

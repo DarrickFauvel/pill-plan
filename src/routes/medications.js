@@ -63,7 +63,8 @@ function parseStrength(s) {
   const str = String(s ?? '').trim();
   if (!str) return { value: '', unit: '', unitCustom: '' };
   const match = str.match(/^([0-9]*\.?[0-9]+)\s*(.*)$/);
-  const val = match ? match[1] : '';
+  const raw = match ? match[1] : '';
+  const val = raw.startsWith('.') ? '0' + raw : raw;
   const rawUnit = (match ? match[2] : str).trim().toUpperCase();
   if (!rawUnit) return { value: val, unit: '', unitCustom: '' };
   if (STRENGTH_UNITS.includes(rawUnit)) return { value: val, unit: rawUnit, unitCustom: '' };
@@ -116,37 +117,27 @@ function calcDaysRemaining(totalQuantity, refillThreshold, scheduleRaw) {
 
 /* ────────────────────────────────────────────────────────────
    RxNorm search autocomplete
-   GET /api/meds/search?q=<term>
+   POST /api/meds/search  (body: Datastar signals JSON)
    ──────────────────────────────────────────────────────────── */
 
-router.get('/api/meds/search', requireAuth, loadAppContext, async (req, res) => {
+router.post('/api/meds/search', requireAuth, loadAppContext, async (req, res) => {
   sseHeaders(res);
 
-  const q = String(req.query.q ?? '').trim();
+  const q = String(req.body.medQuery ?? '').trim();
 
-  if (q.length < 2) {
-    res.write('event: datastar-patch-elements\n');
-    res.write('data: mode morph\n');
-    res.write('data: selector #med-results\n');
-    res.write('data: elements <div id="med-results" class="med-results"></div>\n');
-    res.write('\n');
-    return res.end();
+  let html = '<div id="med-results" class="med-results"></div>';
+
+  if (q.length >= 2) {
+    const results = await searchMeds(q);
+    if (results.length) {
+      const items = results
+        .map((r) => `<button type="button" data-on:click="@get('/api/meds/details/${esc(r.rxcui)}')" aria-label="Select ${esc(r.name)}">${esc(r.name)}</button>`)
+        .join('');
+      html = `<div id="med-results" class="med-results" role="listbox" aria-label="Medication suggestions">${items}</div>`;
+    }
   }
 
-  const results = await searchMeds(q);
-
-  const buttons = results
-    .map(
-      (r) =>
-        `<button type="button" data-on:click="@get('/api/meds/details/${esc(r.rxcui)}')" aria-label="Select ${esc(r.name)}">${esc(r.name)}</button>`
-    )
-    .join('');
-
-  res.write('event: datastar-patch-elements\n');
-  res.write('data: mode morph\n');
-  res.write('data: selector #med-results\n');
-  res.write(`data: elements <div id="med-results" class="med-results" role="listbox" aria-label="Medication suggestions">${buttons}</div>\n`);
-  res.write('\n');
+  res.write(`event: datastar-patch-elements\ndata: mode outer\ndata: elements ${html}\n\n`);
   res.end();
 });
 
@@ -163,33 +154,22 @@ router.get('/api/meds/details/:rxcui', requireAuth, loadAppContext, async (req, 
   const details = await getMedDetails(rxcui);
 
   if (!details) {
-    res.write('event: datastar-patch-signals\n');
-    res.write('data: signals {"medName":"","medRxcui":"","medStrengthValue":"","medStrengthUnit":"","medStrengthUnitCustom":"","medForm":""}\n');
-    res.write('\n');
+    res.write('event: datastar-patch-signals\ndata: signals {"medName":"","medRxcui":"","medStrengthValue":"","medStrengthUnit":"","medStrengthUnitCustom":"","medForm":""}\n\n');
     return res.end();
   }
 
-  const { value: strengthValue, unit: strengthUnit, unitCustom: strengthUnitCustom } = parseStrength(details.strength);
-
+  const { value: sv, unit: su, unitCustom: suc } = parseStrength(details.strength);
   const signals = JSON.stringify({
-    medName:              capFirst(details.name),
-    medRxcui:             details.rxcui,
-    medStrengthValue:     strengthValue,
-    medStrengthUnit:      strengthUnit,
-    medStrengthUnitCustom: strengthUnitCustom,
-    medForm:              details.form,
+    medName:               capFirst(details.name),
+    medRxcui:              details.rxcui,
+    medStrengthValue:      sv,
+    medStrengthUnit:       su,
+    medStrengthUnitCustom: suc,
+    medForm:               details.form,
   });
 
-  res.write('event: datastar-patch-signals\n');
-  res.write(`data: signals ${signals}\n`);
-  res.write('\n');
-
-  res.write('event: datastar-patch-elements\n');
-  res.write('data: mode morph\n');
-  res.write('data: selector #med-results\n');
-  res.write('data: elements <div id="med-results" class="med-results"></div>\n');
-  res.write('\n');
-
+  res.write(`event: datastar-patch-signals\ndata: signals ${signals}\n\n`);
+  res.write('event: datastar-patch-elements\ndata: mode outer\ndata: elements <div id="med-results" class="med-results"></div>\n\n');
   res.end();
 });
 
@@ -222,7 +202,7 @@ router.get('/app/medications', requireAuth, loadAppContext, async (req, res) => 
       id: String(row.id),
       name: String(row.name),
       rxcui: row.rxcui ? String(row.rxcui) : null,
-      strength: row.strength ? String(row.strength) : '',
+      strength: row.strength ? String(row.strength).replace(/^\./, '0.') : '',
       form: row.form ? String(row.form) : '',
       instructions: row.instructions ? String(row.instructions) : '',
       totalQuantity: Number(row.total_quantity ?? 0),
@@ -356,7 +336,7 @@ router.get('/app/medications/:id', requireAuth, loadAppContext, async (req, res)
     id: String(row.id),
     name: String(row.name),
     rxcui: row.rxcui ? String(row.rxcui) : null,
-    strength: row.strength ? String(row.strength) : '',
+    strength: row.strength ? String(row.strength).replace(/^\./, '0.') : '',
     form: row.form ? String(row.form) : '',
     instructions: row.instructions ? String(row.instructions) : '',
     totalQuantity: Number(row.total_quantity ?? 0),
