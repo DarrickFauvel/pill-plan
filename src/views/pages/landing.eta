@@ -3,7 +3,7 @@
 <!-- ─── Navigation ──────────────────────────────────────── -->
 <header>
   <nav class="landing-nav" aria-label="Main navigation">
-    <a href="/" class="landing-nav__logo" aria-label="MediGrid home">MediGrid</a>
+    <a href="/" class="landing-nav__logo" aria-label="MediGrid home"><span class="logo-plus">+</span> MediGrid</a>
     <div class="landing-nav__actions">
       <button class="qr-btn" aria-label="Show QR code to open MediGrid on another device" onclick="document.getElementById('qr-modal').showModal()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">

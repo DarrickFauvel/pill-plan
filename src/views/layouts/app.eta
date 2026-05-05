@@ -20,7 +20,7 @@
 
     <!-- Mobile-only top header -->
     <header class="app-header" role="banner">
-      <a href="/app/grid" class="app-brand">MediGrid</a>
+      <a href="/app/grid" class="app-brand"><span class="logo-plus">+</span> MediGrid</a>
 
       <!-- Profile switcher (mobile header) -->
       <details class="profile-switcher" id="profile-switcher-header">
@@ -71,7 +71,7 @@
 
     <!-- Desktop sidebar (hidden on mobile) -->
     <nav class="app-sidebar" aria-label="Main navigation">
-      <a href="/app/grid" class="app-brand">MediGrid</a>
+      <a href="/app/grid" class="app-brand"><span class="logo-plus">+</span> MediGrid</a>
 
       <!-- Profile switcher (sidebar) -->
       <details class="profile-switcher profile-switcher--sidebar" id="profile-switcher-sidebar">

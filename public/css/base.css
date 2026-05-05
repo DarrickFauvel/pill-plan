@@ -1,4 +1,13 @@
 @layer base {
+  .logo-plus {
+    color: #d32f2f;
+    font-weight: 900;
+    -webkit-text-stroke: 0.04em #d32f2f;
+    font-size: 1.5em;
+    position: relative;
+    top: 0.1em;
+  }
+
   *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
