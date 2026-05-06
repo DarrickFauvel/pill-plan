@@ -246,13 +246,9 @@
     aria-live="polite"
     aria-atomic="true"
     data-signals='{"saveStatus":"idle"}'
-    data-class='{"save-indicator--saving": $saveStatus === "saving", "save-indicator--saved": $saveStatus === "saved", "save-indicator--error": $saveStatus === "error"}'
+    data-class='{"save-indicator--saved": $saveStatus === "saved", "save-indicator--error": $saveStatus === "error"}'
     class="save-indicator"
   >
-    <span data-show="$saveStatus === 'saving'">
-      <span class="save-indicator__spinner" aria-hidden="true"></span>
-      Saving…
-    </span>
     <span data-show="$saveStatus === 'saved'">Saved</span>
     <span data-show="$saveStatus === 'error'">Not saved — check your connection</span>
   </div>

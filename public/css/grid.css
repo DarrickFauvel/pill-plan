@@ -404,6 +404,50 @@
     flex-shrink: 0;
   }
 
+  /* Pending state — disabled with diagonal shimmer */
+  .grid-cell--pending {
+    pointer-events: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .grid-cell--pending::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      -45deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.45) 50%,
+      transparent 70%
+    );
+    background-size: 300% 300%;
+    animation: cell-pending 0.9s ease-in-out infinite;
+  }
+
+  /* Shimmer on empty (un-taking) cell uses primary tint instead of white */
+  .grid-cell--pending:not(.grid-cell--taken)::before {
+    background: linear-gradient(
+      -45deg,
+      transparent 30%,
+      color-mix(in srgb, var(--color-primary) 35%, transparent) 50%,
+      transparent 70%
+    );
+    background-size: 300% 300%;
+  }
+
+  @keyframes cell-pending {
+    0%   { background-position: 120% 120%; }
+    100% { background-position: -20% -20%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .grid-cell--pending::before {
+      animation: none;
+      opacity: 0.5;
+    }
+  }
+
   /* Unscheduled — hatched pattern */
   .grid-cell--empty {
     display: block;

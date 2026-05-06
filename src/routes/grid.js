@@ -72,8 +72,8 @@ function cellId(medId, slotId, takenDate) {
 function cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken) {
   const cls    = taken ? 'grid-cell grid-cell--taken' : 'grid-cell';
   const label  = `${esc(medName)}, ${esc(slotLabel)}, ${esc(dayLabel)} ${dayNum}${taken ? ', taken' : ', not taken'}`;
-  const action = `$pendingToggleId='${id}';$pendingToggleNewState=${!taken};$saveStatus='saving';$toggleMedId='${esc(medId)}';$toggleSlotId='${esc(slotId)}';$toggleDate='${takenDate}';@post('/api/grid/toggle')`;
-  const dataClass = `{'grid-cell--taken': $pendingToggleId === '${id}' ? $pendingToggleNewState : ${taken}}`;
+  const action = `$pendingToggleId='${id}';$pendingToggleNewState=${!taken};$saveStatus='idle';$toggleMedId='${esc(medId)}';$toggleSlotId='${esc(slotId)}';$toggleDate='${takenDate}';@post('/api/grid/toggle')`;
+  const dataClass = `{'grid-cell--taken': $pendingToggleId === '${id}' ? $pendingToggleNewState : ${taken}, 'grid-cell--pending': $pendingToggleId === '${id}'}`;
   return `<button id="${id}" class="${cls}" data-on:click="${action}" data-class="${dataClass}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"></button>`;
 }
 

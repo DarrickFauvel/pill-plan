@@ -231,12 +231,6 @@
     visibility: hidden;
   }
 
-  .save-indicator--saving {
-    opacity: 1;
-    visibility: visible;
-    color: var(--color-muted);
-  }
-
   .save-indicator--saved {
     opacity: 1;
     visibility: visible;
@@ -256,23 +250,10 @@
     border-color: var(--color-danger);
   }
 
-  @keyframes spin {
-    to { rotate: 360deg; }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .save-indicator--saved {
       animation: save-fade-out 0.01s 2s forwards;
     }
-  }
-
-  .save-indicator__spinner {
-    inline-size: 1em;
-    block-size: 1em;
-    border: 2px solid currentColor;
-    border-block-start-color: transparent;
-    border-radius: var(--radius-full);
-    animation: spin 600ms linear infinite;
   }
 
 

@@ -130,7 +130,7 @@
             var isTaken     = !!(entry && entry.status === 'taken');
             var cid         = 'gc-' + med.id.replace(/-/g,'') + '-' + slot.id.replace(/-/g,'') + '-' + day.date.replace(/-/g,'');
             var ariaLabel   = med.name + ', ' + slot.label + ', ' + day.dayLabel + ' ' + day.dayNum + (isTaken ? ', taken' : ', not taken');
-            var clickAction = "$pendingToggleId='" + cid + "';$pendingToggleNewState=" + (!isTaken) + ";$saveStatus='saving';$toggleMedId='" + med.id + "';$toggleSlotId='" + slot.id + "';$toggleDate='" + day.date + "';@post('/api/grid/toggle')";
+            var clickAction = "$pendingToggleId='" + cid + "';$pendingToggleNewState=" + (!isTaken) + ";$saveStatus='idle';$toggleMedId='" + med.id + "';$toggleSlotId='" + slot.id + "';$toggleDate='" + day.date + "';@post('/api/grid/toggle')";
             var weekStart   = !!(dayIdx % 7 === 0);
             var orgStart    = !!(dayIdx > 0 && dayIdx % 7 === 0);
             var orgEnd      = !!(dayIdx % 7 === 6);
@@ -145,7 +145,7 @@
               id="<%= cid %>"
               class="grid-cell<%= isTaken ? ' grid-cell--taken' : '' %>"
               data-on:click="<%= clickAction %>"
-              data-class="{'grid-cell--taken': $pendingToggleId === '<%= cid %>' ? $pendingToggleNewState : <%= isTaken %>}"
+              data-class="{'grid-cell--taken': $pendingToggleId === '<%= cid %>' ? $pendingToggleNewState : <%= isTaken %>, 'grid-cell--pending': $pendingToggleId === '<%= cid %>'}"
               aria-label="<%= ariaLabel %>"
               aria-pressed="<%= isTaken ? 'true' : 'false' %>"
             ></button>
