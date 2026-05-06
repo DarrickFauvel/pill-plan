@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import db from '../db/client.js';
 import { requireAuth, loadAppContext } from '../middleware/auth.js';
-import { searchMeds, getMedDetails } from '../services/rxnorm.js';
+import { searchMeds, getMedDetails, getMedImages } from '../services/rxnorm.js';
 
 const router = Router();
 
@@ -172,6 +172,19 @@ router.get('/api/meds/details/:rxcui', requireAuth, loadAppContext, async (req, 
   res.write(`event: datastar-patch-signals\ndata: signals ${signals}\n\n`);
   res.write('event: datastar-patch-elements\ndata: mode outer\ndata: elements <div id="med-results" class="med-results"></div>\n\n');
   res.end();
+});
+
+
+/* ────────────────────────────────────────────────────────────
+   Pill image proxy
+   GET /api/meds/images/:rxcui
+   ──────────────────────────────────────────────────────────── */
+
+router.get('/api/meds/images/:rxcui', requireAuth, loadAppContext, async (req, res) => {
+  const { rxcui } = req.params;
+  if (!/^\d+$/.test(rxcui)) return res.json([]);
+  const images = await getMedImages(rxcui);
+  res.json(images);
 });
 
 

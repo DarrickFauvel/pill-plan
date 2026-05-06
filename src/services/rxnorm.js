@@ -25,6 +25,33 @@ export async function searchMeds(q) {
 }
 
 /**
+ * Fetch pill images for an RxCUI from the NLM RxImage database.
+ *
+ * @param {string} rxcui
+ * @returns {Promise<Array<{url: string, name: string, shape: string, color: string, imprint: string}>>}
+ */
+export async function getMedImages(rxcui) {
+  try {
+    const url = `https://rximage.nlm.nih.gov/api/rximage/1/rxbase?rxcui=${encodeURIComponent(rxcui)}`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const body = await res.json();
+    const images = body?.nlmRxImages;
+    if (!Array.isArray(images) || !images.length) return [];
+    return images.slice(0, 6).map((img) => ({
+      url:     String(img.imageUrl ?? ''),
+      name:    String(img.name ?? ''),
+      shape:   String(img.shapeText ?? ''),
+      color:   String(img.colorText ?? ''),
+      imprint: String(img.imprint ?? ''),
+    }));
+  } catch (err) {
+    console.error('[rxnorm] getMedImages error:', err.message);
+    return [];
+  }
+}
+
+/**
  * Fetch detailed properties for a single RxCUI.
  *
  * @param {string} rxcui
