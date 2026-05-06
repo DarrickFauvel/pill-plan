@@ -180,7 +180,7 @@ router.get('/api/meds/details/:rxcui', requireAuth, loadAppContext, async (req, 
    GET /api/meds/images/:rxcui
    ──────────────────────────────────────────────────────────── */
 
-router.get('/api/meds/images/:rxcui', requireAuth, loadAppContext, async (req, res) => {
+router.get('/api/meds/images/:rxcui', requireAuth, async (req, res) => {
   const { rxcui } = req.params;
   if (!/^\d+$/.test(rxcui)) return res.json([]);
   const images = await getMedImages(rxcui);

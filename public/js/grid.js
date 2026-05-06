@@ -4,12 +4,17 @@
 
   const titleEl    = document.getElementById('med-info-title');
   const subtitleEl = modal.querySelector('.med-info-modal__subtitle');
+  const statusEl   = document.getElementById('med-info-status');
   const loadingEl  = modal.querySelector('.med-info-modal__loading');
   const imagesEl   = modal.querySelector('.med-info-modal__images');
   const noImagesEl = modal.querySelector('.med-info-modal__no-images');
 
-  document.querySelectorAll('.grid-med-info-btn').forEach((btn) => {
-    btn.addEventListener('click', () => openMedInfo(btn));
+  /** @type {Map<string, Array<{url:string,name:string,shape:string,color:string,imprint:string}>>} */
+  const imageCache = new Map();
+
+  document.addEventListener('click', (e) => {
+    const btn = /** @type {HTMLElement} */ (e.target).closest('.grid-med-info-btn');
+    if (btn) openMedInfo(/** @type {HTMLButtonElement} */ (btn));
   });
 
   modal.addEventListener('click', (e) => {
@@ -20,12 +25,11 @@
    * @param {HTMLButtonElement} btn
    */
   async function openMedInfo(btn) {
-    const name     = btn.dataset.medName ?? '';
-    const strength = btn.dataset.medStrength ?? '';
-    const rxcui    = btn.dataset.rxcui ?? '';
+    const { medName: name = '', medStrength: strength = '', rxcui = '' } = btn.dataset;
 
     titleEl.textContent    = name;
     subtitleEl.textContent = strength;
+    statusEl.textContent   = 'Loading images…';
 
     imagesEl.innerHTML = '';
     imagesEl.hidden    = true;
@@ -35,21 +39,27 @@
     modal.showModal();
 
     try {
-      const res    = await fetch(`/api/meds/images/${encodeURIComponent(rxcui)}`);
-      const images = await res.json();
+      const images = imageCache.has(rxcui)
+        ? imageCache.get(rxcui)
+        : await fetch(`/api/meds/images/${encodeURIComponent(rxcui)}`).then((r) => r.json());
 
-      loadingEl.hidden = true;
+      if (!imageCache.has(rxcui)) imageCache.set(rxcui, images);
 
       if (!Array.isArray(images) || !images.length) {
-        noImagesEl.hidden = false;
+        noImagesEl.hidden  = false;
+        statusEl.textContent = 'No pill images are available for this medication.';
         return;
       }
 
-      imagesEl.hidden = false;
+      imagesEl.hidden      = false;
+      statusEl.textContent = '';
+
       for (const img of images) {
+        const li = document.createElement('li');
+        li.className = 'med-info-img';
+
         const figure = document.createElement('figure');
-        figure.className = 'med-info-img';
-        figure.setAttribute('role', 'listitem');
+        figure.className = 'med-info-img__figure';
 
         const photo = document.createElement('img');
         photo.src       = img.url;
@@ -63,11 +73,14 @@
         caption.textContent = parts.join(' · ') || img.name;
 
         figure.append(photo, caption);
-        imagesEl.append(figure);
+        li.append(figure);
+        imagesEl.append(li);
       }
     } catch {
-      loadingEl.hidden  = true;
-      noImagesEl.hidden = false;
+      noImagesEl.hidden    = false;
+      statusEl.textContent = 'No pill images are available for this medication.';
+    } finally {
+      loadingEl.hidden = true;
     }
   }
 

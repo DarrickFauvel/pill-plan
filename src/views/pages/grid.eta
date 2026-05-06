@@ -119,7 +119,7 @@
           <th scope="row" class="grid-th grid-th--med">
             <a href="/app/medications/<%= med.id %>" class="grid-med-link">
               <span class="grid-med-name"><%= med.name %></span>
-              <% if (med.form || med.strength) { %><span class="grid-med-strength"><%= [(med.form ? med.form.charAt(0).toUpperCase() + med.form.slice(1) : ''), med.strength].filter(Boolean).join(' · ') %></span><% } %>
+              <% if (med.strengthLabel) { %><span class="grid-med-strength"><%= med.strengthLabel %></span><% } %>
             </a>
             <% if (med.rxcui) { %>
             <button
@@ -127,7 +127,7 @@
               class="grid-med-info-btn"
               aria-label="View pill images for <%= med.name %>"
               data-med-name="<%= med.name %>"
-              data-med-strength="<%= [(med.form ? med.form.charAt(0).toUpperCase() + med.form.slice(1) : ''), med.strength].filter(Boolean).join(' · ') %>"
+              data-med-strength="<%= med.strengthLabel %>"
               data-rxcui="<%= med.rxcui %>"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -208,7 +208,8 @@
       </button>
     </header>
     <div class="med-info-modal__body">
-      <p class="med-info-modal__loading" aria-live="polite">Loading images…</p>
+      <p id="med-info-status" class="med-info-modal__status" role="status" aria-live="polite"></p>
+      <p class="med-info-modal__loading" hidden>Loading images…</p>
       <div class="med-info-modal__images" role="list" hidden></div>
       <p class="med-info-modal__no-images" hidden>No pill images are available for this medication.</p>
     </div>

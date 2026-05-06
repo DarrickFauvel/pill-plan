@@ -179,15 +179,18 @@ export async function buildDayGrid(profileId, dateStr) {
       Number(row.dose_qty ?? 1) * (scheduledDays.length / 7);
 
     const entry = entryIndex[`${medId}:${slotId}`] ?? null;
+    const dayStrength = row.strength ? String(row.strength).replace(/^\./, '0.') : '';
+    const dayForm = row.form ? String(row.form) : '';
     slotMedsMap[slotId].push({
-      id:       medId,
-      name:     String(row.name),
-      rxcui:    row.rxcui ? String(row.rxcui) : null,
-      strength: row.strength ? String(row.strength).replace(/^\./, '0.') : '',
-      form:     row.form ? String(row.form) : '',
-      doseQty:  Number(row.dose_qty ?? 1),
-      entryId:  entry?.entryId ?? null,
-      taken:    !!(entry && entry.status === 'taken'),
+      id:            medId,
+      name:          String(row.name),
+      rxcui:         row.rxcui ? String(row.rxcui) : null,
+      strength:      dayStrength,
+      form:          dayForm,
+      strengthLabel: [dayForm ? dayForm.charAt(0).toUpperCase() + dayForm.slice(1) : '', dayStrength].filter(Boolean).join(' · '),
+      doseQty:       Number(row.dose_qty ?? 1),
+      entryId:       entry?.entryId ?? null,
+      taken:         !!(entry && entry.status === 'taken'),
     });
   }
 
@@ -322,12 +325,15 @@ export async function buildMonthGrid(profileId, year, month) {
       if (entryIndex[key]) medEntries[day.date] = entryIndex[key];
     }
 
+    const moStrength = row.strength ? String(row.strength).replace(/^\./, '0.') : '';
+    const moForm = row.form ? String(row.form) : '';
     slotMedsMap[slotId].push({
       id:            String(row.id),
       name:          String(row.name),
       rxcui:         row.rxcui ? String(row.rxcui) : null,
-      strength:      row.strength ? String(row.strength) : '',
-      form:          row.form ? String(row.form) : '',
+      strength:      moStrength,
+      form:          moForm,
+      strengthLabel: [moForm ? moForm.charAt(0).toUpperCase() + moForm.slice(1) : '', moStrength].filter(Boolean).join(' · '),
       doseQty:       Number(row.dose_qty ?? 1),
       scheduledDays,
       entries:       medEntries,
@@ -487,12 +493,15 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
       if (entryIndex[key]) medEntries[day.date] = entryIndex[key];
     }
 
+    const wrStrength = row.strength ? String(row.strength).replace(/^\./, '0.') : '';
+    const wrForm = row.form ? String(row.form) : '';
     slotMedsMap[slotId].push({
       id:            String(row.id),
       name:          String(row.name),
       rxcui:         row.rxcui ? String(row.rxcui) : null,
-      strength:      row.strength ? String(row.strength) : '',
-      form:          row.form ? String(row.form) : '',
+      strength:      wrStrength,
+      form:          wrForm,
+      strengthLabel: [wrForm ? wrForm.charAt(0).toUpperCase() + wrForm.slice(1) : '', wrStrength].filter(Boolean).join(' · '),
       doseQty:       Number(row.dose_qty ?? 1),
       scheduledDays,
       entries:       medEntries,

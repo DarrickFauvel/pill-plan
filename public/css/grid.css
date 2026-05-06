@@ -505,6 +505,15 @@
     padding: var(--space-4);
   }
 
+  .med-info-modal__status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
   .med-info-modal__loading,
   .med-info-modal__no-images {
     color: var(--color-muted);
@@ -518,6 +527,9 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
     gap: var(--space-4);
+    list-style: none;
+    padding: 0;
+    margin: 0;
   }
 
   .med-info-img {
@@ -525,7 +537,15 @@
     flex-direction: column;
     align-items: center;
     gap: var(--space-2);
+  }
+
+  .med-info-img__figure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
     margin: 0;
+    width: 100%;
   }
 
   .med-info-img__photo {
