@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#6EC6A0">
   <meta name="description" content="Your medication organizer">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
@@ -21,6 +22,24 @@
     <!-- Mobile-only top header -->
     <header class="app-header" role="banner">
       <a href="/app/grid" class="app-brand"><span class="logo-plus">+</span> MediGrid</a>
+
+      <div class="app-header__actions">
+        <button class="qr-btn" aria-label="Open on another device" onclick="document.getElementById('qr-modal').showModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <rect width="5" height="5" x="3" y="3" rx="1"/>
+            <rect width="5" height="5" x="16" y="3" rx="1"/>
+            <rect width="5" height="5" x="3" y="16" rx="1"/>
+            <path d="M21 16h-3a2 2 0 0 0-2 2v3"/>
+            <path d="M21 21v.01"/>
+            <path d="M12 7v3a2 2 0 0 1-2 2H7"/>
+            <path d="M3 12h.01"/>
+            <path d="M12 3h.01"/>
+            <path d="M12 16v.01"/>
+            <path d="M16 12h1"/>
+            <path d="M21 12v.01"/>
+            <path d="M12 21v-1"/>
+          </svg>
+        </button>
 
       <!-- Profile switcher (mobile header) -->
       <details-menu>
@@ -68,6 +87,7 @@
         </div>
       </details>
       </details-menu>
+      </div><!-- /.app-header__actions -->
     </header>
 
     <!-- Desktop sidebar (hidden on mobile) -->
@@ -155,9 +175,28 @@
         </li>
       </ul>
 
-      <form action="/api/auth/logout" method="POST" class="app-sidebar__signout">
-        <button type="submit" class="btn btn--secondary btn--full">Sign out</button>
-      </form>
+      <div class="app-sidebar__footer">
+        <button class="qr-btn" aria-label="Open on another device" onclick="document.getElementById('qr-modal').showModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <rect width="5" height="5" x="3" y="3" rx="1"/>
+            <rect width="5" height="5" x="16" y="3" rx="1"/>
+            <rect width="5" height="5" x="3" y="16" rx="1"/>
+            <path d="M21 16h-3a2 2 0 0 0-2 2v3"/>
+            <path d="M21 21v.01"/>
+            <path d="M12 7v3a2 2 0 0 1-2 2H7"/>
+            <path d="M3 12h.01"/>
+            <path d="M12 3h.01"/>
+            <path d="M12 16v.01"/>
+            <path d="M16 12h1"/>
+            <path d="M21 12v.01"/>
+            <path d="M12 21v-1"/>
+          </svg>
+          <span>Open on another device</span>
+        </button>
+        <form action="/api/auth/logout" method="POST">
+          <button type="submit" class="btn btn--secondary btn--full">Sign out</button>
+        </form>
+      </div>
     </nav>
 
     <!-- Main content -->
@@ -218,6 +257,27 @@
     <span data-show="$saveStatus === 'saved'">Saved</span>
     <span data-show="$saveStatus === 'error'">Not saved — check your connection</span>
   </div>
+
+  <dialog id="qr-modal" class="qr-modal" aria-labelledby="qr-modal-title">
+    <div class="qr-modal__inner">
+      <div class="qr-modal__header">
+        <h2 id="qr-modal-title" class="qr-modal__title">Open on another device</h2>
+        <button class="qr-modal__close" aria-label="Close" onclick="this.closest('dialog').close()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <img src="/qrcode.svg" alt="QR code linking to MediGrid" class="qr-modal__code" width="256" height="256">
+      <p class="qr-modal__hint">Scan with your phone camera to open MediGrid</p>
+    </div>
+  </dialog>
+
+  <script>
+    document.getElementById('qr-modal').addEventListener('click', function(e) {
+      if (e.target === this) this.close();
+    });
+  </script>
 
   <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.1/bundles/datastar.js"></script>
   <script type="module" src="/js/app.js"></script>

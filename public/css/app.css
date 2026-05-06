@@ -200,10 +200,34 @@
   }
 
 
-  /* ─── Sidebar sign-out form ──────────────────────────────── */
+  /* ─── Mobile header actions group ───────────────────────── */
 
-  .app-sidebar__signout {
+  .app-header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .app-header__actions .qr-btn {
+    min-block-size: var(--tap-min);
+    min-inline-size: var(--tap-min);
+    padding-inline: var(--space-2);
+  }
+
+
+  /* ─── Sidebar footer ────────────────────────────────────── */
+
+  .app-sidebar__footer {
     margin-block-start: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .app-sidebar__footer .qr-btn {
+    inline-size: 100%;
+    justify-content: flex-start;
+    padding-inline: var(--space-3);
   }
 
 

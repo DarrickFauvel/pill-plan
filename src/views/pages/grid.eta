@@ -95,9 +95,8 @@
             role="columnheader"
             id="col-<%= day.date %>"
           >
-            <span class="grid-day-num" aria-hidden="true"><%= day.dayNum %></span>
-            <span class="grid-day-name" aria-hidden="true"><%= day.dayLabel.charAt(0) %></span>
-            <span class="sr-only"><%= day.dayLabel %> <%= day.dayNum %></span>
+            <span class="grid-day-num"><%= day.dayNum %></span>
+            <span class="grid-day-name"><%= day.dayLabel %></span>
           </th>
           <% }); %>
         </tr>
