@@ -72,8 +72,9 @@ function cellId(medId, slotId, takenDate) {
 function cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken) {
   const cls    = taken ? 'grid-cell grid-cell--taken' : 'grid-cell';
   const label  = `${esc(medName)}, ${esc(slotLabel)}, ${esc(dayLabel)} ${dayNum}${taken ? ', taken' : ', not taken'}`;
-  const action = `$toggleMedId='${esc(medId)}';$toggleSlotId='${esc(slotId)}';$toggleDate='${takenDate}';@post('/api/grid/toggle')`;
-  return `<button id="${id}" class="${cls}" data-on:click="${action}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"></button>`;
+  const action = `$pendingToggleId='${id}';$pendingToggleNewState=${!taken};$saveStatus='saving';$toggleMedId='${esc(medId)}';$toggleSlotId='${esc(slotId)}';$toggleDate='${takenDate}';@post('/api/grid/toggle')`;
+  const dataClass = `{'grid-cell--taken': $pendingToggleId === '${id}' ? $pendingToggleNewState : ${taken}}`;
+  return `<button id="${id}" class="${cls}" data-on:click="${action}" data-class="${dataClass}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"></button>`;
 }
 
 /**
@@ -221,7 +222,7 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
   const takenDate = String(req.body.toggleDate   ?? '').trim();
 
   if (!medId || !slotId || !/^\d{4}-\d{2}-\d{2}$/.test(takenDate)) {
-    res.write('event: datastar-patch-signals\ndata: signals {"toggleError":"invalid"}\n\n');
+    res.write('event: datastar-patch-signals\ndata: signals {"toggleError":"invalid","saveStatus":"error"}\n\n');
     return res.end();
   }
 
@@ -231,7 +232,7 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
     args: [medId, req.profile.id],
   });
   if (!medCheck.rows.length) {
-    res.write('event: datastar-patch-signals\ndata: signals {"toggleError":"forbidden"}\n\n');
+    res.write('event: datastar-patch-signals\ndata: signals {"toggleError":"forbidden","saveStatus":"error"}\n\n');
     return res.end();
   }
 
@@ -241,7 +242,7 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
     args: [slotId, req.profile.id],
   });
   if (!slotCheck.rows.length) {
-    res.write('event: datastar-patch-signals\ndata: signals {"toggleError":"forbidden"}\n\n');
+    res.write('event: datastar-patch-signals\ndata: signals {"toggleError":"forbidden","saveStatus":"error"}\n\n');
     return res.end();
   }
 
@@ -294,6 +295,7 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
   res.write('event: datastar-patch-elements\n');
   res.write('data: mode outer\n');
   res.write(`data: elements ${html}\n\n`);
+  res.write('event: datastar-patch-signals\ndata: signals {"pendingToggleId":"","pendingToggleNewState":false,"saveStatus":"saved"}\n\n');
   res.end();
 });
 

@@ -25,7 +25,6 @@
     aria-live="polite"
     aria-atomic="true"
     data-signals='{"saveStatus":"idle"}'
-    data-show="$saveStatus !== 'idle'"
     data-class='{"save-indicator--saving": $saveStatus === "saving", "save-indicator--saved": $saveStatus === "saved", "save-indicator--error": $saveStatus === "error"}'
     class="save-indicator"
   >

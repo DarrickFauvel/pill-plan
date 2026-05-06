@@ -227,25 +227,30 @@
     font-weight: 500;
     z-index: 50;
     pointer-events: none;
-    transition: opacity var(--transition);
+    opacity: 0;
+    visibility: hidden;
   }
 
   .save-indicator--saving {
+    opacity: 1;
+    visibility: visible;
     color: var(--color-muted);
   }
 
   .save-indicator--saved {
+    opacity: 1;
+    visibility: visible;
     color: var(--color-primary);
     animation: save-fade-out 0.35s ease-out 2s forwards;
   }
 
   @keyframes save-fade-out {
-    0%   { opacity: 1; visibility: visible; }
-    99%  { opacity: 0; visibility: visible; }
-    100% { opacity: 0; visibility: hidden;  }
+    to { opacity: 0; visibility: hidden; }
   }
 
   .save-indicator--error {
+    opacity: 1;
+    visibility: visible;
     color: var(--color-danger);
     pointer-events: auto;
     border-color: var(--color-danger);
@@ -257,7 +262,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .save-indicator--saved {
-      animation: save-fade-out 0s 2s forwards;
+      animation: save-fade-out 0.01s 2s forwards;
     }
   }
 
