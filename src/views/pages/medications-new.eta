@@ -53,7 +53,6 @@
 
   <form action="/api/medications" method="POST" class="med-form">
     <input type="hidden" name="rxcui" data-bind="medRxcui">
-    <input type="hidden" name="form" data-bind="medForm">
 
     <!-- Manual name field — always present; pre-filled via signal when RxNorm match selected -->
     <div class="form-group">
@@ -117,8 +116,36 @@
     </div>
 
     <div class="form-group">
-      <label for="med-qty">Quantity on hand (pills / doses)</label>
+      <label for="med-form">Form</label>
+      <select id="med-form" name="form" class="input" data-bind="medForm">
+        <option value="">— not specified —</option>
+        <option value="tablet">Tablet</option>
+        <option value="capsule">Capsule</option>
+        <option value="gel cap">Gel cap</option>
+        <option value="softgel">Softgel</option>
+        <option value="liquid">Liquid</option>
+        <option value="drops">Drops</option>
+        <option value="patch">Patch</option>
+        <option value="inhaler">Inhaler</option>
+        <option value="powder">Powder</option>
+        <option value="cream">Cream</option>
+        <option value="ointment">Ointment</option>
+        <option value="suppository">Suppository</option>
+        <option value="injection">Injection</option>
+        <option value="spray">Spray</option>
+        <option value="chewable">Chewable</option>
+        <option value="lozenge">Lozenge</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="med-qty">Quantity in organizer</label>
       <input id="med-qty" type="number" name="totalQuantity" class="input" min="0" value="0" required>
+    </div>
+
+    <div class="form-group">
+      <label for="med-bottle-qty">Quantity in bottle</label>
+      <input id="med-bottle-qty" type="number" name="bottleQuantity" class="input" min="0" value="0" required>
     </div>
 
     <div class="form-group">

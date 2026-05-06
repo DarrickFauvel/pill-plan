@@ -272,6 +272,7 @@ router.post('/api/medications', requireAuth, loadAppContext, async (req, res) =>
   const form = String(body.form ?? '').trim() || null;
   const instructions = String(body.instructions ?? '').trim() || null;
   const totalQuantity = Math.max(0, parseInt(body.totalQuantity, 10) || 0);
+  const bottleQuantity = Math.max(0, parseInt(body.bottleQuantity, 10) || 0);
   const refillThreshold = Math.max(1, parseInt(body.refillThreshold, 10) || 7);
 
   const medId = randomUUID();
@@ -301,9 +302,9 @@ router.post('/api/medications', requireAuth, loadAppContext, async (req, res) =>
     {
       sql: `INSERT INTO medications
               (id, profile_id, rxcui, name, strength, form, instructions,
-               total_quantity, refill_threshold, active, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
-      args: [medId, req.profile.id, rxcui, name, strength, form, instructions, totalQuantity, refillThreshold, now],
+               total_quantity, bottle_quantity, refill_threshold, active, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+      args: [medId, req.profile.id, rxcui, name, strength, form, instructions, totalQuantity, bottleQuantity, refillThreshold, now],
     },
     ...scheduleEntries.map(({ slotId, doseQty }) => ({
       sql: 'INSERT INTO schedules (id, med_id, slot_id, days, dose_qty) VALUES (?, ?, ?, ?, ?)',

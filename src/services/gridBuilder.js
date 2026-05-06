@@ -129,7 +129,7 @@ export async function buildDayGrid(profileId, dateStr) {
       args: [profileId],
     }),
     db.execute({
-      sql: `SELECT m.id, m.name, m.strength, m.total_quantity, m.bottle_quantity, m.refill_threshold,
+      sql: `SELECT m.id, m.name, m.strength, m.form, m.total_quantity, m.bottle_quantity, m.refill_threshold,
                    s.slot_id, s.days, s.dose_qty
             FROM medications m
             JOIN schedules s ON s.med_id = m.id
@@ -183,6 +183,7 @@ export async function buildDayGrid(profileId, dateStr) {
       id:       medId,
       name:     String(row.name),
       strength: row.strength ? String(row.strength).replace(/^\./, '0.') : '',
+      form:     row.form ? String(row.form) : '',
       doseQty:  Number(row.dose_qty ?? 1),
       entryId:  entry?.entryId ?? null,
       taken:    !!(entry && entry.status === 'taken'),
@@ -261,7 +262,7 @@ export async function buildMonthGrid(profileId, year, month) {
       args: [profileId],
     }),
     db.execute({
-      sql: `SELECT m.id, m.name, m.strength, m.total_quantity, m.bottle_quantity, m.refill_threshold,
+      sql: `SELECT m.id, m.name, m.strength, m.form, m.total_quantity, m.bottle_quantity, m.refill_threshold,
                    s.slot_id, s.days, s.dose_qty
             FROM medications m
             JOIN schedules s ON s.med_id = m.id
@@ -324,6 +325,7 @@ export async function buildMonthGrid(profileId, year, month) {
       id:            String(row.id),
       name:          String(row.name),
       strength:      row.strength ? String(row.strength) : '',
+      form:          row.form ? String(row.form) : '',
       doseQty:       Number(row.dose_qty ?? 1),
       scheduledDays,
       entries:       medEntries,
@@ -425,7 +427,7 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
       args: [profileId],
     }),
     db.execute({
-      sql: `SELECT m.id, m.name, m.strength, m.total_quantity, m.bottle_quantity, m.refill_threshold,
+      sql: `SELECT m.id, m.name, m.strength, m.form, m.total_quantity, m.bottle_quantity, m.refill_threshold,
                    s.slot_id, s.days, s.dose_qty
             FROM medications m
             JOIN schedules s ON s.med_id = m.id
@@ -487,6 +489,7 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
       id:            String(row.id),
       name:          String(row.name),
       strength:      row.strength ? String(row.strength) : '',
+      form:          row.form ? String(row.form) : '',
       doseQty:       Number(row.dose_qty ?? 1),
       scheduledDays,
       entries:       medEntries,

@@ -91,7 +91,7 @@
           <% it.grid.days.forEach(function(day, dayIdx) { %>
           <th
             scope="col"
-            class="grid-th grid-th--day<%= day.isToday ? ' grid-th--today' : '' %><%= (it.grid.organizers && it.grid.organizers.length > 1 && dayIdx > 0 && dayIdx % 7 === 0) ? ' grid-th--org-start' : '' %>"
+            class="grid-th grid-th--day<%= day.isToday ? ' grid-th--today' : '' %><%= (dayIdx % 7 === 0) ? ' grid-th--week-start' : '' %><%= (dayIdx > 0 && dayIdx % 7 === 0) ? ' grid-th--org-start' : '' %><%= (dayIdx % 7 === 6) ? ' grid-th--org-end' : '' %>"
             role="columnheader"
             id="col-<%= day.date %>"
           >
@@ -110,7 +110,7 @@
         <tr class="grid-slot-row" aria-hidden="true">
           <th class="grid-th grid-th--slot" scope="rowgroup"><%= slot.label %></th>
           <% it.grid.days.forEach(function(day, dayIdx) { %>
-          <td class="grid-td grid-td--slot-fill<%= (it.grid.organizers && it.grid.organizers.length > 1 && dayIdx > 0 && dayIdx % 7 === 0) ? ' grid-td--org-start' : '' %>"></td>
+          <td class="grid-td grid-td--slot-fill<%= (dayIdx % 7 === 0) ? ' grid-td--week-start' : '' %><%= (dayIdx > 0 && dayIdx % 7 === 0) ? ' grid-td--org-start' : '' %><%= (dayIdx % 7 === 6) ? ' grid-td--org-end' : '' %>"></td>
           <% }); %>
         </tr>
 
@@ -120,7 +120,7 @@
           <th scope="row" class="grid-th grid-th--med">
             <a href="/app/medications/<%= med.id %>" class="grid-med-link">
               <span class="grid-med-name"><%= med.name %></span>
-              <% if (med.strength) { %><span class="grid-med-strength"><%= med.strength %></span><% } %>
+              <% if (med.form || med.strength) { %><span class="grid-med-strength"><%= [(med.form ? med.form.charAt(0).toUpperCase() + med.form.slice(1) : ''), med.strength].filter(Boolean).join(' · ') %></span><% } %>
             </a>
           </th>
           <% it.grid.days.forEach(function(day, dayIdx) { %>
@@ -132,11 +132,13 @@
             var cid         = 'gc-' + med.id.replace(/-/g,'') + '-' + slot.id.replace(/-/g,'') + '-' + day.date.replace(/-/g,'');
             var ariaLabel   = med.name + ', ' + slot.label + ', ' + day.dayLabel + ' ' + day.dayNum + (isTaken ? ', taken' : ', not taken');
             var clickAction = "$toggleMedId='" + med.id + "';$toggleSlotId='" + slot.id + "';$toggleDate='" + day.date + "';@post('/api/grid/toggle')";
-            var orgStart    = !!(it.grid.organizers && it.grid.organizers.length > 1 && dayIdx > 0 && dayIdx % 7 === 0);
+            var weekStart   = !!(dayIdx % 7 === 0);
+            var orgStart    = !!(dayIdx > 0 && dayIdx % 7 === 0);
+            var orgEnd      = !!(dayIdx % 7 === 6);
           %>
           <td
             role="gridcell"
-            class="grid-td<%= day.isToday ? ' grid-td--today' : '' %><%= day.isPast && isScheduled && !isTaken ? ' grid-td--missed' : '' %><%= orgStart ? ' grid-td--org-start' : '' %>"
+            class="grid-td<%= day.isToday ? ' grid-td--today' : '' %><%= day.isPast && isScheduled && !isTaken ? ' grid-td--missed' : '' %><%= weekStart ? ' grid-td--week-start' : '' %><%= orgStart ? ' grid-td--org-start' : '' %><%= orgEnd ? ' grid-td--org-end' : '' %>"
             headers="col-<%= day.date %>"
           >
             <% if (isScheduled) { %>
