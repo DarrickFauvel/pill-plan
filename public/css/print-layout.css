@@ -5,11 +5,23 @@
 
 @layer print-layout {
 
+  /* ── Force light mode — print pages always render light ─── */
+
+  :root {
+    --color-surface:  #F0F7FF;
+    --color-card:     #FFFFFF;
+    --color-text:     #1A2840;
+    --color-muted:    #6A8FAD;
+    --color-border:   #C8DCF0;
+    --color-primary:  #5BA4D4;
+    --color-warning:  #F4A261;
+  }
+
   /* ── Page shell ──────────────────────────────────────────── */
 
   body {
     background: white;
-    color: black;
+    color: var(--color-text);
   }
 
   .print-page {
@@ -17,7 +29,7 @@
     padding: var(--space-4);
   }
 
-  /* ── Header ──────────────────────────────────────────────── */
+  /* ── Header ──────────────────────────────────────────── */
 
   .print-header {
     display: flex;
@@ -176,23 +188,86 @@
       min-width: 1.5rem;
     }
 
+    /* ── Low-ink: strip tinted backgrounds for actual printing ── */
+
+    .grid-td--today,
+    .grid-td--missed,
+    .grid-slot-row .grid-th--slot,
+    .grid-td--slot-fill,
+    .grid-organizer-row .grid-th--organizer {
+      background: none;
+    }
+
+    .grid-th--today {
+      color: var(--color-text);
+    }
+
+    /* Taken: outline circle with black checkmark, no fill */
     .print-cell {
       width: 1.25rem;
       height: 1.25rem;
-    }
-
-    .print-cell--taken {
-      background: black;
       border-color: black;
     }
 
-    .grid-td--missed {
+    .print-cell--taken {
+      background: transparent;
+      border-color: black;
+    }
+
+    .print-cell--taken::after {
+      border-left-color: black;
+      border-bottom-color: black;
+    }
+
+    /* Not scheduled: invisible */
+    .print-cell--skip {
       background: none;
+      border-color: transparent;
     }
 
     .refill-banner {
       margin-block-end: var(--space-3);
     }
+  }
+
+  /* ── Medication list print table ────────────────────────── */
+
+  .medlist-print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+  }
+
+  .medlist-print-table th,
+  .medlist-print-table td {
+    padding: var(--space-2) var(--space-3);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+  }
+
+  .medlist-print-table thead th {
+    font-weight: 700;
+    border-bottom: 2px solid var(--color-border);
+    white-space: nowrap;
+  }
+
+  .medlist-print-table__name {
+    font-weight: 600;
+  }
+
+  .medlist-print-table__schedule {
+    min-width: 14rem;
+  }
+
+  .medlist-schedule-row {
+    display: block;
+    line-height: 1.5;
+  }
+
+  .medlist-print-table__days--warning {
+    color: var(--color-warning);
+    font-weight: 700;
   }
 
   /* ── High contrast ───────────────────────────────────────── */

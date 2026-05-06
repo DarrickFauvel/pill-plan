@@ -227,6 +227,80 @@ router.get('/app/medications', requireAuth, loadAppContext, async (req, res) => 
 
 
 /* ────────────────────────────────────────────────────────────
+   Medication list print page
+   GET /app/medications/print
+   (registered before /:id to avoid path collision)
+   ──────────────────────────────────────────────────────────── */
+
+router.get('/app/medications/print', requireAuth, loadAppContext, async (req, res) => {
+  const { rows } = await db.execute({
+    sql: `SELECT m.id, m.name, m.strength, m.form,
+                 m.total_quantity, m.bottle_quantity, m.refill_threshold,
+                 s.slot_id, s.dose_qty, s.days, t.label AS slot_label, t.sort_order
+          FROM medications m
+          LEFT JOIN schedules s ON s.med_id = m.id
+          LEFT JOIN time_slots t ON t.id = s.slot_id
+          WHERE m.profile_id = ? AND m.active = 1
+          ORDER BY m.created_at ASC, t.sort_order ASC`,
+    args: [req.profile.id],
+  });
+
+  /** @type {Map<string, {id:string,name:string,strength:string,form:string,totalQuantity:number,bottleQuantity:number,refillThreshold:number,schedules:Array<{slotLabel:string,doseQty:number,days:number[]}>}>} */
+  const medsMap = new Map();
+  for (const row of rows) {
+    const id = String(row.id);
+    if (!medsMap.has(id)) {
+      medsMap.set(id, {
+        id,
+        name:           String(row.name),
+        strength:       row.strength ? String(row.strength).replace(/^\./, '0.') : '',
+        form:           row.form ? String(row.form) : '',
+        totalQuantity:  Number(row.total_quantity ?? 0),
+        bottleQuantity: Number(row.bottle_quantity ?? 0),
+        refillThreshold: Number(row.refill_threshold ?? 7),
+        schedules:      [],
+      });
+    }
+    if (row.slot_id) {
+      let days;
+      try { days = JSON.parse(String(row.days)); } catch { days = [0, 1, 2, 3, 4, 5, 6]; }
+      medsMap.get(id).schedules.push({
+        slotLabel: String(row.slot_label),
+        doseQty:   Number(row.dose_qty ?? 1),
+        days,
+      });
+    }
+  }
+
+  const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  const meds = Array.from(medsMap.values()).map((med) => {
+    const scheduleRaw = med.schedules.length
+      ? med.schedules.map((s) => `x:${s.doseQty}:${JSON.stringify(s.days)}`).join(',')
+      : null;
+    const { daysRemaining, needsRefill } = calcDaysRemaining(
+      med.totalQuantity, med.bottleQuantity, med.refillThreshold, scheduleRaw
+    );
+    return {
+      ...med,
+      daysRemaining,
+      needsRefill,
+      schedules: med.schedules.map((s) => ({
+        ...s,
+        daysLabel: s.days.length === 7 ? 'Daily' : s.days.map((d) => DAY_LABELS[d]).join(', '),
+      })),
+    };
+  });
+
+  res.render('pages/medications-print', {
+    title:   `Medications — ${req.profile.name}`,
+    profile: req.profile,
+    meds,
+  });
+});
+
+
+/* ────────────────────────────────────────────────────────────
    Add medication page
    GET /app/medications/new
    ──────────────────────────────────────────────────────────── */

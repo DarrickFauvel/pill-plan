@@ -1,0 +1,65 @@
+<% layout('../layouts/print') %>
+<style>@page { size: portrait; }</style>
+<div class="print-page">
+
+  <header class="print-header">
+    <div class="print-header__meta">
+      <h1 class="print-header__title">Medications</h1>
+      <p class="print-header__profile"><%= it.profile.name %></p>
+    </div>
+    <div class="print-header__actions no-print">
+      <a href="/app/medications" class="btn btn--secondary btn--sm">← Back</a>
+      <a href="/app/grid/print" class="btn btn--secondary btn--sm">Print grid</a>
+      <button type="button" class="btn btn--primary btn--sm" onclick="window.print()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/>
+        </svg>
+        Print
+      </button>
+    </div>
+  </header>
+
+  <% if (it.meds.length === 0) { %>
+  <p class="print-empty">No medications on file.</p>
+  <% } else { %>
+
+  <table class="medlist-print-table" role="grid" aria-label="Medication list for <%= it.profile.name %>">
+    <thead>
+      <tr>
+        <th scope="col">Medication</th>
+        <th scope="col">Form</th>
+        <th scope="col">Strength</th>
+        <th scope="col">Schedule</th>
+        <th scope="col">Organizer</th>
+        <th scope="col">Bottle</th>
+        <th scope="col">Days left</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% it.meds.forEach(function(med) { %>
+      <tr>
+        <td class="medlist-print-table__name"><%= med.name %></td>
+        <td><%= med.form ? med.form.charAt(0).toUpperCase() + med.form.slice(1) : '—' %></td>
+        <td><%= med.strength || '—' %></td>
+        <td class="medlist-print-table__schedule">
+          <% if (med.schedules.length === 0) { %>
+            —
+          <% } else { %>
+            <% med.schedules.forEach(function(s) { %>
+            <span class="medlist-schedule-row"><%= s.slotLabel %> · <%= s.doseQty %> pill<%= s.doseQty !== 1 ? 's' : '' %> · <%= s.daysLabel %></span>
+            <% }); %>
+          <% } %>
+        </td>
+        <td><%= med.totalQuantity %></td>
+        <td><%= med.bottleQuantity %></td>
+        <td class="<%= med.needsRefill ? 'medlist-print-table__days--warning' : '' %>">
+          <%= med.daysRemaining !== null ? med.daysRemaining : '—' %>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+
+  <% } %>
+
+</div>
