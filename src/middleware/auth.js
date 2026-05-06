@@ -42,19 +42,20 @@ export async function requireAuth(req, res, next) {
  */
 export async function loadAppContext(req, res, next) {
   const { rows } = await db.execute({
-    sql: `SELECT id, name, avatar_color, organizer_type
+    sql: `SELECT id, name, avatar_color, organizer_type, organizer_count
           FROM profiles
           WHERE user_id = ?
           ORDER BY created_at ASC`,
     args: [req.user.id],
   });
 
-  /** @type {Array<{id: string, name: string, avatarColor: string, organizerType: string}>} */
+  /** @type {Array<{id: string, name: string, avatarColor: string, organizerType: string, organizerCount: number}>} */
   const profiles = rows.map((r) => ({
-    id:            String(r.id),
-    name:          String(r.name),
-    avatarColor:   String(r.avatar_color),
-    organizerType: String(r.organizer_type ?? '7x4'),
+    id:             String(r.id),
+    name:           String(r.name),
+    avatarColor:    String(r.avatar_color),
+    organizerType:  String(r.organizer_type ?? '7x4'),
+    organizerCount: Number(r.organizer_count ?? 1),
   }));
 
   const pidCookie = req.cookies?.pid;

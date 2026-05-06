@@ -1,0 +1,75 @@
+@layer profiles {
+
+  .profile-new-page {
+    max-width: 32rem;
+    padding: var(--space-4);
+  }
+
+  .profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    margin-block-start: var(--space-2);
+  }
+
+  /* ── Color swatches ──────────────────────────────────────── */
+
+  .color-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-block-start: var(--space-2);
+  }
+
+  .color-swatch-label {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .color-swatch {
+    display: block;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-full);
+    background-color: var(--swatch);
+    border: 3px solid transparent;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    transition: outline-color 0.1s;
+  }
+
+  .color-swatch-label:has(input:checked) .color-swatch {
+    outline-color: var(--swatch);
+    border-color: var(--color-surface);
+    box-shadow: 0 0 0 1px var(--swatch);
+  }
+
+  .color-swatch-label:focus-within .color-swatch {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  /* ── Actions ─────────────────────────────────────────────── */
+
+  .profile-form__actions {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  /* ── Reduced motion ──────────────────────────────────────── */
+
+  @media (prefers-reduced-motion: reduce) {
+    .color-swatch {
+      transition: none;
+    }
+  }
+
+  /* ── High contrast ───────────────────────────────────────── */
+
+  @media (prefers-contrast: more) {
+    .color-swatch-label:has(input:checked) .color-swatch {
+      box-shadow: 0 0 0 3px var(--swatch);
+    }
+  }
+
+}

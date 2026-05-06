@@ -90,6 +90,30 @@
     </div>
   </section>
 
+  <!-- Number of organizers -->
+  <section class="settings-section" aria-labelledby="organizer-count-heading" data-show="$organizerType !== 'bottles'">
+    <h2 id="organizer-count-heading">Number of organizers</h2>
+    <p class="settings-section__desc">
+      How many weekly trays do you fill at once? The grid will show that many weeks.
+    </p>
+    <div class="organizer-count-control">
+      <label for="organizer-count-input" class="organizer-count-label">Organizers</label>
+      <input
+        id="organizer-count-input"
+        type="number"
+        class="input organizer-count-input"
+        min="1"
+        max="8"
+        data-bind="organizerCount"
+        data-on:change="@post('/api/settings/organizer-count')"
+        aria-describedby="organizer-count-hint"
+      >
+      <span id="organizer-count-hint" class="organizer-count-hint">
+        = <span data-text="$organizerCount * 7"></span> days in the grid
+      </span>
+    </div>
+  </section>
+
   <!-- Time slots -->
   <section class="settings-section" aria-labelledby="slots-heading">
     <h2 id="slots-heading">Time slots</h2>

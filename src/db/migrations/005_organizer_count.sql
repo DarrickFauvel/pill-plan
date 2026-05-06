@@ -1,0 +1,1 @@
+ALTER TABLE profiles ADD COLUMN organizer_count INTEGER NOT NULL DEFAULT 1

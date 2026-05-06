@@ -1,0 +1,57 @@
+<% layout('../layouts/app') %>
+<div class="profile-new-page">
+
+  <header class="page-header">
+    <h1>Add profile</h1>
+  </header>
+
+  <% if (it.error) { %>
+  <div class="alert alert--error" role="alert">
+    Please enter a name for this profile.
+  </div>
+  <% } %>
+
+  <form action="/app/profiles" method="POST" class="profile-form">
+
+    <div class="form-group">
+      <label for="profile-name">Name</label>
+      <input
+        id="profile-name"
+        type="text"
+        name="name"
+        class="input"
+        required
+        maxlength="50"
+        autocomplete="off"
+        autofocus
+        value="<%= it.formName ?? '' %>"
+        placeholder="e.g. Mom, Dad, John"
+      >
+    </div>
+
+    <fieldset class="form-group">
+      <legend>Avatar color</legend>
+      <div class="color-swatches" role="list">
+        <% var swatchColors = ['#6EC6A0','#5B9BD5','#E07B54','#C66E99','#8B7CD4','#E0B84E','#5BA85B','#D45B5B']; swatchColors.forEach(function(color) { %>
+        <label class="color-swatch-label" role="listitem">
+          <input
+            type="radio"
+            name="avatarColor"
+            value="<%= color %>"
+            class="sr-only"
+            <%= (it.formColor || '#6EC6A0') === color ? 'checked' : '' %>
+          >
+          <span class="color-swatch" style="--swatch: <%= color %>;"></span>
+        </label>
+        <% }); %>
+      </div>
+    </fieldset>
+
+    <div class="profile-form__actions">
+      <a href="/app/grid" class="btn btn--secondary">Cancel</a>
+      <button type="submit" class="btn btn--primary">Create profile</button>
+    </div>
+
+  </form>
+
+</div>

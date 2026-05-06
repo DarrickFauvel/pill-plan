@@ -58,7 +58,7 @@ router.get('/app/settings', requireAuth, loadAppContext, async (req, res) => {
   const slots = await loadSlots(req.profile.id);
 
   /** @type {Record<string, string | number>} */
-  const signals = { saveStatus: 'idle', newSlotLabel: '', organizerType: req.profile.organizerType };
+  const signals = { saveStatus: 'idle', newSlotLabel: '', organizerType: req.profile.organizerType, organizerCount: req.profile.organizerCount };
   for (const slot of slots) {
     signals[slotSignalKey(slot.id)] = slot.label;
   }
@@ -93,6 +93,30 @@ router.post('/api/settings/organizer-type', requireAuth, loadAppContext, async (
   await db.execute({
     sql:  'UPDATE profiles SET organizer_type = ? WHERE id = ?',
     args: [type, req.profile.id],
+  });
+
+  res.write('event: datastar-patch-signals\ndata: signals {"saveStatus":"saved"}\n\n');
+  res.end();
+});
+
+
+/* ─────────────────────────────────────────────────────────────
+   Save organizer count  POST /api/settings/organizer-count
+   Datastar SSE — reads signal "organizerCount" from body
+   ───────────────────────────────────────────────────────────── */
+
+router.post('/api/settings/organizer-count', requireAuth, loadAppContext, async (req, res) => {
+  sseHeaders(res);
+  const count = parseInt(String(req.body.organizerCount ?? ''), 10);
+
+  if (!Number.isInteger(count) || count < 1 || count > 8) {
+    res.write('event: datastar-patch-signals\ndata: signals {"saveStatus":"error"}\n\n');
+    return res.end();
+  }
+
+  await db.execute({
+    sql:  'UPDATE profiles SET organizer_count = ? WHERE id = ?',
+    args: [count, req.profile.id],
   });
 
   res.write('event: datastar-patch-signals\ndata: signals {"saveStatus":"saved"}\n\n');

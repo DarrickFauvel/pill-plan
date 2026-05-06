@@ -43,13 +43,16 @@ import db from '../db/client.js';
 /**
  * @typedef {Object} GridMonth
  * @property {number} year
- * @property {number} month     - 0-based
+ * @property {number} month      - 0-based
  * @property {string} monthLabel
- * @property {string} prevMonth - YYYY-MM
- * @property {string} nextMonth - YYYY-MM
+ * @property {string} rangeLabel - display label (same as monthLabel for month grids)
+ * @property {string} prevMonth  - YYYY-MM
+ * @property {string} nextMonth  - YYYY-MM
+ * @property {string} prevLink   - full href for prev navigation
+ * @property {string} nextLink   - full href for next navigation
  * @property {GridDay[]} days
  * @property {GridSlot[]} slots
- * @property {string} todayStr  - YYYY-MM-DD
+ * @property {string} todayStr   - YYYY-MM-DD
  * @property {RefillAlert[]} refillAlerts
  */
 
@@ -344,12 +347,190 @@ export async function buildMonthGrid(profileId, year, month) {
   }
   refillAlerts.sort((a, b) => a.daysRemaining - b.daysRemaining);
 
+  const monthLabel = firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const prevMonth  = toMonthParam(year, month - 1);
+  const nextMonth  = toMonthParam(year, month + 1);
+
   return {
     year,
     month,
-    monthLabel: firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-    prevMonth:  toMonthParam(year, month - 1),
-    nextMonth:  toMonthParam(year, month + 1),
+    monthLabel,
+    rangeLabel: monthLabel,
+    prevMonth,
+    nextMonth,
+    prevLink: `/app/grid?month=${prevMonth}`,
+    nextLink: `/app/grid?month=${nextMonth}`,
+    days,
+    slots,
+    todayStr,
+    refillAlerts,
+  };
+}
+
+/**
+ * Return the YYYY-MM-DD of the Monday on or before the given date.
+ *
+ * @param {Date} date
+ * @returns {string}
+ */
+function toMonday(date) {
+  const d   = new Date(date);
+  const dow = d.getDay(); // 0=Sun … 6=Sat
+  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+  return toDateStr(d);
+}
+
+/**
+ * Build a grid spanning numWeeks consecutive weeks starting from the Monday
+ * on or before startDateStr.
+ *
+ * @param {string} profileId
+ * @param {string} startDateStr - YYYY-MM-DD (snapped to Monday internally)
+ * @param {number} numWeeks     - 1–8
+ * @returns {Promise<GridMonth>}
+ */
+export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
+  const monday    = toMonday(new Date(startDateStr + 'T12:00:00'));
+  const startDate = new Date(monday + 'T12:00:00');
+  const totalDays = numWeeks * 7;
+  const endDate   = new Date(startDate);
+  endDate.setDate(endDate.getDate() + totalDays - 1);
+
+  const today    = new Date();
+  const todayStr = toDateStr(today);
+
+  /** @type {GridDay[]} */
+  const days = [];
+  for (let i = 0; i < totalDays; i++) {
+    const date    = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateStr = toDateStr(date);
+    days.push({
+      date:     dateStr,
+      dayNum:   date.getDate(),
+      dayLabel: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      isToday:  dateStr === todayStr,
+      isPast:   dateStr < todayStr,
+      isFuture: dateStr > todayStr,
+    });
+  }
+
+  const startStr = toDateStr(startDate);
+  const endStr   = toDateStr(endDate);
+
+  const [slotsRes, medsRes, entriesRes] = await Promise.all([
+    db.execute({
+      sql:  'SELECT id, label, sort_order FROM time_slots WHERE profile_id = ? ORDER BY sort_order ASC',
+      args: [profileId],
+    }),
+    db.execute({
+      sql: `SELECT m.id, m.name, m.strength, m.total_quantity, m.refill_threshold,
+                   s.slot_id, s.days, s.dose_qty
+            FROM medications m
+            JOIN schedules s ON s.med_id = m.id
+            WHERE m.profile_id = ? AND m.active = 1
+            ORDER BY s.slot_id, m.created_at ASC`,
+      args: [profileId],
+    }),
+    db.execute({
+      sql: `SELECT id, med_id, slot_id, taken_date, status
+            FROM grid_entries
+            WHERE profile_id = ? AND taken_date >= ? AND taken_date <= ?`,
+      args: [profileId, startStr, endStr],
+    }),
+  ]);
+
+  /** @type {Record<string, GridEntry>} */
+  const entryIndex = {};
+  for (const e of entriesRes.rows) {
+    const key = `${e.med_id}:${e.slot_id}:${e.taken_date}`;
+    entryIndex[key] = { entryId: String(e.id), status: String(e.status) };
+  }
+
+  /** @type {Record<string, {name: string, totalQty: number, threshold: number, dailyDose: number}>} */
+  const medRefill = {};
+
+  /** @type {Record<string, GridMed[]>} */
+  const slotMedsMap = {};
+  for (const row of medsRes.rows) {
+    const slotId = String(row.slot_id);
+    if (!slotMedsMap[slotId]) slotMedsMap[slotId] = [];
+
+    let scheduledDays;
+    try {
+      scheduledDays = JSON.parse(String(row.days));
+    } catch {
+      scheduledDays = [0, 1, 2, 3, 4, 5, 6];
+    }
+
+    const medId = String(row.id);
+    if (!medRefill[medId]) {
+      medRefill[medId] = {
+        name:      String(row.name),
+        totalQty:  Number(row.total_quantity ?? 0),
+        threshold: Number(row.refill_threshold ?? 7),
+        dailyDose: 0,
+      };
+    }
+    medRefill[medId].dailyDose +=
+      Number(row.dose_qty ?? 1) * (scheduledDays.length / 7);
+
+    /** @type {Record<string, GridEntry>} */
+    const medEntries = {};
+    for (const day of days) {
+      const key = `${row.id}:${slotId}:${day.date}`;
+      if (entryIndex[key]) medEntries[day.date] = entryIndex[key];
+    }
+
+    slotMedsMap[slotId].push({
+      id:            String(row.id),
+      name:          String(row.name),
+      strength:      row.strength ? String(row.strength) : '',
+      doseQty:       Number(row.dose_qty ?? 1),
+      scheduledDays,
+      entries:       medEntries,
+    });
+  }
+
+  /** @type {GridSlot[]} */
+  const slots = slotsRes.rows.map((r) => ({
+    id:    String(r.id),
+    label: String(r.label),
+    meds:  slotMedsMap[String(r.id)] ?? [],
+  }));
+
+  /** @type {RefillAlert[]} */
+  const refillAlerts = [];
+  for (const [medId, data] of Object.entries(medRefill)) {
+    if (data.totalQty <= 0 || data.dailyDose <= 0) continue;
+    const daysRemaining = Math.floor(data.totalQty / data.dailyDose);
+    if (daysRemaining <= data.threshold) {
+      refillAlerts.push({ id: medId, name: data.name, daysRemaining });
+    }
+  }
+  refillAlerts.sort((a, b) => a.daysRemaining - b.daysRemaining);
+
+  const startFmt = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const endFmt   = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const rangeLabel = `${startFmt} – ${endFmt}`;
+
+  const prevStart = new Date(startDate);
+  prevStart.setDate(prevStart.getDate() - numWeeks * 7);
+  const nextStart = new Date(startDate);
+  nextStart.setDate(nextStart.getDate() + numWeeks * 7);
+
+  const prevStartStr = toDateStr(prevStart);
+  const nextStartStr = toDateStr(nextStart);
+
+  return {
+    year:      startDate.getFullYear(),
+    month:     startDate.getMonth(),
+    monthLabel: rangeLabel,
+    rangeLabel,
+    prevMonth:  toMonthParam(prevStart.getFullYear(), prevStart.getMonth()),
+    nextMonth:  toMonthParam(nextStart.getFullYear(), nextStart.getMonth()),
+    prevLink:  `/app/grid?start=${prevStartStr}`,
+    nextLink:  `/app/grid?start=${nextStartStr}`,
     days,
     slots,
     todayStr,

@@ -2,9 +2,24 @@ import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import db from '../db/client.js';
 import { requireAuth, loadAppContext } from '../middleware/auth.js';
-import { buildMonthGrid, buildDayGrid } from '../services/gridBuilder.js';
+import { buildMonthGrid, buildDayGrid, buildWeekRangeGrid } from '../services/gridBuilder.js';
 
 const router = Router();
+
+/**
+ * Return YYYY-MM-DD of the Monday on or before the given date.
+ * @param {Date} date
+ * @returns {string}
+ */
+function mondayOf(date) {
+  const d   = new Date(date);
+  const dow = d.getDay();
+  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 /**
  * @param {import('express').Response} res
@@ -143,7 +158,31 @@ router.get('/app/grid', requireAuth, loadAppContext, async (req, res) => {
     });
   }
 
+  const numWeeks   = req.profile.organizerCount ?? 1;
+  const startParam = String(req.query.start ?? '');
   const monthParam = String(req.query.month ?? '');
+
+  if (numWeeks > 1 || /^\d{4}-\d{2}-\d{2}$/.test(startParam)) {
+    let startDate;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(startParam)) {
+      startDate = startParam;
+    } else if (/^\d{4}-\d{2}$/.test(monthParam)) {
+      const [y, m] = monthParam.split('-').map(Number);
+      startDate = mondayOf(new Date(y, m - 1, 1));
+    } else {
+      startDate = mondayOf(new Date());
+    }
+
+    const grid = await buildWeekRangeGrid(req.profile.id, startDate, numWeeks);
+    return res.render('pages/grid', {
+      title:    grid.rangeLabel,
+      path:     '/app/grid',
+      profile:  req.profile,
+      profiles: req.profiles,
+      grid,
+      extraCss: '/css/grid.css',
+    });
+  }
 
   let year, month;
   if (/^\d{4}-\d{2}$/.test(monthParam)) {
