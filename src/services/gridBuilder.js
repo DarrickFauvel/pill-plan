@@ -48,8 +48,9 @@ import db from '../db/client.js';
  * @property {string} rangeLabel - display label (same as monthLabel for month grids)
  * @property {string} prevMonth  - YYYY-MM
  * @property {string} nextMonth  - YYYY-MM
- * @property {string} prevLink   - full href for prev navigation
- * @property {string} nextLink   - full href for next navigation
+ * @property {string} prevLink    - full href for prev navigation
+ * @property {string} nextLink    - full href for next navigation
+ * @property {string[]} [organizers] - letter labels per organizer tray (week-range mode only)
  * @property {GridDay[]} days
  * @property {GridSlot[]} slots
  * @property {string} todayStr   - YYYY-MM-DD
@@ -368,15 +369,15 @@ export async function buildMonthGrid(profileId, year, month) {
 }
 
 /**
- * Return the YYYY-MM-DD of the Monday on or before the given date.
+ * Return the YYYY-MM-DD of the Sunday on or before the given date.
  *
  * @param {Date} date
  * @returns {string}
  */
-function toMonday(date) {
+function toSunday(date) {
   const d   = new Date(date);
   const dow = d.getDay(); // 0=Sun … 6=Sat
-  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+  d.setDate(d.getDate() - dow);
   return toDateStr(d);
 }
 
@@ -390,7 +391,7 @@ function toMonday(date) {
  * @returns {Promise<GridMonth>}
  */
 export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
-  const monday    = toMonday(new Date(startDateStr + 'T12:00:00'));
+  const monday    = toSunday(new Date(startDateStr + 'T12:00:00'));
   const startDate = new Date(monday + 'T12:00:00');
   const totalDays = numWeeks * 7;
   const endDate   = new Date(startDate);
@@ -510,9 +511,11 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
   }
   refillAlerts.sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-  const startFmt = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const endFmt   = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const startFmt   = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const endFmt     = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const rangeLabel = `${startFmt} – ${endFmt}`;
+
+  const organizers = Array.from({ length: numWeeks }, (_, i) => String.fromCharCode(65 + i));
 
   const prevStart = new Date(startDate);
   prevStart.setDate(prevStart.getDate() - numWeeks * 7);
@@ -531,6 +534,7 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
     nextMonth:  toMonthParam(nextStart.getFullYear(), nextStart.getMonth()),
     prevLink:  `/app/grid?start=${prevStartStr}`,
     nextLink:  `/app/grid?start=${nextStartStr}`,
+    organizers,
     days,
     slots,
     todayStr,

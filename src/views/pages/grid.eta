@@ -74,16 +74,24 @@
       aria-label="Medication dose grid for <%= it.grid.rangeLabel %>"
     >
       <thead>
+        <% if (it.grid.organizers && it.grid.organizers.length > 1) { %>
+        <tr class="grid-organizer-row" aria-hidden="true">
+          <td class="grid-td"></td>
+          <% it.grid.organizers.forEach(function(label) { %>
+          <th class="grid-th grid-th--organizer" colspan="7" scope="colgroup"><%= label %></th>
+          <% }); %>
+        </tr>
+        <% } %>
         <tr>
           <th
             scope="col"
             class="grid-th grid-th--label"
             role="columnheader"
           >Medication</th>
-          <% it.grid.days.forEach(function(day) { %>
+          <% it.grid.days.forEach(function(day, dayIdx) { %>
           <th
             scope="col"
-            class="grid-th grid-th--day<%= day.isToday ? ' grid-th--today' : '' %>"
+            class="grid-th grid-th--day<%= day.isToday ? ' grid-th--today' : '' %><%= (it.grid.organizers && it.grid.organizers.length > 1 && dayIdx > 0 && dayIdx % 7 === 0) ? ' grid-th--org-start' : '' %>"
             role="columnheader"
             id="col-<%= day.date %>"
           >
@@ -101,8 +109,8 @@
         <!-- Slot group header -->
         <tr class="grid-slot-row" aria-hidden="true">
           <th class="grid-th grid-th--slot" scope="rowgroup"><%= slot.label %></th>
-          <% it.grid.days.forEach(function() { %>
-          <td class="grid-td grid-td--slot-fill"></td>
+          <% it.grid.days.forEach(function(day, dayIdx) { %>
+          <td class="grid-td grid-td--slot-fill<%= (it.grid.organizers && it.grid.organizers.length > 1 && dayIdx > 0 && dayIdx % 7 === 0) ? ' grid-td--org-start' : '' %>"></td>
           <% }); %>
         </tr>
 
@@ -115,7 +123,7 @@
               <% if (med.strength) { %><span class="grid-med-strength"><%= med.strength %></span><% } %>
             </a>
           </th>
-          <% it.grid.days.forEach(function(day) { %>
+          <% it.grid.days.forEach(function(day, dayIdx) { %>
           <%
             var dayOfWeek   = new Date(day.date + 'T12:00:00').getDay();
             var isScheduled = med.scheduledDays.indexOf(dayOfWeek) !== -1;
@@ -124,10 +132,11 @@
             var cid         = 'gc-' + med.id.replace(/-/g,'') + '-' + slot.id.replace(/-/g,'') + '-' + day.date.replace(/-/g,'');
             var ariaLabel   = med.name + ', ' + slot.label + ', ' + day.dayLabel + ' ' + day.dayNum + (isTaken ? ', taken' : ', not taken');
             var clickAction = "$toggleMedId='" + med.id + "';$toggleSlotId='" + slot.id + "';$toggleDate='" + day.date + "';@post('/api/grid/toggle')";
+            var orgStart    = !!(it.grid.organizers && it.grid.organizers.length > 1 && dayIdx > 0 && dayIdx % 7 === 0);
           %>
           <td
             role="gridcell"
-            class="grid-td<%= day.isToday ? ' grid-td--today' : '' %><%= day.isPast && isScheduled && !isTaken ? ' grid-td--missed' : '' %>"
+            class="grid-td<%= day.isToday ? ' grid-td--today' : '' %><%= day.isPast && isScheduled && !isTaken ? ' grid-td--missed' : '' %><%= orgStart ? ' grid-td--org-start' : '' %>"
             headers="col-<%= day.date %>"
           >
             <% if (isScheduled) { %>

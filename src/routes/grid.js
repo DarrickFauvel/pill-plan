@@ -7,16 +7,16 @@ import { buildMonthGrid, buildDayGrid, buildWeekRangeGrid } from '../services/gr
 const router = Router();
 
 /**
- * Return YYYY-MM-DD of the Monday on or before the given date.
+ * Return YYYY-MM-DD of the Sunday on or before the given date.
  * @param {Date} date
  * @returns {string}
  */
-function mondayOf(date) {
+function sundayOf(date) {
   const d   = new Date(date);
   const dow = d.getDay();
-  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
+  d.setDate(d.getDate() - dow);
+  const y   = d.getFullYear();
+  const m   = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
@@ -168,9 +168,9 @@ router.get('/app/grid', requireAuth, loadAppContext, async (req, res) => {
       startDate = startParam;
     } else if (/^\d{4}-\d{2}$/.test(monthParam)) {
       const [y, m] = monthParam.split('-').map(Number);
-      startDate = mondayOf(new Date(y, m - 1, 1));
+      startDate = sundayOf(new Date(y, m - 1, 1));
     } else {
-      startDate = mondayOf(new Date());
+      startDate = sundayOf(new Date());
     }
 
     const grid = await buildWeekRangeGrid(req.profile.id, startDate, numWeeks);

@@ -159,6 +159,11 @@
     background: var(--color-surface);
   }
 
+  /* When organizer row is present, push day headers below it */
+  .grid-organizer-row ~ tr .grid-th--day {
+    top: 2.25rem;
+  }
+
   .grid-th--med,
   .grid-th--slot {
     position: sticky;
@@ -178,6 +183,41 @@
     width: 0.75rem;
     background: linear-gradient(to right, rgba(0,0,0,0.06), transparent);
     pointer-events: none;
+  }
+
+  /* ── Organizer label row ─────────────────────────────────── */
+
+  .grid-organizer-row .grid-th--organizer {
+    text-align: center;
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: 0.05em;
+    height: 2.25rem;
+    padding-block: var(--space-1);
+    border-bottom: 1px solid var(--color-border);
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  .grid-organizer-row .grid-td {
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    background: var(--color-surface);
+  }
+
+  /* ── Organizer boundary separator ───────────────────────── */
+
+  .grid-th--org-start,
+  .grid-td--org-start {
+    border-inline-start: 2px solid var(--color-border);
+  }
+
+  .grid-th--organizer + .grid-th--organizer {
+    border-inline-start: 2px solid var(--color-border);
   }
 
   /* ── Header cells ────────────────────────────────────────── */
