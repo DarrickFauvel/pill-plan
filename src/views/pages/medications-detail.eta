@@ -1,7 +1,7 @@
 <% layout('../layouts/app') %>
 <div
   class="medications-detail-page"
-  data-signals='<%~ JSON.stringify({saveStatus:"idle",name:it.med.name,strengthValue:it.strengthValue,strengthUnit:it.strengthUnit,strengthUnitCustom:it.strengthUnitCustom,form:it.med.form,instructions:it.med.instructions,totalQuantity:it.med.totalQuantity,refillThreshold:it.med.refillThreshold}) %>'
+  data-signals='<%~ JSON.stringify({saveStatus:"idle",name:it.med.name,strengthValue:it.strengthValue,strengthUnit:it.strengthUnit,strengthUnitCustom:it.strengthUnitCustom,form:it.med.form,instructions:it.med.instructions,totalQuantity:it.med.totalQuantity,bottleQuantity:it.med.bottleQuantity,refillThreshold:it.med.refillThreshold}) %>'
 >
 
   <header class="page-header">
@@ -12,19 +12,38 @@
   <!-- Supply & refill -->
   <section class="detail-section" aria-labelledby="supply-heading">
     <h2 id="supply-heading">Current supply</h2>
-    <div class="supply-row">
-      <p class="supply-count">
-        <span data-text="$totalQuantity"></span> on hand
+
+    <div class="supply-tiers">
+      <div class="supply-tier">
+        <span class="supply-tier__label">Organizer</span>
+        <span class="supply-tier__count" data-text="$totalQuantity"></span>
         <% if (it.daysRemaining !== null) { %>
           <span class="days-badge<%= it.needsRefill ? ' days-badge--warning' : '' %>">
             <%= it.daysRemaining %> day<%= it.daysRemaining === 1 ? '' : 's' %> left
           </span>
         <% } %>
-      </p>
+      </div>
+      <div class="supply-tier">
+        <span class="supply-tier__label">Bottle</span>
+        <span class="supply-tier__count" data-text="$bottleQuantity"></span>
+      </div>
     </div>
+
+    <% if (it.pillsNeeded > 0) { %>
+    <form action="/api/medications/<%= it.med.id %>/fill-organizer" method="POST" class="fill-form">
+      <p class="fill-hint">
+        Filling <%= it.organizerCount %> week<%= it.organizerCount === 1 ? '' : 's' %> needs <strong><%= it.pillsNeeded %></strong> pill<%= it.pillsNeeded === 1 ? '' : 's' %>
+        <% if (it.med.bottleQuantity < it.pillsNeeded) { %>
+          <span class="fill-hint__warning">(only <%= it.med.bottleQuantity %> in bottle)</span>
+        <% } %>
+      </p>
+      <button type="submit" class="btn btn--secondary">Fill organizer</button>
+    </form>
+    <% } %>
+
     <form action="/api/medications/<%= it.med.id %>/refill" method="POST" class="refill-form">
       <div class="form-group">
-        <label for="qty-add">Add to supply</label>
+        <label for="qty-add">Add to bottle</label>
         <input id="qty-add" type="number" name="qty_add" min="1" class="input input--small" placeholder="0">
       </div>
       <button type="submit" class="btn btn--primary">Log refill</button>
@@ -123,13 +142,25 @@
     </div>
 
     <div class="form-group">
-      <label for="ed-qty">Quantity on hand</label>
+      <label for="ed-qty">Quantity in organizer</label>
       <input
         id="ed-qty"
         type="number"
         class="input"
         min="0"
         data-bind="totalQuantity"
+        data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="ed-bottle-qty">Quantity in bottle</label>
+      <input
+        id="ed-bottle-qty"
+        type="number"
+        class="input"
+        min="0"
+        data-bind="bottleQuantity"
         data-on:input__debounce.1000ms="@post('/api/medications/<%= it.med.id %>')"
       >
     </div>

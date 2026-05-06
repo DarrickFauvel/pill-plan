@@ -260,14 +260,28 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
   const dayLabel = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
   const dayNum   = dateObj.getDate();
 
+  const scheduleRow = await db.execute({
+    sql:  'SELECT dose_qty FROM schedules WHERE med_id = ? AND slot_id = ?',
+    args: [medId, slotId],
+  });
+  const doseQty = scheduleRow.rows.length ? (Number(scheduleRow.rows[0].dose_qty) || 1) : 1;
+
   let taken;
   if (existing.rows.length) {
     await db.execute({ sql: 'DELETE FROM grid_entries WHERE id = ?', args: [String(existing.rows[0].id)] });
+    await db.execute({
+      sql:  'UPDATE medications SET total_quantity = total_quantity + ? WHERE id = ?',
+      args: [doseQty, medId],
+    });
     taken = false;
   } else {
     await db.execute({
       sql:  'INSERT INTO grid_entries (id, profile_id, med_id, slot_id, taken_date, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
       args: [randomUUID(), req.profile.id, medId, slotId, takenDate, 'taken', new Date().toISOString()],
+    });
+    await db.execute({
+      sql:  'UPDATE medications SET total_quantity = MAX(0, total_quantity - ?) WHERE id = ?',
+      args: [doseQty, medId],
     });
     taken = true;
   }

@@ -86,8 +86,9 @@ function combineStrength(value, unit, unitCustom) {
   return u ? `${v} ${u}` : v;
 }
 
-function calcDaysRemaining(totalQuantity, refillThreshold, scheduleRaw) {
-  if (!scheduleRaw || totalQuantity <= 0) {
+function calcDaysRemaining(organizerQty, bottleQty, refillThreshold, scheduleRaw) {
+  const totalQty = (organizerQty ?? 0) + (bottleQty ?? 0);
+  if (!scheduleRaw || totalQty <= 0) {
     return { daysRemaining: null, needsRefill: false };
   }
 
@@ -109,7 +110,7 @@ function calcDaysRemaining(totalQuantity, refillThreshold, scheduleRaw) {
 
   if (dailyDose <= 0) return { daysRemaining: null, needsRefill: false };
 
-  const daysRemaining = Math.floor(totalQuantity / dailyDose);
+  const daysRemaining = Math.floor(totalQty / dailyDose);
   const needsRefill = daysRemaining <= refillThreshold;
   return { daysRemaining, needsRefill };
 }
@@ -182,7 +183,7 @@ router.get('/api/meds/details/:rxcui', requireAuth, loadAppContext, async (req, 
 router.get('/app/medications', requireAuth, loadAppContext, async (req, res) => {
   const { rows } = await db.execute({
     sql: `SELECT m.id, m.name, m.rxcui, m.strength, m.form, m.instructions,
-                 m.total_quantity, m.refill_threshold, m.active, m.created_at,
+                 m.total_quantity, m.bottle_quantity, m.refill_threshold, m.active, m.created_at,
                  GROUP_CONCAT(s.slot_id || ':' || s.dose_qty || ':' || s.days) AS schedule_raw
           FROM medications m
           LEFT JOIN schedules s ON s.med_id = m.id
@@ -195,6 +196,7 @@ router.get('/app/medications', requireAuth, loadAppContext, async (req, res) => 
   const meds = rows.map((row) => {
     const { daysRemaining, needsRefill } = calcDaysRemaining(
       Number(row.total_quantity ?? 0),
+      Number(row.bottle_quantity ?? 0),
       Number(row.refill_threshold ?? 7),
       row.schedule_raw ? String(row.schedule_raw) : null
     );
@@ -206,6 +208,7 @@ router.get('/app/medications', requireAuth, loadAppContext, async (req, res) => 
       form: row.form ? String(row.form) : '',
       instructions: row.instructions ? String(row.instructions) : '',
       totalQuantity: Number(row.total_quantity ?? 0),
+      bottleQuantity: Number(row.bottle_quantity ?? 0),
       refillThreshold: Number(row.refill_threshold ?? 7),
       daysRemaining,
       needsRefill,
@@ -340,6 +343,7 @@ router.get('/app/medications/:id', requireAuth, loadAppContext, async (req, res)
     form: row.form ? String(row.form) : '',
     instructions: row.instructions ? String(row.instructions) : '',
     totalQuantity: Number(row.total_quantity ?? 0),
+    bottleQuantity: Number(row.bottle_quantity ?? 0),
     refillThreshold: Number(row.refill_threshold ?? 7),
     active: Number(row.active),
   };
@@ -387,9 +391,19 @@ router.get('/app/medications/:id', requireAuth, loadAppContext, async (req, res)
 
   const { daysRemaining, needsRefill } = calcDaysRemaining(
     med.totalQuantity,
+    med.bottleQuantity,
     med.refillThreshold,
     scheduleRaw
   );
+
+  const organizerCount = req.profile.organizerCount ?? 1;
+  let pillsNeeded = 0;
+  for (const s of schedules) {
+    let days;
+    try { days = JSON.parse(s.days); } catch { days = [0,1,2,3,4,5,6]; }
+    const daysCount = Array.isArray(days) ? days.length : 7;
+    pillsNeeded += s.doseQty * daysCount * organizerCount;
+  }
 
   const { value: strengthValue, unit: strengthUnit, unitCustom: strengthUnitCustom } = parseStrength(med.strength);
 
@@ -407,6 +421,8 @@ router.get('/app/medications/:id', requireAuth, loadAppContext, async (req, res)
     scheduleMap,
     daysRemaining,
     needsRefill,
+    pillsNeeded,
+    organizerCount,
     extraCss: '/css/medications.css',
   });
 });
@@ -448,14 +464,15 @@ router.post('/api/medications/:id', requireAuth, loadAppContext, async (req, res
   const form = String(body.form ?? '').trim() || null;
   const instructions = String(body.instructions ?? '').trim() || null;
   const totalQuantity = Math.max(0, parseInt(body.totalQuantity, 10) || 0);
+  const bottleQuantity = Math.max(0, parseInt(body.bottleQuantity, 10) || 0);
   const refillThreshold = Math.max(1, parseInt(body.refillThreshold, 10) || 7);
 
   await db.execute({
     sql: `UPDATE medications
           SET name = ?, strength = ?, form = ?, instructions = ?,
-              total_quantity = ?, refill_threshold = ?
+              total_quantity = ?, bottle_quantity = ?, refill_threshold = ?
           WHERE id = ?`,
-    args: [name, strength, form, instructions, totalQuantity, refillThreshold, id],
+    args: [name, strength, form, instructions, totalQuantity, bottleQuantity, refillThreshold, id],
   });
 
   res.write('event: datastar-patch-signals\n');
@@ -543,8 +560,51 @@ router.post('/api/medications/:id/refill', requireAuth, loadAppContext, async (r
   const qtyAdd = Math.max(1, parseInt(req.body.qty_add, 10) || 1);
 
   await db.execute({
-    sql: 'UPDATE medications SET total_quantity = total_quantity + ? WHERE id = ?',
+    sql: 'UPDATE medications SET bottle_quantity = bottle_quantity + ? WHERE id = ?',
     args: [qtyAdd, id],
+  });
+
+  res.redirect(`/app/medications/${id}`);
+});
+
+
+/* ────────────────────────────────────────────────────────────
+   Fill organizer from bottle
+   POST /api/medications/:id/fill-organizer
+   ──────────────────────────────────────────────────────────── */
+
+router.post('/api/medications/:id/fill-organizer', requireAuth, loadAppContext, async (req, res) => {
+  const { id } = req.params;
+
+  const medResult = await db.execute({
+    sql: 'SELECT id, total_quantity, bottle_quantity FROM medications WHERE id = ? AND profile_id = ?',
+    args: [id, req.profile.id],
+  });
+
+  if (!medResult.rows.length) return res.redirect('/app/medications');
+
+  const schedulesResult = await db.execute({
+    sql: 'SELECT dose_qty, days FROM schedules WHERE med_id = ?',
+    args: [id],
+  });
+
+  const organizerCount = req.profile.organizerCount ?? 1;
+  let pillsNeeded = 0;
+  for (const r of schedulesResult.rows) {
+    let days;
+    try { days = JSON.parse(String(r.days)); } catch { days = [0,1,2,3,4,5,6]; }
+    const daysCount = Array.isArray(days) ? days.length : 7;
+    pillsNeeded += (Number(r.dose_qty) || 1) * daysCount * organizerCount;
+  }
+
+  const med = medResult.rows[0];
+  const totalOnHand = Number(med.total_quantity ?? 0) + Number(med.bottle_quantity ?? 0);
+  const newOrganizer = Math.min(pillsNeeded, totalOnHand);
+  const newBottle = Math.max(0, totalOnHand - pillsNeeded);
+
+  await db.execute({
+    sql: 'UPDATE medications SET total_quantity = ?, bottle_quantity = ? WHERE id = ?',
+    args: [newOrganizer, newBottle, id],
   });
 
   res.redirect(`/app/medications/${id}`);

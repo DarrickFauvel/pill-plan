@@ -504,21 +504,46 @@
     color: var(--color-danger);
   }
 
-  .supply-row {
+  .supply-tiers {
     display: flex;
-    align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-6);
     flex-wrap: wrap;
-    margin-block-end: var(--space-4);
+    margin-block-end: var(--space-5);
   }
 
-  .supply-count {
+  .supply-tier {
     display: flex;
     align-items: center;
     gap: var(--space-3);
+  }
+
+  .supply-tier__label {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .supply-tier__count {
     font-size: var(--font-size-lg);
+    font-weight: 700;
     color: var(--color-text);
-    margin: 0;
+  }
+
+  .fill-form {
+    margin-block-end: var(--space-5);
+  }
+
+  .fill-hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    margin-block-end: var(--space-3);
+  }
+
+  .fill-hint__warning {
+    color: var(--color-warning, #c07000);
+    font-weight: 600;
   }
 
   .refill-form {

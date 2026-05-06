@@ -1,0 +1,1 @@
+ALTER TABLE medications ADD COLUMN bottle_quantity INTEGER NOT NULL DEFAULT 0;
