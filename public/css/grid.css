@@ -131,9 +131,18 @@
   /* Column sizing */
   .grid-th--label,
   .grid-th--med {
-    width: 10rem;
-    min-width: 10rem;
-    max-width: 14rem;
+    width: 9rem;
+    min-width: 9rem;
+    max-width: 9rem;
+  }
+
+  @media (min-width: 480px) {
+    .grid-th--label,
+    .grid-th--med {
+      width: 10rem;
+      min-width: 10rem;
+      max-width: 14rem;
+    }
   }
 
   .grid-th--day,
@@ -324,7 +333,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 9rem;
+    max-width: 8rem;
+  }
+
+  @media (min-width: 480px) {
+    .grid-med-name {
+      max-width: 9rem;
+    }
   }
 
   .grid-med-strength {
