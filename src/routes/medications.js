@@ -1,8 +1,52 @@
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
+import { fileURLToPath } from 'url';
+import { dirname, join, extname } from 'path';
+import { mkdirSync, unlinkSync } from 'fs';
+import multer from 'multer';
 import db from '../db/client.js';
 import { requireAuth, loadAppContext } from '../middleware/auth.js';
 import { searchMeds, getMedDetails, getMedImages } from '../services/rxnorm.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const publicDir  = join(__dirname, '..', '..', 'public');
+const uploadsDir = join(publicDir, 'uploads', 'med-images');
+
+mkdirSync(uploadsDir, { recursive: true });
+
+/** Multer for the detail page — stores under uploads/med-images/{medId}/ */
+const upload = multer({
+  storage: multer.diskStorage({
+    destination(req, _file, cb) {
+      const dir = join(uploadsDir, req.params.id);
+      mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename(_req, file, cb) {
+      cb(null, randomUUID() + (extname(file.originalname) || '.jpg'));
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    if (file.mimetype.startsWith('image/')) return cb(null, true);
+    cb(new Error('Only image files are allowed'));
+  },
+});
+
+/** Multer for the create form — flat directory (no med ID yet) */
+const uploadFlat = multer({
+  storage: multer.diskStorage({
+    destination(_req, _file, cb) { cb(null, uploadsDir); },
+    filename(_req, file, cb) {
+      cb(null, randomUUID() + (extname(file.originalname) || '.jpg'));
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    if (file.mimetype.startsWith('image/')) return cb(null, true);
+    cb(new Error('Only image files are allowed'));
+  },
+});
 
 const router = Router();
 
@@ -84,6 +128,18 @@ function combineStrength(value, unit, unitCustom) {
   const u = unit === 'other' ? String(unitCustom ?? '').trim() : String(unit ?? '').trim();
   if (!v) return null;
   return u ? `${v} ${u}` : v;
+}
+
+/**
+ * @param {string} medId
+ * @returns {Promise<Array<{id:string, source:string, url:string}>>}
+ */
+async function loadMedImages(medId) {
+  const { rows } = await db.execute({
+    sql: 'SELECT id, source, url FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC, created_at ASC',
+    args: [medId],
+  });
+  return rows.map((r) => ({ id: String(r.id), source: String(r.source), url: String(r.url) }));
 }
 
 function calcDaysRemaining(organizerQty, bottleQty, refillThreshold, scheduleRaw) {
@@ -337,6 +393,7 @@ router.get('/app/medications/new', requireAuth, loadAppContext, async (req, res)
     profiles: req.profiles,
     slots,
     extraCss: '/css/medications.css',
+    scripts: '<script type="module" src="/js/medications-new.js"></script>',
   });
 });
 
@@ -346,11 +403,12 @@ router.get('/app/medications/new', requireAuth, loadAppContext, async (req, res)
    POST /api/medications
    ──────────────────────────────────────────────────────────── */
 
-router.post('/api/medications', requireAuth, loadAppContext, async (req, res) => {
+router.post('/api/medications', requireAuth, loadAppContext, uploadFlat.array('photos', 10), async (req, res) => {
   const body = req.body;
 
   const name = capFirst(String(body.name ?? '').trim());
   if (!name) {
+    for (const f of req.files ?? []) try { unlinkSync(f.path); } catch {}
     return res.redirect('/app/medications/new?error=name-required');
   }
 
@@ -384,6 +442,11 @@ router.post('/api/medications', requireAuth, loadAppContext, async (req, res) =>
     scheduleEntries.push({ slotId, doseQty });
   }
 
+  /** @type {Array<string>} */
+  let apiImageUrls = [];
+  try { apiImageUrls = JSON.parse(body.imageUrls || '[]'); } catch {}
+  apiImageUrls = apiImageUrls.filter((u) => typeof u === 'string' && u.startsWith('https://'));
+
   /** @type {Array<{sql: string, args: Array<string|number>}>} */
   const statements = [
     {
@@ -396,6 +459,14 @@ router.post('/api/medications', requireAuth, loadAppContext, async (req, res) =>
     ...scheduleEntries.map(({ slotId, doseQty }) => ({
       sql: 'INSERT INTO schedules (id, med_id, slot_id, days, dose_qty) VALUES (?, ?, ?, ?, ?)',
       args: [randomUUID(), medId, slotId, '[0,1,2,3,4,5,6]', doseQty],
+    })),
+    ...(req.files ?? []).map((f) => ({
+      sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
+      args: [randomUUID(), medId, 'upload', `/uploads/med-images/${f.filename}`, now],
+    })),
+    ...apiImageUrls.map((url) => ({
+      sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
+      args: [randomUUID(), medId, 'api', url, now],
     })),
   ];
 
@@ -494,6 +565,7 @@ router.get('/app/medications/:id', requireAuth, loadAppContext, async (req, res)
   }
 
   const { value: strengthValue, unit: strengthUnit, unitCustom: strengthUnitCustom } = parseStrength(med.strength);
+  const images = await loadMedImages(id);
 
   res.render('pages/medications-detail', {
     title: med.name,
@@ -511,7 +583,9 @@ router.get('/app/medications/:id', requireAuth, loadAppContext, async (req, res)
     needsRefill,
     pillsNeeded,
     organizerCount,
+    images,
     extraCss: '/css/medications.css',
+    scripts: '<script type="module" src="/js/medications-detail.js"></script>',
   });
 });
 
@@ -696,6 +770,97 @@ router.post('/api/medications/:id/fill-organizer', requireAuth, loadAppContext, 
   });
 
   res.redirect(`/app/medications/${id}`);
+});
+
+
+/* ────────────────────────────────────────────────────────────
+   Save an API pill image reference
+   POST /api/medications/:id/images/select
+   ──────────────────────────────────────────────────────────── */
+
+router.post('/api/medications/:id/images/select', requireAuth, loadAppContext, async (req, res) => {
+  const { id } = req.params;
+
+  const ownerCheck = await db.execute({
+    sql: 'SELECT id FROM medications WHERE id = ? AND profile_id = ?',
+    args: [id, req.profile.id],
+  });
+  if (!ownerCheck.rows.length) return res.status(403).json({ error: 'Not found' });
+
+  const url = String(req.body.url ?? '').trim();
+  if (!url.startsWith('https://')) return res.status(400).json({ error: 'Invalid URL' });
+
+  const imageId = randomUUID();
+  await db.execute({
+    sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
+    args: [imageId, id, 'api', url, new Date().toISOString()],
+  });
+
+  res.json({ id: imageId, url, source: 'api' });
+});
+
+
+/* ────────────────────────────────────────────────────────────
+   Upload a camera / gallery photo
+   POST /api/medications/:id/images/upload
+   ──────────────────────────────────────────────────────────── */
+
+router.post('/api/medications/:id/images/upload',
+  requireAuth,
+  loadAppContext,
+  upload.single('photo'),
+  async (req, res) => {
+    const { id } = req.params;
+
+    const ownerCheck = await db.execute({
+      sql: 'SELECT id FROM medications WHERE id = ? AND profile_id = ?',
+      args: [id, req.profile.id],
+    });
+    if (!ownerCheck.rows.length) {
+      if (req.file) try { unlinkSync(req.file.path); } catch {}
+      return res.status(403).json({ error: 'Not found' });
+    }
+
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+    const url = `/uploads/med-images/${id}/${req.file.filename}`;
+    const imageId = randomUUID();
+    await db.execute({
+      sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
+      args: [imageId, id, 'upload', url, new Date().toISOString()],
+    });
+
+    res.json({ id: imageId, url, source: 'upload' });
+  }
+);
+
+
+/* ────────────────────────────────────────────────────────────
+   Delete a medication image
+   POST /api/medications/:id/images/:imageId/delete
+   ──────────────────────────────────────────────────────────── */
+
+router.post('/api/medications/:id/images/:imageId/delete', requireAuth, loadAppContext, async (req, res) => {
+  const { id, imageId } = req.params;
+
+  const { rows } = await db.execute({
+    sql: `SELECT mi.id, mi.source, mi.url
+          FROM medication_images mi
+          JOIN medications m ON m.id = mi.med_id
+          WHERE mi.id = ? AND m.id = ? AND m.profile_id = ?`,
+    args: [imageId, id, req.profile.id],
+  });
+
+  if (!rows.length) return res.status(404).json({ error: 'Not found' });
+
+  if (String(rows[0].source) === 'upload') {
+    const filePath = join(publicDir, String(rows[0].url));
+    try { unlinkSync(filePath); } catch {}
+  }
+
+  await db.execute({ sql: 'DELETE FROM medication_images WHERE id = ?', args: [imageId] });
+
+  res.status(204).end();
 });
 
 

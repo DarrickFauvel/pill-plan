@@ -51,7 +51,7 @@
     >Change</button>
   </div>
 
-  <form action="/api/medications" method="POST" class="med-form">
+  <form action="/api/medications" method="POST" enctype="multipart/form-data" class="med-form">
     <input type="hidden" name="rxcui" data-bind="medRxcui">
 
     <!-- Manual name field — always present; pre-filled via signal when RxNorm match selected -->
@@ -179,11 +179,49 @@
       </div>
     </fieldset>
 
+    <!-- Pill photos -->
+    <div class="form-group">
+      <div class="med-image-gallery" id="med-images">
+        <p class="photos-label">Pill photos <span class="photos-label__optional">(optional)</span></p>
+
+        <ul class="med-image-list" id="med-image-list" role="list" aria-label="Selected pill photos"></ul>
+        <p class="med-image-empty" id="med-image-empty">No photos added yet.</p>
+
+        <div class="med-image-actions">
+          <button
+            type="button"
+            class="btn btn--secondary"
+            id="browse-api-images-btn"
+            data-show="$medRxcui !== ''"
+            aria-haspopup="dialog"
+          >Browse pill photos</button>
+          <label class="btn btn--secondary" for="camera-input">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Add photo
+          </label>
+          <input id="camera-input" type="file" name="photos" accept="image/*" multiple class="sr-only" aria-label="Add pill photos from camera or gallery">
+        </div>
+
+        <input type="hidden" name="imageUrls" id="image-urls-input" value="[]">
+      </div>
+    </div>
+
     <div class="form-actions">
       <button type="submit" class="btn btn--primary">Save medication</button>
       <a href="/app/medications" class="btn btn--secondary">Cancel</a>
     </div>
   </form>
+
+  <dialog class="api-images-modal" id="api-images-modal" aria-labelledby="api-modal-title-new">
+    <div class="api-images-modal__inner">
+      <div class="api-images-modal__header">
+        <h2 id="api-modal-title-new" class="api-images-modal__title">Browse pill photos</h2>
+        <button type="button" class="btn btn--secondary btn--sm" id="close-api-images" aria-label="Close pill photos browser">✕</button>
+      </div>
+      <p role="status" id="api-images-status" class="api-images-modal__status" aria-live="polite"></p>
+      <ul class="api-images-list" id="api-images-list" role="list" aria-label="Available pill photos"></ul>
+    </div>
+  </dialog>
 
 </div>
 
