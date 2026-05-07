@@ -17,7 +17,7 @@
   /* ─── Sidebar ────────────────────────────────────────────── */
 
   .admin-sidebar {
-    background: var(--color-text);
+    background: #1A2840;
     color: #e8f2f8;
     display: flex;
     flex-direction: column;
@@ -387,7 +387,7 @@
     margin-inline-end: 0.4em;
   }
 
-  /* ─── Mobile: collapse sidebar ───────────────────────────── */
+  /* ─── Mobile: collapse sidebar to top nav ───────────────── */
 
   @media (max-width: 48rem) {
     .admin-shell {
@@ -400,10 +400,19 @@
       flex-direction: row;
       flex-wrap: wrap;
       align-items: center;
+      padding: var(--space-2) var(--space-4);
+      gap: var(--space-2);
+      border-block-end: 1px solid rgba(255 255 255 / 0.1);
     }
 
     .admin-brand {
       flex: 1;
+      min-inline-size: 0;
+      padding-block: var(--space-1);
+    }
+
+    .admin-brand__badge {
+      display: none;
     }
 
     .admin-nav {
@@ -411,15 +420,106 @@
       flex: none;
     }
 
+    .admin-nav__link {
+      padding: 0.45em 0.6em;
+      font-size: var(--font-size-sm);
+    }
+
     .admin-sidebar__footer {
       flex-direction: row;
       border: none;
       padding: 0;
-      margin-inline-start: auto;
+      gap: var(--space-2);
+      align-items: center;
     }
 
     .admin-main {
       padding: var(--space-4);
+    }
+
+    .admin-page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-3);
+      margin-block-end: var(--space-6);
+    }
+
+    .admin-filter-tabs {
+      margin-inline-start: 0;
+    }
+
+    .stat-grid {
+      grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+      gap: var(--space-3);
+      margin-block-end: var(--space-6);
+    }
+
+    /* Users table → card-per-row layout */
+    .admin-table--users thead {
+      display: none;
+    }
+
+    .admin-table--users,
+    .admin-table--users tbody {
+      display: block;
+    }
+
+    .admin-table--users tbody tr {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto auto;
+      padding: var(--space-3) var(--space-4);
+      gap: var(--space-1) var(--space-3);
+      border-block-end: 1px solid var(--color-border);
+    }
+
+    .admin-table--users tbody tr:last-child {
+      border-block-end: none;
+    }
+
+    .admin-table--users tbody tr:hover td {
+      background: transparent;
+    }
+
+    .admin-table--users tbody tr:hover {
+      background: color-mix(in srgb, var(--color-primary) 4%, transparent);
+    }
+
+    .admin-table--users td {
+      display: block;
+      padding: 0;
+      border: none;
+    }
+
+    .admin-table--users .admin-table__email {
+      grid-column: 1;
+      grid-row: 1;
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    /* Plan badge cell */
+    .admin-table--users td:nth-child(2) {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .admin-table--users .admin-table__date {
+      grid-column: 1;
+      grid-row: 3;
+      font-size: var(--font-size-sm);
+      white-space: normal;
+    }
+
+    .admin-table--users .admin-table__num {
+      display: none;
+    }
+
+    .admin-table--users .admin-table__cell--action {
+      grid-column: 2;
+      grid-row: 1 / 4;
+      display: flex;
+      align-items: center;
     }
   }
 

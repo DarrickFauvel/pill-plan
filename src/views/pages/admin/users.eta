@@ -28,7 +28,7 @@
   <% } else { %>
 
   <div class="admin-table-wrap">
-    <table class="admin-table" role="grid">
+    <table class="admin-table admin-table--users" role="grid">
       <thead>
         <tr>
           <th scope="col">Email</th>
@@ -49,7 +49,7 @@
           <td class="admin-table__date"><%= u.createdAt %></td>
           <td class="admin-table__num"><%= u.profileCount %></td>
           <td class="admin-table__num"><%= u.medCount %></td>
-          <td>
+          <td class="admin-table__cell--action">
             <a href="/admin/users/<%= u.id %>" class="admin-table__action">View</a>
           </td>
         </tr>

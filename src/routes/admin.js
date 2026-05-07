@@ -67,7 +67,6 @@ router.get('/dashboard', async (req, res) => {
       medications: Number(medsRes.rows[0].n),
       entries:    Number(entriesRes.rows[0].n),
     },
-    extraCss: '/css/admin.css',
   });
 });
 
@@ -126,7 +125,6 @@ router.get('/users', async (req, res) => {
     page,
     totalPages,
     total,
-    extraCss:   '/css/admin.css',
   });
 });
 
@@ -181,7 +179,6 @@ router.get('/users/:id', async (req, res) => {
     target,
     profiles,
     success:   req.query.updated === '1',
-    extraCss:  '/css/admin.css',
   });
 });
 
