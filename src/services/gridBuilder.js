@@ -130,7 +130,7 @@ export async function buildDayGrid(profileId, dateStr) {
     }),
     db.execute({
       sql: `SELECT m.id, m.name, m.rxcui, m.strength, m.form, m.total_quantity, m.bottle_quantity, m.refill_threshold,
-                   s.slot_id, s.days, s.dose_qty
+                   m.not_in_organizer, s.slot_id, s.days, s.dose_qty
             FROM medications m
             JOIN schedules s ON s.med_id = m.id
             WHERE m.profile_id = ? AND m.active = 1
@@ -182,15 +182,16 @@ export async function buildDayGrid(profileId, dateStr) {
     const dayStrength = row.strength ? String(row.strength).replace(/^\./, '0.') : '';
     const dayForm = row.form ? String(row.form) : '';
     slotMedsMap[slotId].push({
-      id:            medId,
-      name:          String(row.name),
-      rxcui:         row.rxcui ? String(row.rxcui) : null,
-      strength:      dayStrength,
-      form:          dayForm,
-      strengthLabel: [dayForm ? dayForm.charAt(0).toUpperCase() + dayForm.slice(1) : '', dayStrength].filter(Boolean).join(' · '),
-      doseQty:       Number(row.dose_qty ?? 1),
-      entryId:       entry?.entryId ?? null,
-      taken:         !!(entry && entry.status === 'taken'),
+      id:             medId,
+      name:           String(row.name),
+      rxcui:          row.rxcui ? String(row.rxcui) : null,
+      strength:       dayStrength,
+      form:           dayForm,
+      strengthLabel:  [dayForm ? dayForm.charAt(0).toUpperCase() + dayForm.slice(1) : '', dayStrength].filter(Boolean).join(' · '),
+      notInOrganizer: Number(row.not_in_organizer) === 1,
+      doseQty:        Number(row.dose_qty ?? 1),
+      entryId:        entry?.entryId ?? null,
+      taken:          !!(entry && entry.status === 'taken'),
     });
   }
 
@@ -199,7 +200,7 @@ export async function buildDayGrid(profileId, dateStr) {
     .map((r) => ({
       id:    String(r.id),
       label: String(r.label),
-      meds:  slotMedsMap[String(r.id)] ?? [],
+      meds:  (slotMedsMap[String(r.id)] ?? []).sort((a, b) => (a.notInOrganizer ? 1 : 0) - (b.notInOrganizer ? 1 : 0)),
     }))
     .filter((s) => s.meds.length > 0);
 
@@ -267,7 +268,7 @@ export async function buildMonthGrid(profileId, year, month) {
     }),
     db.execute({
       sql: `SELECT m.id, m.name, m.rxcui, m.strength, m.form, m.total_quantity, m.bottle_quantity, m.refill_threshold,
-                   s.slot_id, s.days, s.dose_qty
+                   m.not_in_organizer, s.slot_id, s.days, s.dose_qty
             FROM medications m
             JOIN schedules s ON s.med_id = m.id
             WHERE m.profile_id = ? AND m.active = 1
@@ -328,15 +329,16 @@ export async function buildMonthGrid(profileId, year, month) {
     const moStrength = row.strength ? String(row.strength).replace(/^\./, '0.') : '';
     const moForm = row.form ? String(row.form) : '';
     slotMedsMap[slotId].push({
-      id:            String(row.id),
-      name:          String(row.name),
-      rxcui:         row.rxcui ? String(row.rxcui) : null,
-      strength:      moStrength,
-      form:          moForm,
-      strengthLabel: [moForm ? moForm.charAt(0).toUpperCase() + moForm.slice(1) : '', moStrength].filter(Boolean).join(' · '),
-      doseQty:       Number(row.dose_qty ?? 1),
+      id:             String(row.id),
+      name:           String(row.name),
+      rxcui:          row.rxcui ? String(row.rxcui) : null,
+      strength:       moStrength,
+      form:           moForm,
+      strengthLabel:  [moForm ? moForm.charAt(0).toUpperCase() + moForm.slice(1) : '', moStrength].filter(Boolean).join(' · '),
+      notInOrganizer: Number(row.not_in_organizer) === 1,
+      doseQty:        Number(row.dose_qty ?? 1),
       scheduledDays,
-      entries:       medEntries,
+      entries:        medEntries,
     });
   }
 
@@ -344,7 +346,7 @@ export async function buildMonthGrid(profileId, year, month) {
   const slots = slotsRes.rows.map((r) => ({
     id:    String(r.id),
     label: String(r.label),
-    meds:  slotMedsMap[String(r.id)] ?? [],
+    meds:  (slotMedsMap[String(r.id)] ?? []).sort((a, b) => (a.notInOrganizer ? 1 : 0) - (b.notInOrganizer ? 1 : 0)),
   }));
 
   /** @type {RefillAlert[]} */
@@ -436,7 +438,7 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
     }),
     db.execute({
       sql: `SELECT m.id, m.name, m.rxcui, m.strength, m.form, m.total_quantity, m.bottle_quantity, m.refill_threshold,
-                   s.slot_id, s.days, s.dose_qty
+                   m.not_in_organizer, s.slot_id, s.days, s.dose_qty
             FROM medications m
             JOIN schedules s ON s.med_id = m.id
             WHERE m.profile_id = ? AND m.active = 1
@@ -496,15 +498,16 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
     const wrStrength = row.strength ? String(row.strength).replace(/^\./, '0.') : '';
     const wrForm = row.form ? String(row.form) : '';
     slotMedsMap[slotId].push({
-      id:            String(row.id),
-      name:          String(row.name),
-      rxcui:         row.rxcui ? String(row.rxcui) : null,
-      strength:      wrStrength,
-      form:          wrForm,
-      strengthLabel: [wrForm ? wrForm.charAt(0).toUpperCase() + wrForm.slice(1) : '', wrStrength].filter(Boolean).join(' · '),
-      doseQty:       Number(row.dose_qty ?? 1),
+      id:             String(row.id),
+      name:           String(row.name),
+      rxcui:          row.rxcui ? String(row.rxcui) : null,
+      strength:       wrStrength,
+      form:           wrForm,
+      strengthLabel:  [wrForm ? wrForm.charAt(0).toUpperCase() + wrForm.slice(1) : '', wrStrength].filter(Boolean).join(' · '),
+      notInOrganizer: Number(row.not_in_organizer) === 1,
+      doseQty:        Number(row.dose_qty ?? 1),
       scheduledDays,
-      entries:       medEntries,
+      entries:        medEntries,
     });
   }
 
@@ -512,7 +515,7 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
   const slots = slotsRes.rows.map((r) => ({
     id:    String(r.id),
     label: String(r.label),
-    meds:  slotMedsMap[String(r.id)] ?? [],
+    meds:  (slotMedsMap[String(r.id)] ?? []).sort((a, b) => (a.notInOrganizer ? 1 : 0) - (b.notInOrganizer ? 1 : 0)),
   }));
 
   /** @type {RefillAlert[]} */

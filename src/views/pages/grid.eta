@@ -115,11 +115,12 @@
 
         <!-- Medication rows -->
         <% slot.meds.forEach(function(med) { %>
-        <tr>
+        <tr<%= med.notInOrganizer ? ' class="grid-row--separate"' : '' %>>
           <th scope="row" class="grid-th grid-th--med">
             <a href="/app/medications/<%= med.id %>" class="grid-med-link">
               <span class="grid-med-name"><%= med.name %></span>
               <% if (med.strengthLabel) { %><span class="grid-med-strength"><%= med.strengthLabel %></span><% } %>
+              <% if (med.notInOrganizer) { %><span class="grid-med-separate-badge" aria-label="Not stored in organizer">Not in organizer</span><% } %>
             </a>
             <button
               type="button"

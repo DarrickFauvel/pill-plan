@@ -1,0 +1,1 @@
+ALTER TABLE medications ADD COLUMN not_in_organizer INTEGER NOT NULL DEFAULT 0

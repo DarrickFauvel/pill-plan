@@ -504,6 +504,38 @@
     color: var(--color-danger);
   }
 
+  .form-group--check {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .check-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    cursor: pointer;
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    color: var(--color-text);
+    min-block-size: var(--tap-min);
+  }
+
+  .check-label input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+
+  .form-hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    margin: 0;
+    line-height: var(--line-height-body);
+  }
+
   .supply-tiers {
     display: flex;
     gap: var(--space-6);

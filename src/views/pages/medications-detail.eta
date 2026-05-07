@@ -1,7 +1,7 @@
 <% layout('../layouts/app') %>
 <div
   class="medications-detail-page"
-  data-signals='<%~ JSON.stringify({saveStatus:"idle",name:it.med.name,strengthValue:it.strengthValue,strengthUnit:it.strengthUnit,strengthUnitCustom:it.strengthUnitCustom,form:it.med.form,instructions:it.med.instructions,totalQuantity:it.med.totalQuantity,bottleQuantity:it.med.bottleQuantity,refillThreshold:it.med.refillThreshold}) %>'
+  data-signals='<%~ JSON.stringify({saveStatus:"idle",name:it.med.name,strengthValue:it.strengthValue,strengthUnit:it.strengthUnit,strengthUnitCustom:it.strengthUnitCustom,form:it.med.form,instructions:it.med.instructions,totalQuantity:it.med.totalQuantity,bottleQuantity:it.med.bottleQuantity,refillThreshold:it.med.refillThreshold,notInOrganizer:it.med.notInOrganizer}) %>'
 >
 
   <header class="page-header">
@@ -139,6 +139,18 @@
         <option value="chewable">Chewable</option>
         <option value="lozenge">Lozenge</option>
       </select>
+    </div>
+
+    <div class="form-group form-group--check">
+      <label class="check-label">
+        <input
+          type="checkbox"
+          data-bind="notInOrganizer"
+          data-on:change="@post('/api/medications/<%= it.med.id %>')"
+        >
+        <span>Not stored in organizer</span>
+      </label>
+      <p class="form-hint">Check for medications kept outside the organizer (inhaler, liquid, spray, patch, etc.)</p>
     </div>
 
     <div class="form-group">

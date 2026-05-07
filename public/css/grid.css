@@ -349,6 +349,21 @@
     line-height: 1.2;
   }
 
+  /* ── Not-in-organizer row ────────────────────────────────── */
+
+  .grid-row--separate .grid-th--med {
+    border-inline-start: 3px solid color-mix(in srgb, var(--color-muted) 35%, transparent);
+  }
+
+  .grid-med-separate-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-muted);
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    font-style: italic;
+  }
+
   /* ── Med info button ────────────────────────────────────── */
 
   .grid-med-info-btn {

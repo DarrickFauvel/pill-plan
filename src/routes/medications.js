@@ -130,6 +130,16 @@ function combineStrength(value, unit, unitCustom) {
   return u ? `${v} ${u}` : v;
 }
 
+const NOT_IN_ORGANIZER_FORMS = new Set(['inhaler', 'liquid', 'drops', 'patch', 'spray', 'cream', 'ointment', 'suppository', 'injection', 'powder']);
+
+/**
+ * @param {string | null} form
+ * @returns {boolean}
+ */
+function isNotInOrganizer(form) {
+  return !!form && NOT_IN_ORGANIZER_FORMS.has(String(form).toLowerCase());
+}
+
 /**
  * @param {string} medId
  * @returns {Promise<Array<{id:string, source:string, url:string}>>}
@@ -426,6 +436,7 @@ router.post('/api/medications', requireAuth, loadAppContext, uploadFlat.array('p
 
   const medId = randomUUID();
   const now = new Date().toISOString();
+  const notInOrganizer = isNotInOrganizer(form) ? 1 : 0;
 
   const slotRows = await db.execute({
     sql: 'SELECT id FROM time_slots WHERE profile_id = ?',
@@ -456,9 +467,9 @@ router.post('/api/medications', requireAuth, loadAppContext, uploadFlat.array('p
     {
       sql: `INSERT INTO medications
               (id, profile_id, rxcui, name, strength, form, instructions,
-               total_quantity, bottle_quantity, refill_threshold, active, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
-      args: [medId, req.profile.id, rxcui, name, strength, form, instructions, totalQuantity, bottleQuantity, refillThreshold, now],
+               total_quantity, bottle_quantity, refill_threshold, not_in_organizer, active, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+      args: [medId, req.profile.id, rxcui, name, strength, form, instructions, totalQuantity, bottleQuantity, refillThreshold, notInOrganizer, now],
     },
     ...scheduleEntries.map(({ slotId, doseQty }) => ({
       sql: 'INSERT INTO schedules (id, med_id, slot_id, days, dose_qty) VALUES (?, ?, ?, ?, ?)',
@@ -509,6 +520,7 @@ router.get('/app/medications/:id', requireAuth, loadAppContext, async (req, res)
     bottleQuantity: Number(row.bottle_quantity ?? 0),
     refillThreshold: Number(row.refill_threshold ?? 7),
     active: Number(row.active),
+    notInOrganizer: Number(row.not_in_organizer ?? 0) === 1,
   };
 
   const schedulesResult = await db.execute({
@@ -632,13 +644,15 @@ router.post('/api/medications/:id', requireAuth, loadAppContext, async (req, res
   const totalQuantity = Math.max(0, parseInt(body.totalQuantity, 10) || 0);
   const bottleQuantity = Math.max(0, parseInt(body.bottleQuantity, 10) || 0);
   const refillThreshold = Math.max(1, parseInt(body.refillThreshold, 10) || 7);
+  const notInOrganizer = body.notInOrganizer ? 1 : 0;
 
   await db.execute({
     sql: `UPDATE medications
           SET name = ?, strength = ?, form = ?, instructions = ?,
-              total_quantity = ?, bottle_quantity = ?, refill_threshold = ?
+              total_quantity = ?, bottle_quantity = ?, refill_threshold = ?,
+              not_in_organizer = ?
           WHERE id = ?`,
-    args: [name, strength, form, instructions, totalQuantity, bottleQuantity, refillThreshold, id],
+    args: [name, strength, form, instructions, totalQuantity, bottleQuantity, refillThreshold, notInOrganizer, id],
   });
 
   res.write('event: datastar-patch-signals\n');
