@@ -1,0 +1,135 @@
+<% layout('../layouts/base') %>
+
+<main id="main" class="legal-page">
+
+  <p class="legal-back"><a href="/">&larr; Back to MediGrid</a></p>
+
+  <h1>Privacy Policy</h1>
+  <p><strong>Last updated: May 7, 2026</strong></p>
+
+  <p>
+    MediGrid is operated by Darrick Fauvel (trading as Darrick Develops).
+    This policy explains what personal data we collect, why we collect it,
+    how long we keep it, and what rights you have under the
+    General Data Protection Regulation (GDPR) and other applicable privacy laws.
+  </p>
+
+  <h2>1. Data controller</h2>
+  <p>
+    Darrick Fauvel / Darrick Develops<br>
+    Email: <a href="mailto:darrick@darrickdevelops.com">darrick@darrickdevelops.com</a>
+  </p>
+
+  <h2>2. Data we collect</h2>
+
+  <h3>Account data</h3>
+  <ul>
+    <li><strong>Email address</strong> — used to identify your account and communicate with you.</li>
+    <li><strong>Password</strong> — stored as a one-way bcrypt hash (we cannot read your password).</li>
+    <li><strong>Account creation date</strong></li>
+    <li><strong>Consent timestamp</strong> — when you agreed to this policy.</li>
+  </ul>
+
+  <h3>Health data (Article 9 special category)</h3>
+  <p>
+    MediGrid stores sensitive health information that you enter directly:
+  </p>
+  <ul>
+    <li>Medication names, strengths, forms, and dosing instructions</li>
+    <li>Medication quantities and refill thresholds</li>
+    <li>Medication schedule (which time slots each medication is taken)</li>
+    <li>Daily intake history (whether each dose was taken or skipped)</li>
+    <li>Profile names (e.g., "Me", "Dad")</li>
+    <li>Medication images you upload or link</li>
+  </ul>
+  <p>
+    We process this data only because you have given us your explicit consent
+    (GDPR Article 9(2)(a)) at account creation. You can withdraw consent at any time
+    by deleting your account in Settings.
+  </p>
+
+  <h3>Payment data (Pro plan users only)</h3>
+  <p>
+    If you upgrade to Pro, your email address is shared with Stripe, Inc., our payment
+    processor. Stripe stores your payment card details — we never see or store them.
+    We keep a Stripe customer ID and subscription ID to manage your subscription status.
+  </p>
+
+  <h2>3. Legal basis for processing</h2>
+  <ul>
+    <li><strong>Account and session data</strong>: Performance of contract (GDPR Article 6(1)(b)) — necessary to provide the MediGrid service.</li>
+    <li><strong>Health data</strong>: Explicit consent (GDPR Article 9(2)(a)) — you choose to enter this data and can delete it at any time.</li>
+    <li><strong>Payment data</strong>: Contract performance and legal obligation (GDPR Article 6(1)(b) and 6(1)(c)).</li>
+  </ul>
+
+  <h2>4. How long we keep your data</h2>
+  <ul>
+    <li><strong>Session cookies</strong>: 7 days, then automatically deleted.</li>
+    <li><strong>Account and health data</strong>: Until you delete your account. Deletion is immediate and permanent — we run no backups that outlive deletion.</li>
+    <li><strong>Payment records</strong>: Stripe retains transaction records as required by financial regulations, even after you delete your MediGrid account.</li>
+  </ul>
+
+  <h2>5. Who we share data with</h2>
+  <ul>
+    <li>
+      <strong>Stripe, Inc.</strong> (payment processor, Pro plan only) — processes payments on our behalf.
+      Stripe is certified under EU-US Data Privacy Framework.
+      <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe Privacy Policy</a>.
+    </li>
+    <li>
+      <strong>National Library of Medicine / RxNorm</strong> — when you search for a medication by name,
+      the search term is sent to a public NIH API. No personal data is included in these requests.
+    </li>
+  </ul>
+  <p>We do not sell, rent, or share your data with any other third party.</p>
+
+  <h2>6. Cookies</h2>
+  <p>We use only strictly necessary cookies. No analytics, advertising, or tracking cookies are used.</p>
+  <ul>
+    <li><strong>sid</strong> — session authentication cookie. Expires after 7 days. Required to keep you logged in. HttpOnly, Secure, SameSite=Strict.</li>
+    <li><strong>pid</strong> — remembers which profile you last viewed. Session-scoped (cleared when the browser closes). HttpOnly, Secure, SameSite=Strict.</li>
+  </ul>
+  <p>
+    Because these cookies are strictly necessary for the service to function, they are
+    set without requiring your separate consent for cookies (ePrivacy Directive Article 5(3) exemption).
+  </p>
+
+  <h2>7. Your rights</h2>
+  <p>Under GDPR you have the right to:</p>
+  <ul>
+    <li><strong>Access</strong> (Article 15) — request a copy of all data we hold about you. Use the "Download your data" button in Settings.</li>
+    <li><strong>Erasure</strong> (Article 17) — permanently delete your account and all associated data. Use "Delete account" in Settings.</li>
+    <li><strong>Portability</strong> (Article 20) — receive your data in a machine-readable format. Use "Download your data" in Settings.</li>
+    <li><strong>Rectification</strong> (Article 16) — correct inaccurate data. You can edit all your data directly in the app.</li>
+    <li><strong>Objection</strong> (Article 21) — object to processing based on legitimate interests. Contact us at the address below.</li>
+    <li><strong>Withdraw consent</strong> — delete your account at any time to withdraw consent for health data processing.</li>
+    <li><strong>Lodge a complaint</strong> — with your national data protection authority if you believe your rights have been violated.</li>
+  </ul>
+
+  <h2>8. Data security</h2>
+  <p>
+    Passwords are hashed with bcrypt (cost factor 12). Session cookies use HttpOnly, Secure,
+    and SameSite=Strict flags. All data is transmitted over HTTPS. Database access requires
+    authentication tokens that are never exposed to clients.
+  </p>
+
+  <h2>9. Children</h2>
+  <p>
+    MediGrid is not directed at children under 16. If you are under 16, please do not create an account.
+    If we learn that we have collected personal data from a child under 16 without verifiable parental
+    consent, we will delete it promptly.
+  </p>
+
+  <h2>10. Changes to this policy</h2>
+  <p>
+    If we make material changes, we will update the "Last updated" date above and notify you
+    by email at least 14 days before the changes take effect.
+  </p>
+
+  <h2>11. Contact</h2>
+  <p>
+    For any privacy questions or to exercise your rights:<br>
+    <a href="mailto:darrick@darrickdevelops.com">darrick@darrickdevelops.com</a>
+  </p>
+
+</main>

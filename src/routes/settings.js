@@ -72,6 +72,7 @@ router.get('/app/settings', requireAuth, loadAppContext, async (req, res) => {
     user:          req.user,
     slots,
     organizerType: req.profile.organizerType,
+    deleteError:   req.query.error === 'delete-password',
     signals:       JSON.stringify(signals),
     extraCss:      '/css/settings.css',
   });

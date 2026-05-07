@@ -21,6 +21,11 @@ function setSessionCookie(res, sessionId) {
 router.post('/signup', async (req, res) => {
   const email = String(req.body.email ?? '').trim().toLowerCase();
   const password = String(req.body.password ?? '');
+  const consent = req.body.consent === 'on';
+
+  if (!consent) {
+    return res.redirect('/signup?error=consent');
+  }
 
   if (!email || !password || password.length < 8) {
     return res.redirect('/signup?error=invalid');
@@ -44,8 +49,8 @@ router.post('/signup', async (req, res) => {
 
   await db.batch([
     {
-      sql: 'INSERT INTO users (id, email, password, created_at) VALUES (?, ?, ?, ?)',
-      args: [userId, email, hash, now],
+      sql: 'INSERT INTO users (id, email, password, created_at, gdpr_consent_at) VALUES (?, ?, ?, ?, ?)',
+      args: [userId, email, hash, now, now],
     },
     {
       sql: 'INSERT INTO profiles (id, user_id, name, avatar_color, created_at) VALUES (?, ?, ?, ?, ?)',

@@ -14,6 +14,7 @@ import gridRouter from './routes/grid.js';
 import settingsRouter from './routes/settings.js';
 import billingRouter from './routes/billing.js';
 import adminRouter from './routes/admin.js';
+import accountRouter from './routes/account.js';
 import { requireAuth, loadAppContext } from './middleware/auth.js';
 import { requireAdmin } from './middleware/admin.js';
 import db from './db/client.js';
@@ -79,6 +80,14 @@ app.get('/signup', (req, res) =>
   })
 );
 
+app.get('/privacy', (req, res) =>
+  res.render('pages/privacy', { title: 'Privacy Policy', saveIndicator: false })
+);
+
+app.get('/terms', (req, res) =>
+  res.render('pages/terms', { title: 'Terms of Service', saveIndicator: false })
+);
+
 // QR code for the site URL
 app.get('/qrcode.svg', async (req, res) => {
   const url = process.env.SITE_URL ?? `${req.protocol}://${req.get('host')}`;
@@ -94,6 +103,9 @@ app.get('/qrcode.svg', async (req, res) => {
 
 // Auth API
 app.use('/api/auth', authRoutes);
+
+// Account (data export + deletion)
+app.use('/api/account', accountRouter);
 
 // Billing
 app.use('/app/billing', billingRouter);

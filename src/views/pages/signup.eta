@@ -13,6 +13,8 @@
         An account with that email already exists. <a href="/login">Sign in instead</a>.
       <% } else if (it.error === 'invalid') { %>
         Please enter a valid email and a password of at least 8 characters.
+      <% } else if (it.error === 'consent') { %>
+        You must agree to the Privacy Policy and Terms of Service to create an account.
       <% } else { %>
         Something went wrong. Please try again.
       <% } %>
@@ -49,6 +51,23 @@
         <span id="password-hint" class="field-error" style="color: var(--color-muted)">
           At least 8 characters
         </span>
+      </div>
+
+      <div class="form-group form-group--checkbox">
+        <input
+          type="checkbox"
+          id="consent"
+          name="consent"
+          required
+          value="on"
+        >
+        <label for="consent">
+          I have read and agree to the
+          <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+          and
+          <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>,
+          including the processing of my health data.
+        </label>
       </div>
 
       <button type="submit" class="btn btn--primary btn--full">

@@ -210,4 +210,79 @@
     <% } %>
   </section>
 
+  <!-- Your data -->
+  <section class="settings-section" aria-labelledby="data-heading">
+    <h2 id="data-heading">Your data</h2>
+    <p class="settings-section__desc">
+      Under GDPR and other privacy laws, you have the right to access, export, and erase your personal data.
+      Read our <a href="/privacy">Privacy Policy</a> for full details.
+    </p>
+
+    <% if (it.deleteError) { %>
+    <div class="alert alert--error" role="alert">
+      Incorrect password. Your account was not deleted.
+    </div>
+    <% } %>
+
+    <div class="data-actions">
+
+      <div class="data-action">
+        <h3>Download your data</h3>
+        <p>Get a portable copy of all your account data, profiles, medications, and history as a JSON file.</p>
+        <a href="/api/account/export" class="btn btn--secondary">Download your data</a>
+      </div>
+
+      <div class="data-action">
+        <h3>Delete account</h3>
+        <p>
+          Permanently delete your account and all associated data — profiles, medications, and history.
+          This cannot be undone.
+        </p>
+        <confirm-dialog>
+          <button
+            type="button"
+            class="btn btn--danger"
+            data-trigger
+            aria-describedby="delete-account-warn"
+          >
+            Delete account
+          </button>
+          <dialog class="confirm-modal" aria-labelledby="delete-account-modal-title">
+            <div class="confirm-modal__inner">
+              <h2 id="delete-account-modal-title" class="confirm-modal__title">Delete your account?</h2>
+              <p id="delete-account-warn" class="confirm-modal__body">
+                This will permanently erase your account, all profiles, all medications,
+                and your entire medication history. This cannot be undone.
+              </p>
+              <form action="/api/account/delete" method="POST">
+                <div class="form-group" style="margin-block-end: var(--space-4)">
+                  <label for="delete-password">Enter your password to confirm</label>
+                  <input
+                    type="password"
+                    id="delete-password"
+                    name="password"
+                    class="input"
+                    required
+                    autocomplete="current-password"
+                  >
+                </div>
+                <div class="confirm-modal__actions">
+                  <button type="button" class="btn btn--secondary" data-close>Cancel</button>
+                  <button
+                    type="submit"
+                    class="btn btn--danger"
+                    aria-describedby="delete-account-warn"
+                  >
+                    Delete everything
+                  </button>
+                </div>
+              </form>
+            </div>
+          </dialog>
+        </confirm-dialog>
+      </div>
+
+    </div>
+  </section>
+
 </div>
