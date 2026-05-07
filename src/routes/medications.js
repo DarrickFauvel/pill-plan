@@ -6,7 +6,7 @@ import { mkdirSync, unlinkSync } from 'fs';
 import multer from 'multer';
 import db from '../db/client.js';
 import { requireAuth, loadAppContext } from '../middleware/auth.js';
-import { searchMeds, getMedDetails, getMedImages } from '../services/rxnorm.js';
+import { searchMeds, getMedDetails } from '../services/rxnorm.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir  = join(__dirname, '..', '..', 'public');
@@ -232,16 +232,20 @@ router.get('/api/meds/details/:rxcui', requireAuth, loadAppContext, async (req, 
 
 
 /* ────────────────────────────────────────────────────────────
-   Pill image proxy
-   GET /api/meds/images/:rxcui
+   Saved images for a medication (JSON)
+   GET /api/medications/:id/images
    ──────────────────────────────────────────────────────────── */
 
-router.get('/api/meds/images/:rxcui', requireAuth, async (req, res) => {
-  const { rxcui } = req.params;
-  if (!/^\d+$/.test(rxcui)) return res.json([]);
-  const images = await getMedImages(rxcui);
-  res.json(images);
+router.get('/api/medications/:id/images', requireAuth, loadAppContext, async (req, res) => {
+  const { id } = req.params;
+  const ownerCheck = await db.execute({
+    sql: 'SELECT id FROM medications WHERE id = ? AND profile_id = ?',
+    args: [id, req.profile.id],
+  });
+  if (!ownerCheck.rows.length) return res.json([]);
+  res.json(await loadMedImages(id));
 });
+
 
 
 /* ────────────────────────────────────────────────────────────
@@ -443,9 +447,9 @@ router.post('/api/medications', requireAuth, loadAppContext, uploadFlat.array('p
   }
 
   /** @type {Array<string>} */
-  let apiImageUrls = [];
-  try { apiImageUrls = JSON.parse(body.imageUrls || '[]'); } catch {}
-  apiImageUrls = apiImageUrls.filter((u) => typeof u === 'string' && u.startsWith('https://'));
+  let imageUrls = [];
+  try { imageUrls = JSON.parse(body.imageUrls || '[]'); } catch {}
+  imageUrls = imageUrls.filter((u) => typeof u === 'string' && /^https?:\/\/.+/.test(u));
 
   /** @type {Array<{sql: string, args: Array<string|number>}>} */
   const statements = [
@@ -464,9 +468,9 @@ router.post('/api/medications', requireAuth, loadAppContext, uploadFlat.array('p
       sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
       args: [randomUUID(), medId, 'upload', `/uploads/med-images/${f.filename}`, now],
     })),
-    ...apiImageUrls.map((url) => ({
+    ...imageUrls.map((url) => ({
       sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
-      args: [randomUUID(), medId, 'api', url, now],
+      args: [randomUUID(), medId, 'url', url, now],
     })),
   ];
 
@@ -773,12 +777,13 @@ router.post('/api/medications/:id/fill-organizer', requireAuth, loadAppContext, 
 });
 
 
+
 /* ────────────────────────────────────────────────────────────
-   Save an API pill image reference
-   POST /api/medications/:id/images/select
+   Save an image by URL
+   POST /api/medications/:id/images/url
    ──────────────────────────────────────────────────────────── */
 
-router.post('/api/medications/:id/images/select', requireAuth, loadAppContext, async (req, res) => {
+router.post('/api/medications/:id/images/url', requireAuth, loadAppContext, async (req, res) => {
   const { id } = req.params;
 
   const ownerCheck = await db.execute({
@@ -788,15 +793,15 @@ router.post('/api/medications/:id/images/select', requireAuth, loadAppContext, a
   if (!ownerCheck.rows.length) return res.status(403).json({ error: 'Not found' });
 
   const url = String(req.body.url ?? '').trim();
-  if (!url.startsWith('https://')) return res.status(400).json({ error: 'Invalid URL' });
+  if (!/^https?:\/\/.+/.test(url)) return res.status(400).json({ error: 'Invalid URL' });
 
   const imageId = randomUUID();
   await db.execute({
     sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
-    args: [imageId, id, 'api', url, new Date().toISOString()],
+    args: [imageId, id, 'url', url, new Date().toISOString()],
   });
 
-  res.json({ id: imageId, url, source: 'api' });
+  res.json({ id: imageId, url, source: 'url' });
 });
 
 

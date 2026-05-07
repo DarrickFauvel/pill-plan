@@ -29,6 +29,36 @@ document.getElementById('camera-input')?.addEventListener('change', async (e) =>
   }
 });
 
+/* ─── URL input ───────────────────────────────────────────── */
+
+const urlInput  = /** @type {HTMLInputElement} */ (document.getElementById('image-url-input'));
+const addUrlBtn = document.getElementById('add-image-url-btn');
+
+addUrlBtn?.addEventListener('click', async () => {
+  const url = urlInput.value.trim();
+  if (!url || !/^https?:\/\/.+/.test(url)) return;
+
+  /** @type {HTMLButtonElement} */ (addUrlBtn).disabled = true;
+  try {
+    const res = await fetch(`/api/medications/${medId}/images/url`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ url }),
+    });
+    if (!res.ok) throw new Error('Failed');
+    appendImageItem(await res.json());
+    urlInput.value = '';
+  } catch {
+    // silently fail — bad URL or server error
+  } finally {
+    /** @type {HTMLButtonElement} */ (addUrlBtn).disabled = false;
+  }
+});
+
+urlInput?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); addUrlBtn?.click(); }
+});
+
 /* ─── Delete image ────────────────────────────────────────── */
 
 imageList?.addEventListener('click', async (e) => {
@@ -49,101 +79,6 @@ imageList?.addEventListener('click', async (e) => {
     /** @type {HTMLButtonElement} */ (btn).disabled = false;
   }
 });
-
-/* ─── API images browser ──────────────────────────────────── */
-
-const modal      = /** @type {HTMLDialogElement|null} */ (document.getElementById('api-images-modal'));
-const browseBtn  = document.getElementById('browse-api-images-btn');
-const closeBtn   = document.getElementById('close-api-images');
-const apiList    = document.getElementById('api-images-list');
-const apiStatus  = document.getElementById('api-images-status');
-
-/** @type {Map<string, Array<{url:string,name:string,shape:string,color:string,imprint:string}>>} */
-const apiCache = new Map();
-
-browseBtn?.addEventListener('click', () => {
-  modal?.showModal();
-  loadApiImages();
-});
-
-closeBtn?.addEventListener('click', () => modal?.close());
-modal?.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
-
-async function loadApiImages() {
-  const rxcui = browseBtn?.dataset.rxcui;
-  if (!rxcui || !apiList || !apiStatus) return;
-
-  apiList.innerHTML     = '';
-  apiStatus.textContent = 'Loading pill photos…';
-
-  try {
-    const images = apiCache.has(rxcui)
-      ? apiCache.get(rxcui)
-      : await fetch(`/api/meds/images/${encodeURIComponent(rxcui)}`).then((r) => r.json());
-
-    if (!apiCache.has(rxcui)) apiCache.set(rxcui, images);
-
-    if (!Array.isArray(images) || !images.length) {
-      apiStatus.textContent = 'No pill photos available for this medication.';
-      return;
-    }
-
-    apiStatus.textContent = '';
-
-    for (const img of images) {
-      const li = document.createElement('li');
-      li.className = 'api-image-item';
-
-      const photo = document.createElement('img');
-      photo.src       = img.url;
-      photo.alt       = [img.shape, img.color, img.imprint].filter(Boolean).join(', ') || 'Pill photo';
-      photo.className = 'api-image-photo';
-      photo.loading   = 'lazy';
-
-      const caption = document.createElement('p');
-      caption.className   = 'api-image-caption';
-      const parts = [];
-      if (img.shape)   parts.push(img.shape);
-      if (img.color)   parts.push(img.color);
-      if (img.imprint) parts.push(`"${img.imprint}"`);
-      caption.textContent = parts.join(' · ') || img.name || '';
-
-      const btn = document.createElement('button');
-      btn.type      = 'button';
-      btn.className = 'btn btn--primary btn--sm api-image-select-btn';
-      btn.textContent = 'Save photo';
-      btn.addEventListener('click', () => selectApiImage(img.url, btn));
-
-      li.append(photo, caption, btn);
-      apiList.append(li);
-    }
-  } catch {
-    apiStatus.textContent = 'Could not load pill photos. Please try again.';
-  }
-}
-
-/**
- * @param {string} url
- * @param {HTMLButtonElement} btn
- */
-async function selectApiImage(url, btn) {
-  btn.disabled    = true;
-  btn.textContent = 'Saving…';
-
-  try {
-    const res = await fetch(`/api/medications/${medId}/images/select`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ url }),
-    });
-    if (!res.ok) throw new Error('Save failed');
-    appendImageItem(await res.json());
-    btn.textContent = 'Saved ✓';
-  } catch {
-    btn.disabled    = false;
-    btn.textContent = 'Save photo';
-  }
-}
 
 /* ─── DOM helper ──────────────────────────────────────────── */
 
