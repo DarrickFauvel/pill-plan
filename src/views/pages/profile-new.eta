@@ -5,9 +5,21 @@
     <h1>Add profile</h1>
   </header>
 
-  <% if (it.error) { %>
+  <% if (it.error === 'limit') { %>
+  <div class="alert alert--error" role="alert">
+    You've reached the <%= it.profileLimit %>-profile limit on the Free plan.
+    <a href="/app/billing" class="alert__link">Upgrade to Pro</a> for up to 5 profiles.
+  </div>
+  <% } else if (it.error) { %>
   <div class="alert alert--error" role="alert">
     Please enter a name for this profile.
+  </div>
+  <% } %>
+
+  <% if (it.atLimit && it.error !== 'limit') { %>
+  <div class="alert alert--info" role="alert">
+    You're at your <%= it.profileLimit %>-profile limit on the Free plan.
+    <a href="/app/billing" class="alert__link">Upgrade to Pro</a> to add more profiles.
   </div>
   <% } %>
 

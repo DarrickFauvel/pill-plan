@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import db from '../db/client.js';
 import { requireAuth, loadAppContext } from '../middleware/auth.js';
+import { requirePro } from '../middleware/plan.js';
 
 const router = Router();
 
@@ -68,6 +69,7 @@ router.get('/app/settings', requireAuth, loadAppContext, async (req, res) => {
     path:          '/app/settings',
     profile:       req.profile,
     profiles:      req.profiles,
+    user:          req.user,
     slots,
     organizerType: req.profile.organizerType,
     signals:       JSON.stringify(signals),
@@ -154,7 +156,7 @@ router.post('/api/settings/preset-slots', requireAuth, loadAppContext, async (re
    Add time slot  POST /api/settings/slots
    ───────────────────────────────────────────────────────────── */
 
-router.post('/api/settings/slots', requireAuth, loadAppContext, async (req, res) => {
+router.post('/api/settings/slots', requireAuth, loadAppContext, requirePro('slots'), async (req, res) => {
   const label = String(req.body.newSlotLabel ?? '').trim();
   if (!label) return res.redirect('/app/settings');
 

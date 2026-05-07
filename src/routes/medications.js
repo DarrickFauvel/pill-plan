@@ -6,6 +6,7 @@ import { mkdirSync, unlinkSync } from 'fs';
 import multer from 'multer';
 import db from '../db/client.js';
 import { requireAuth, loadAppContext } from '../middleware/auth.js';
+import { requirePro } from '../middleware/plan.js';
 import { searchMeds, getMedDetails } from '../services/rxnorm.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -588,6 +589,7 @@ router.get('/app/medications/:id', requireAuth, loadAppContext, async (req, res)
     path: '/app/medications',
     profile: req.profile,
     profiles: req.profiles,
+    user: req.user,
     med,
     strengthValue,
     strengthUnit,
@@ -797,7 +799,7 @@ router.post('/api/medications/:id/fill-organizer', requireAuth, loadAppContext, 
    POST /api/medications/:id/images/url
    ──────────────────────────────────────────────────────────── */
 
-router.post('/api/medications/:id/images/url', requireAuth, loadAppContext, async (req, res) => {
+router.post('/api/medications/:id/images/url', requireAuth, loadAppContext, requirePro('images'), async (req, res) => {
   const { id } = req.params;
 
   const ownerCheck = await db.execute({
@@ -827,6 +829,7 @@ router.post('/api/medications/:id/images/url', requireAuth, loadAppContext, asyn
 router.post('/api/medications/:id/images/upload',
   requireAuth,
   loadAppContext,
+  requirePro('images'),
   upload.single('photo'),
   async (req, res) => {
     const { id } = req.params;
@@ -859,7 +862,7 @@ router.post('/api/medications/:id/images/upload',
    POST /api/medications/:id/images/:imageId/delete
    ──────────────────────────────────────────────────────────── */
 
-router.post('/api/medications/:id/images/:imageId/delete', requireAuth, loadAppContext, async (req, res) => {
+router.post('/api/medications/:id/images/:imageId/delete', requireAuth, loadAppContext, requirePro('images'), async (req, res) => {
   const { id, imageId } = req.params;
 
   const { rows } = await db.execute({

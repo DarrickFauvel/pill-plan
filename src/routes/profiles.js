@@ -15,15 +15,19 @@ const AVATAR_COLORS = new Set([
    ───────────────────────────────────────────────────────────── */
 
 router.get('/new', async (req, res) => {
+  const profileLimit = req.user.isPro ? 5 : 1;
   res.render('pages/profile-new', {
-    title:     'Add profile',
-    path:      '/app/profiles/new',
-    profile:   req.profile,
-    profiles:  req.profiles,
-    error:     req.query.error === 'invalid' ? true : null,
-    formName:  String(req.query.name ?? ''),
-    formColor: AVATAR_COLORS.has(String(req.query.color ?? '')) ? String(req.query.color) : '#6EC6A0',
-    extraCss:  '/css/profiles.css',
+    title:        'Add profile',
+    path:         '/app/profiles/new',
+    profile:      req.profile,
+    profiles:     req.profiles,
+    user:         req.user,
+    profileLimit,
+    atLimit:      req.profiles.length >= profileLimit,
+    error:        req.query.error === 'invalid' ? 'invalid' : (req.query.error === 'limit' ? 'limit' : null),
+    formName:     String(req.query.name ?? ''),
+    formColor:    AVATAR_COLORS.has(String(req.query.color ?? '')) ? String(req.query.color) : '#6EC6A0',
+    extraCss:     '/css/profiles.css',
   });
 });
 
@@ -39,6 +43,15 @@ router.post('/', async (req, res) => {
   if (!name || !AVATAR_COLORS.has(color)) {
     const params = new URLSearchParams({ error: 'invalid', name, color });
     return res.redirect(`/app/profiles/new?${params}`);
+  }
+
+  const limit = req.user.isPro ? 5 : 1;
+  const countRes = await db.execute({
+    sql:  'SELECT COUNT(*) AS n FROM profiles WHERE user_id = ?',
+    args: [req.user.id],
+  });
+  if (Number(countRes.rows[0].n) >= limit) {
+    return res.redirect('/app/profiles/new?error=limit');
   }
 
   const profileId = randomUUID();

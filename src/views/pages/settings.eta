@@ -182,6 +182,7 @@
       <% }); %>
     </ul>
 
+    <% if (it.user && it.user.isPro) { %>
     <form
       action="/api/settings/slots"
       method="POST"
@@ -201,6 +202,12 @@
       </div>
       <button type="submit" class="btn btn--primary add-slot-form__btn">Add</button>
     </form>
+    <% } else { %>
+    <div class="pro-gate">
+      <p>Custom time slots are a <strong>Pro</strong> feature.</p>
+      <a href="/app/billing?reason=slots" class="btn btn--primary">Upgrade to Pro</a>
+    </div>
+    <% } %>
   </section>
 
 </div>

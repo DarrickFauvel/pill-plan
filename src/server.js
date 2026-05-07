@@ -12,7 +12,10 @@ import sseRouter from './routes/sse.js';
 import medicationsRouter from './routes/medications.js';
 import gridRouter from './routes/grid.js';
 import settingsRouter from './routes/settings.js';
+import billingRouter from './routes/billing.js';
+import adminRouter from './routes/admin.js';
 import { requireAuth, loadAppContext } from './middleware/auth.js';
+import { requireAdmin } from './middleware/admin.js';
 import db from './db/client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -37,6 +40,10 @@ app.set('view engine', 'eta');
 app.set('views', viewsDir);
 
 app.use(express.static(publicDir));
+
+// Stripe webhook needs raw body — must be before express.json()
+app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), billingRouter);
+
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());
@@ -87,6 +94,13 @@ app.get('/qrcode.svg', async (req, res) => {
 
 // Auth API
 app.use('/api/auth', authRoutes);
+
+// Billing
+app.use('/app/billing', billingRouter);
+app.use('/api/billing', billingRouter);
+
+// Admin
+app.use('/admin', requireAuth, requireAdmin, adminRouter);
 
 // Protected app shell
 app.get('/app', requireAuth, (req, res) => res.redirect('/app/grid'));

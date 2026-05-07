@@ -1,0 +1,81 @@
+<% layout('../../layouts/admin') %>
+<div class="admin-page">
+
+  <header class="admin-page-header">
+    <h1>Users <span class="admin-page-header__count">(<%= it.total %>)</span></h1>
+
+    <nav class="admin-filter-tabs" aria-label="Filter by plan">
+      <a
+        href="/admin/users"
+        class="admin-filter-tab<%= !it.planFilter ? ' admin-filter-tab--active' : '' %>"
+        aria-current="<%= !it.planFilter ? 'true' : 'false' %>"
+      >All</a>
+      <a
+        href="/admin/users?plan=free"
+        class="admin-filter-tab<%= it.planFilter === 'free' ? ' admin-filter-tab--active' : '' %>"
+        aria-current="<%= it.planFilter === 'free' ? 'true' : 'false' %>"
+      >Free</a>
+      <a
+        href="/admin/users?plan=pro"
+        class="admin-filter-tab<%= it.planFilter === 'pro' ? ' admin-filter-tab--active' : '' %>"
+        aria-current="<%= it.planFilter === 'pro' ? 'true' : 'false' %>"
+      >Pro</a>
+    </nav>
+  </header>
+
+  <% if (it.users.length === 0) { %>
+  <p class="admin-empty">No users found.</p>
+  <% } else { %>
+
+  <div class="admin-table-wrap">
+    <table class="admin-table" role="grid">
+      <thead>
+        <tr>
+          <th scope="col">Email</th>
+          <th scope="col">Plan</th>
+          <th scope="col">Joined</th>
+          <th scope="col">Profiles</th>
+          <th scope="col">Meds</th>
+          <th scope="col"><span class="sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% it.users.forEach(function(u) { %>
+        <tr>
+          <td class="admin-table__email"><%= u.email %></td>
+          <td>
+            <span class="plan-badge plan-badge--<%= u.plan %>"><%= u.plan %></span>
+          </td>
+          <td class="admin-table__date"><%= u.createdAt %></td>
+          <td class="admin-table__num"><%= u.profileCount %></td>
+          <td class="admin-table__num"><%= u.medCount %></td>
+          <td>
+            <a href="/admin/users/<%= u.id %>" class="admin-table__action">View</a>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if (it.totalPages > 1) { %>
+  <nav class="admin-pagination" aria-label="Page navigation">
+    <% if (it.page > 1) { %>
+    <a
+      href="/admin/users?<%= it.planFilter ? 'plan=' + it.planFilter + '&' : '' %>page=<%= it.page - 1 %>"
+      class="btn btn--secondary btn--sm"
+    >Previous</a>
+    <% } %>
+    <span class="admin-pagination__info">Page <%= it.page %> of <%= it.totalPages %></span>
+    <% if (it.page < it.totalPages) { %>
+    <a
+      href="/admin/users?<%= it.planFilter ? 'plan=' + it.planFilter + '&' : '' %>page=<%= it.page + 1 %>"
+      class="btn btn--secondary btn--sm"
+    >Next</a>
+    <% } %>
+  </nav>
+  <% } %>
+
+  <% } %>
+
+</div>

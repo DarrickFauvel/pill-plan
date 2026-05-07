@@ -1,0 +1,65 @@
+<% layout('../../layouts/admin') %>
+<div class="admin-page">
+
+  <header class="admin-page-header">
+    <h1>Dashboard</h1>
+  </header>
+
+  <section class="stat-grid" aria-label="Key metrics">
+
+    <article class="stat-card">
+      <span class="stat-card__label">Total users</span>
+      <span class="stat-card__value"><%= it.stats.totalUsers %></span>
+    </article>
+
+    <article class="stat-card stat-card--pro">
+      <span class="stat-card__label">Pro users</span>
+      <span class="stat-card__value"><%= it.stats.proUsers %></span>
+      <% if (it.stats.totalUsers > 0) { %>
+      <span class="stat-card__sub"><%= Math.round(it.stats.proUsers / it.stats.totalUsers * 100) %>% of total</span>
+      <% } %>
+    </article>
+
+    <article class="stat-card">
+      <span class="stat-card__label">Free users</span>
+      <span class="stat-card__value"><%= it.stats.freeUsers %></span>
+    </article>
+
+    <article class="stat-card stat-card--highlight">
+      <span class="stat-card__label">New users (7 days)</span>
+      <span class="stat-card__value"><%= it.stats.new7d %></span>
+    </article>
+
+    <article class="stat-card stat-card--highlight">
+      <span class="stat-card__label">New users (30 days)</span>
+      <span class="stat-card__value"><%= it.stats.new30d %></span>
+    </article>
+
+    <article class="stat-card">
+      <span class="stat-card__label">Active users (7 days)</span>
+      <span class="stat-card__value"><%= it.stats.active7d %></span>
+    </article>
+
+    <article class="stat-card">
+      <span class="stat-card__label">Total profiles</span>
+      <span class="stat-card__value"><%= it.stats.profiles %></span>
+    </article>
+
+    <article class="stat-card">
+      <span class="stat-card__label">Active medications</span>
+      <span class="stat-card__value"><%= it.stats.medications %></span>
+    </article>
+
+    <article class="stat-card">
+      <span class="stat-card__label">Dose entries logged</span>
+      <span class="stat-card__value"><%= it.stats.entries %></span>
+    </article>
+
+  </section>
+
+  <div class="admin-actions">
+    <a href="/admin/users" class="btn btn--primary">View all users</a>
+    <a href="/admin/users?plan=pro" class="btn btn--secondary">View Pro users</a>
+  </div>
+
+</div>

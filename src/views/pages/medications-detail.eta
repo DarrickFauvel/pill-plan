@@ -194,6 +194,8 @@
   <section class="detail-section" aria-labelledby="images-heading">
     <h2 id="images-heading">Pill photos</h2>
 
+    <% if (it.user && it.user.isPro) { %>
+
     <div class="med-image-gallery" id="med-images" data-med-id="<%= it.med.id %>">
 
       <ul class="med-image-list" id="med-image-list" role="list" aria-label="Saved pill photos">
@@ -229,6 +231,13 @@
         <button type="button" class="btn btn--secondary" id="add-image-url-btn">Add URL</button>
       </div>
     </div>
+
+    <% } else { %>
+    <div class="pro-gate">
+      <p>Pill photos are a <strong>Pro</strong> feature.</p>
+      <a href="/app/billing?reason=images" class="btn btn--primary">Upgrade to Pro</a>
+    </div>
+    <% } %>
 
   </section>
 

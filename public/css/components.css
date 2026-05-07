@@ -145,6 +145,48 @@
     border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
   }
 
+  .alert--info {
+    background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    color: var(--color-text);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+  }
+
+  .alert__link {
+    color: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+  }
+
+  /* ─── Pro gate ───────────────────────────────────────────── */
+
+  .pro-gate {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    padding: 1em;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    flex-wrap: wrap;
+  }
+
+  .pro-gate p {
+    margin: 0;
+    flex: 1;
+  }
+
+  /* ─── Upgrade nav link ───────────────────────────────────── */
+
+  .app-nav__link--upgrade {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .profile-option--upgrade {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
 
   /* ─── Card ──────────────────────────────────────────────── */
 

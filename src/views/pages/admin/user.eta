@@ -1,0 +1,98 @@
+<% layout('../../layouts/admin') %>
+<div class="admin-page">
+
+  <header class="admin-page-header">
+    <a href="/admin/users" class="admin-back-link">← Users</a>
+    <h1><%= it.target.email %></h1>
+  </header>
+
+  <% if (it.success) { %>
+  <div class="alert alert--success" role="alert">Plan updated successfully.</div>
+  <% } %>
+
+  <div class="admin-detail-grid">
+
+    <!-- User info -->
+    <section class="admin-card" aria-labelledby="user-info-heading">
+      <h2 id="user-info-heading" class="admin-card__title">Account</h2>
+      <dl class="admin-dl">
+        <dt>Email</dt>
+        <dd><%= it.target.email %></dd>
+
+        <dt>Plan</dt>
+        <dd><span class="plan-badge plan-badge--<%= it.target.plan %>"><%= it.target.plan %></span></dd>
+
+        <dt>Joined</dt>
+        <dd><%= it.target.createdAt %></dd>
+
+        <% if (it.target.planExpiresAt) { %>
+        <dt>Plan expires</dt>
+        <dd><%= it.target.planExpiresAt %></dd>
+        <% } %>
+
+        <% if (it.target.stripeCustomerId) { %>
+        <dt>Stripe customer</dt>
+        <dd><code class="admin-code"><%= it.target.stripeCustomerId %></code></dd>
+        <% } %>
+
+        <% if (it.target.stripeSubscriptionId) { %>
+        <dt>Stripe subscription</dt>
+        <dd><code class="admin-code"><%= it.target.stripeSubscriptionId %></code></dd>
+        <% } %>
+      </dl>
+    </section>
+
+    <!-- Plan override -->
+    <section class="admin-card" aria-labelledby="plan-override-heading">
+      <h2 id="plan-override-heading" class="admin-card__title">Override plan</h2>
+      <p class="admin-card__desc">Manually set this user's plan. Does not affect Stripe — use this to comp Pro access or revert a manual upgrade.</p>
+      <form action="/admin/users/<%= it.target.id %>/plan" method="POST" class="admin-plan-form">
+        <div class="form-group">
+          <label for="plan-select">Plan</label>
+          <select id="plan-select" name="plan" class="input">
+            <option value="free"<%= it.target.plan === 'free' ? ' selected' : '' %>>Free</option>
+            <option value="pro"<%= it.target.plan === 'pro' ? ' selected' : '' %>>Pro</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn--primary">Save</button>
+      </form>
+    </section>
+
+  </div>
+
+  <!-- Profiles -->
+  <section class="admin-card admin-card--full" aria-labelledby="profiles-heading">
+    <h2 id="profiles-heading" class="admin-card__title">Profiles (<%= it.profiles.length %>)</h2>
+
+    <% if (it.profiles.length === 0) { %>
+    <p class="admin-empty">No profiles yet.</p>
+    <% } else { %>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Organizer</th>
+            <th scope="col">Active meds</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% it.profiles.forEach(function(p) { %>
+          <tr>
+            <td>
+              <span class="profile-avatar profile-avatar--sm" style="--avatar-color: <%= p.avatarColor %>;" aria-hidden="true">
+                <%= p.name.charAt(0).toUpperCase() %>
+              </span>
+              <%= p.name %>
+            </td>
+            <td><%= p.organizerType %></td>
+            <td class="admin-table__num"><%= p.medCount %></td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+
+</div>

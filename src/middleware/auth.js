@@ -13,7 +13,8 @@ export async function requireAuth(req, res, next) {
   if (!sessionId) return res.redirect('/login');
 
   const { rows } = await db.execute({
-    sql: `SELECT s.user_id, u.email
+    sql: `SELECT s.user_id, u.email, u.plan, u.plan_expires_at,
+                 u.stripe_customer_id, u.stripe_subscription_id
           FROM sessions s
           JOIN users u ON u.id = s.user_id
           WHERE s.id = ? AND s.expires_at > ?`,
@@ -25,7 +26,17 @@ export async function requireAuth(req, res, next) {
     return res.redirect('/login');
   }
 
-  req.user = { id: String(rows[0].user_id), email: String(rows[0].email) };
+  const row = rows[0];
+  const planExpiresAt = row.plan_expires_at ? String(row.plan_expires_at) : null;
+  req.user = {
+    id:                   String(row.user_id),
+    email:                String(row.email),
+    plan:                 String(row.plan ?? 'free'),
+    stripeCustomerId:     row.stripe_customer_id ? String(row.stripe_customer_id) : null,
+    stripeSubscriptionId: row.stripe_subscription_id ? String(row.stripe_subscription_id) : null,
+    planExpiresAt,
+    isPro: row.plan === 'pro' && (!planExpiresAt || new Date(planExpiresAt) > new Date()),
+  };
   next();
 }
 

@@ -1,0 +1,91 @@
+<% layout('../layouts/app') %>
+<div class="billing-page">
+
+  <header class="page-header">
+    <h1>Plan &amp; billing</h1>
+  </header>
+
+  <% if (it.success) { %>
+  <div class="alert alert--success" role="alert">You're now on Pro — enjoy all the features!</div>
+  <% } %>
+
+  <% if (it.user.isPro) { %>
+
+  <section class="billing-section billing-section--pro" aria-labelledby="plan-heading">
+    <h2 id="plan-heading" class="billing-current-plan">
+      <span class="plan-badge plan-badge--pro">Pro</span>
+      You're on the Pro plan
+    </h2>
+    <p class="billing-desc">All features are unlocked — multiple profiles, pill photos, and custom time slots.</p>
+    <form action="/api/billing/portal" method="POST">
+      <button type="submit" class="btn btn--secondary">Manage subscription</button>
+    </form>
+  </section>
+
+  <% } else { %>
+
+  <% if (it.reason) { %>
+  <div class="alert alert--info" role="alert"><%= it.reason %> Upgrade to Pro to use it.</div>
+  <% } %>
+
+  <section class="billing-section" aria-labelledby="plan-heading">
+    <h2 id="plan-heading" class="billing-current-plan">
+      <span class="plan-badge plan-badge--free">Free</span>
+      You're on the Free plan
+    </h2>
+    <p class="billing-desc">Upgrade to unlock multiple profiles, pill photos, and custom time slots.</p>
+  </section>
+
+  <section class="billing-section billing-comparison" aria-labelledby="compare-heading">
+    <h2 id="compare-heading" class="sr-only">Feature comparison</h2>
+    <table class="compare-table">
+      <caption class="sr-only">Free vs Pro features</caption>
+      <thead>
+        <tr>
+          <th scope="col">Feature</th>
+          <th scope="col">Free</th>
+          <th scope="col">Pro</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Profiles</td>
+          <td>1</td>
+          <td>Up to 5</td>
+        </tr>
+        <tr>
+          <td>Medications, grid &amp; schedules</td>
+          <td class="compare-check" aria-label="Included">✓</td>
+          <td class="compare-check" aria-label="Included">✓</td>
+        </tr>
+        <tr>
+          <td>Preset time slots</td>
+          <td class="compare-check" aria-label="Included">✓</td>
+          <td class="compare-check" aria-label="Included">✓</td>
+        </tr>
+        <tr>
+          <td>Refill tracking &amp; print</td>
+          <td class="compare-check" aria-label="Included">✓</td>
+          <td class="compare-check" aria-label="Included">✓</td>
+        </tr>
+        <tr>
+          <td>Custom time slots</td>
+          <td class="compare-x" aria-label="Not included">—</td>
+          <td class="compare-check" aria-label="Included">✓</td>
+        </tr>
+        <tr>
+          <td>Pill photos</td>
+          <td class="compare-x" aria-label="Not included">—</td>
+          <td class="compare-check" aria-label="Included">✓</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <form action="/api/billing/checkout" method="POST" class="billing-cta">
+      <button type="submit" class="btn btn--primary btn--lg">Upgrade to Pro</button>
+    </form>
+  </section>
+
+  <% } %>
+
+</div>
