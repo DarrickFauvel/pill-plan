@@ -214,27 +214,24 @@
   <% if (it.profile.isOwned) { %>
   <section class="settings-section" aria-labelledby="sharing-heading">
     <h2 id="sharing-heading">Profile sharing</h2>
+    <p class="sharing-profile-name" aria-label="Profile being shared">
+      <span class="sharing-profile-name__label">Sharing:</span>
+      <strong><%= it.profile.name %></strong>
+    </p>
     <p class="settings-section__desc">
       Share this profile with the person whose medications you manage.
       They will have full access to view and edit medications.
     </p>
 
-    <% if (it.shareError) { %>
-    <div class="alert alert--error" role="alert"><%= it.shareError %></div>
-    <% } %>
+    <div class="alert alert--error" role="alert" data-show="$shareError !== ''" data-text="$shareError"></div>
 
-    <% if (it.newInviteUrl) { %>
-    <div class="invite-created" role="status">
-      <p><strong>Invitation created.</strong> Copy the link below and send it to the person you invited.
-      <% if (it.shares.length && it.shares[it.shares.length - 1]) { %>
-        An email was also sent to <strong><%= it.shares[it.shares.length - 1].invitedEmail %></strong> if SMTP is configured.
-      <% } %>
-      </p>
+    <div class="invite-created" role="status" data-show="$inviteUrl !== ''">
+      <p><strong>Invitation created.</strong> Copy the link below and send it to the person you invited.</p>
       <div class="invite-url-row">
         <input
           type="text"
           class="input invite-url-input"
-          value="<%= it.newInviteUrl %>"
+          data-bind="inviteUrl"
           readonly
           aria-label="Invite link"
           id="invite-url-display"
@@ -247,9 +244,8 @@
         >Copy</button>
       </div>
     </div>
-    <% } %>
 
-    <form action="/api/settings/sharing" method="POST" class="invite-form">
+    <form class="invite-form">
       <div class="form-group invite-form__field">
         <label for="invite-email">Email address</label>
         <input
@@ -259,14 +255,13 @@
           class="input"
           autocomplete="email"
           placeholder="their@email.com"
-          required
+          data-bind="inviteEmail"
         >
       </div>
-      <button type="submit" class="btn btn--primary">Send invite</button>
+      <button type="button" class="btn btn--primary" data-on:click="@post('/api/settings/sharing')">Send invite</button>
     </form>
 
-    <% if (it.shares.length > 0) { %>
-    <ul class="share-list" role="list" aria-label="People with access">
+    <ul class="share-list" role="list" aria-label="People with access" id="share-list">
       <% it.shares.forEach(function(share) { %>
       <li class="share-item" id="share-<%= share.id %>">
         <div class="share-item__info">
@@ -289,7 +284,6 @@
       </li>
       <% }); %>
     </ul>
-    <% } %>
   </section>
   <% } %>
 
