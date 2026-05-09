@@ -2,6 +2,19 @@
 
   /* ── Page shell ──────────────────────────────────────────── */
 
+  /* Fix height chain so .grid-scroll-container creates real overflow */
+  .app-main:has(.grid-page) {
+    block-size: calc(100dvh - var(--header-height) - var(--bottom-nav-height));
+    padding: 0;
+    overflow: hidden;
+  }
+
+  @media (min-width: 768px) {
+    .app-main:has(.grid-page) {
+      block-size: 100dvh;
+    }
+  }
+
   .grid-page {
     display: flex;
     flex-direction: column;
@@ -18,7 +31,10 @@
     padding: var(--space-3) var(--space-4);
     background: color-mix(in srgb, var(--color-warning) 12%, var(--color-surface));
     border-bottom: 2px solid var(--color-warning);
-    flex-shrink: 0;
+    position: sticky;
+    left: 0;
+    inline-size: 100dvw;
+    z-index: 9;
   }
 
   .refill-banner__icon {
@@ -76,8 +92,11 @@
     gap: var(--space-2);
     padding: var(--space-3) var(--space-4);
     border-bottom: 1px solid var(--color-border);
-    flex-shrink: 0;
     background: var(--color-surface);
+    position: sticky;
+    left: 0;
+    inline-size: 100dvw;
+    z-index: 10;
   }
 
   .grid-month-title {
@@ -168,8 +187,9 @@
     background: var(--color-surface);
   }
 
-  /* When organizer row is present, push day headers below it */
-  .grid-organizer-row ~ tr .grid-th--day {
+  /* When organizer row is present, push day headers and label cell below it */
+  .grid-organizer-row ~ tr .grid-th--day,
+  .grid-organizer-row ~ tr .grid-th--label {
     top: 2.25rem;
   }
 
@@ -215,6 +235,7 @@
   .grid-organizer-row .grid-td {
     position: sticky;
     left: 0;
+    top: 0;
     z-index: 4;
     background: var(--color-surface);
   }
