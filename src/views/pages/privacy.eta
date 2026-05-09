@@ -2,13 +2,13 @@
 
 <main id="main" class="legal-page">
 
-  <p class="legal-back"><a href="/">&larr; Back to MediGrid</a></p>
+  <p class="legal-back"><a href="/">&larr; Back to Pill Plan</a></p>
 
   <h1>Privacy Policy</h1>
   <p><strong>Last updated: May 7, 2026</strong></p>
 
   <p>
-    MediGrid is operated by Darrick Fauvel (trading as Darrick Develops).
+    Pill Plan is operated by Darrick Fauvel (trading as Darrick Develops).
     This policy explains what personal data we collect, why we collect it,
     how long we keep it, and what rights you have under the
     General Data Protection Regulation (GDPR) and other applicable privacy laws.
@@ -32,7 +32,7 @@
 
   <h3>Health data (Article 9 special category)</h3>
   <p>
-    MediGrid stores sensitive health information that you enter directly:
+    Pill Plan stores sensitive health information that you enter directly:
   </p>
   <ul>
     <li>Medication names, strengths, forms, and dosing instructions</li>
@@ -57,7 +57,7 @@
 
   <h2>3. Legal basis for processing</h2>
   <ul>
-    <li><strong>Account and session data</strong>: Performance of contract (GDPR Article 6(1)(b)) — necessary to provide the MediGrid service.</li>
+    <li><strong>Account and session data</strong>: Performance of contract (GDPR Article 6(1)(b)) — necessary to provide the Pill Plan service.</li>
     <li><strong>Health data</strong>: Explicit consent (GDPR Article 9(2)(a)) — you choose to enter this data and can delete it at any time.</li>
     <li><strong>Payment data</strong>: Contract performance and legal obligation (GDPR Article 6(1)(b) and 6(1)(c)).</li>
   </ul>
@@ -66,7 +66,7 @@
   <ul>
     <li><strong>Session cookies</strong>: 7 days, then automatically deleted.</li>
     <li><strong>Account and health data</strong>: Until you delete your account. Deletion is immediate and permanent — we run no backups that outlive deletion.</li>
-    <li><strong>Payment records</strong>: Stripe retains transaction records as required by financial regulations, even after you delete your MediGrid account.</li>
+    <li><strong>Payment records</strong>: Stripe retains transaction records as required by financial regulations, even after you delete your Pill Plan account.</li>
   </ul>
 
   <h2>5. Who we share data with</h2>
@@ -115,7 +115,7 @@
 
   <h2>9. Children</h2>
   <p>
-    MediGrid is not directed at children under 16. If you are under 16, please do not create an account.
+    Pill Plan is not directed at children under 16. If you are under 16, please do not create an account.
     If we learn that we have collected personal data from a child under 16 without verifiable parental
     consent, we will delete it promptly.
   </p>

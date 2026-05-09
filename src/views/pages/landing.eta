@@ -3,7 +3,7 @@
 <!-- ─── Navigation ──────────────────────────────────────── -->
 <header>
   <nav class="landing-nav" aria-label="Main navigation">
-    <a href="/" class="landing-nav__logo" aria-label="MediGrid home"><span class="logo-plus">+</span> MediGrid</a>
+    <a href="/" class="landing-nav__logo" aria-label="Pill Plan home"><span class="logo-plus">+</span> Pill Plan</a>
     <div class="landing-nav__actions">
       <button class="qr-btn" onclick="document.getElementById('qr-modal').showModal()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -41,7 +41,7 @@
           <mark>always organized.</mark>
         </h1>
         <p class="hero__sub">
-          MediGrid helps patients and caregivers plan doses, fill weekly pill
+          Pill Plan helps patients and caregivers plan doses, fill weekly pill
           organizers, and get alerted before supplies run out.
         </p>
         <div class="hero__actions">
@@ -211,7 +211,7 @@
         <div class="feature-card__body">
           <p>
             Search medications by name using the RxNorm database. Set schedules,
-            dose quantities, and let MediGrid track your supply automatically.
+            dose quantities, and let Pill Plan track your supply automatically.
           </p>
         </div>
       </li>
@@ -327,8 +327,8 @@
         </svg>
       </button>
     </div>
-    <img src="/qrcode.svg" alt="QR code linking to MediGrid" class="qr-modal__code" width="256" height="256">
-    <p class="qr-modal__hint">Scan with your phone camera to open MediGrid</p>
+    <img src="/qrcode.svg" alt="QR code linking to Pill Plan" class="qr-modal__code" width="256" height="256">
+    <p class="qr-modal__hint">Scan with your phone camera to open Pill Plan</p>
   </div>
 </dialog>
 
@@ -340,7 +340,7 @@
 
 <!-- ─── Footer ───────────────────────────────────────────── -->
 <footer class="landing-footer">
-  <a href="/" class="landing-footer__brand">MediGrid</a>
+  <a href="/" class="landing-footer__brand">Pill Plan</a>
   <ul class="landing-footer__links">
     <li><a href="/login">Sign in</a></li>
     <li><a href="/signup">Get started</a></li>
@@ -348,7 +348,7 @@
     <li><a href="/terms">Terms</a></li>
   </ul>
   <p class="landing-footer__copy">
-    &copy; <%= new Date().getFullYear() %> MediGrid. Built by
+    &copy; <%= new Date().getFullYear() %> Pill Plan. Built by
     <a href="https://darrickdevelops.com" target="_blank" rel="noopener noreferrer">Darrick Develops</a>.
   </p>
 </footer>

@@ -1,6 +1,6 @@
 {
-  "name": "MediGrid",
-  "short_name": "MediGrid",
+  "name": "Pill Plan",
+  "short_name": "Pill Plan",
   "description": "Your medication organizer",
   "start_url": "/app/grid",
   "display": "standalone",

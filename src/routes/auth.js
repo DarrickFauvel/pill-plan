@@ -79,7 +79,8 @@ router.post('/signup', async (req, res) => {
   ], 'write');
 
   setSessionCookie(res, sessionId);
-  res.redirect('/app/grid');
+  const signupReturn = String(req.body.return ?? '');
+  res.redirect(signupReturn.startsWith('/') ? signupReturn : '/app/grid');
 });
 
 router.post('/login', async (req, res) => {
@@ -113,7 +114,8 @@ router.post('/login', async (req, res) => {
   });
 
   setSessionCookie(res, sessionId);
-  res.redirect('/app/grid');
+  const loginReturn = String(req.body.return ?? '');
+  res.redirect(loginReturn.startsWith('/') ? loginReturn : '/app/grid');
 });
 
 router.post('/logout', async (req, res) => {

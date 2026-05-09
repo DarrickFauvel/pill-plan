@@ -1,4 +1,4 @@
-# MediGrid — Claude Code Guide
+# Pill Plan — Claude Code Guide
 
 ## What This Project Is
 

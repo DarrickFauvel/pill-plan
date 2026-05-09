@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/app.css">
   <% if (it.extraCss) { %><link rel="stylesheet" href="<%= it.extraCss %>"><% } %>
-  <title><%= it.title ? it.title + ' — MediGrid' : 'MediGrid' %></title>
+  <title><%= it.title ? it.title + ' — Pill Plan' : 'Pill Plan' %></title>
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -21,7 +21,7 @@
 
     <!-- Mobile-only top header -->
     <header class="app-header" role="banner">
-      <a href="/app/grid" class="app-brand"><span class="logo-plus">+</span> MediGrid</a>
+      <a href="/app/grid" class="app-brand"><span class="logo-plus">+</span> Pill Plan</a>
 
       <div class="app-header__actions">
         <button class="qr-btn" aria-label="Open on another device" onclick="document.getElementById('qr-modal').showModal()">
@@ -72,7 +72,12 @@
                 style="--avatar-color: <%= p.avatarColor %>;"
                 aria-hidden="true"
               ><%= p.name.charAt(0).toUpperCase() %></span>
-              <%= p.name %>
+              <span class="profile-option__name-group">
+                <span class="profile-option__name"><%= p.name %></span>
+                <% if (!p.isOwned) { %>
+                <span class="profile-option__shared-by">shared</span>
+                <% } %>
+              </span>
             </button>
           </form>
           <% }); %>
@@ -97,7 +102,7 @@
 
     <!-- Desktop sidebar (hidden on mobile) -->
     <nav class="app-sidebar" aria-label="Main navigation">
-      <a href="/app/grid" class="app-brand"><span class="logo-plus">+</span> MediGrid</a>
+      <a href="/app/grid" class="app-brand"><span class="logo-plus">+</span> Pill Plan</a>
 
       <!-- Profile switcher (sidebar) -->
       <details-menu>
@@ -130,7 +135,12 @@
                 style="--avatar-color: <%= p.avatarColor %>;"
                 aria-hidden="true"
               ><%= p.name.charAt(0).toUpperCase() %></span>
-              <%= p.name %>
+              <span class="profile-option__name-group">
+                <span class="profile-option__name"><%= p.name %></span>
+                <% if (!p.isOwned) { %>
+                <span class="profile-option__shared-by">shared</span>
+                <% } %>
+              </span>
             </button>
           </form>
           <% }); %>
@@ -277,8 +287,8 @@
           </svg>
         </button>
       </div>
-      <img src="/qrcode.svg" alt="QR code linking to MediGrid" class="qr-modal__code" width="256" height="256">
-      <p class="qr-modal__hint">Scan with your phone camera to open MediGrid</p>
+      <img src="/qrcode.svg" alt="QR code linking to Pill Plan" class="qr-modal__code" width="256" height="256">
+      <p class="qr-modal__hint">Scan with your phone camera to open Pill Plan</p>
     </div>
   </dialog>
 

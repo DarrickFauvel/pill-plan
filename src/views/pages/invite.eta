@@ -1,0 +1,97 @@
+<% layout('../layouts/base') %>
+
+<main id="main" class="invite-page">
+  <div class="invite-card">
+
+    <a href="/" class="app-brand invite-brand">
+      <span class="logo-plus">+</span> Pill Plan
+    </a>
+
+    <% if (it.error) { %>
+
+    <h1 class="invite-card__title">Invalid invitation</h1>
+    <div class="alert alert--error" role="alert"><%= it.error %></div>
+    <a href="/login" class="btn btn--primary">Sign in</a>
+
+    <% } else if (it.share.alreadyAccepted) { %>
+
+    <h1 class="invite-card__title">Already accepted</h1>
+    <p>This invitation has already been accepted. Sign in to open Pill Plan.</p>
+    <a href="/app/grid" class="btn btn--primary">Open Pill Plan</a>
+
+    <% } else if (!it.loggedIn) { %>
+
+    <h1 class="invite-card__title">You're invited!</h1>
+    <p>
+      <strong><%= it.share.ownerEmail %></strong> has invited you to access the
+      <strong><%= it.share.profileName %></strong> medication profile on Pill Plan.
+    </p>
+    <p class="invite-card__hint">
+      Sign in or create an account to accept this invitation.
+    </p>
+    <div class="invite-card__auth-actions">
+      <a href="/login?return=/app/invite/<%= it.token %>" class="btn btn--primary">Sign in</a>
+      <a href="/signup?return=/app/invite/<%= it.token %>" class="btn btn--secondary">Create account</a>
+    </div>
+
+    <% } else { %>
+
+    <h1 class="invite-card__title">You're invited!</h1>
+    <p>
+      <strong><%= it.share.ownerEmail %></strong> has invited you to access the
+      <strong><%= it.share.profileName %></strong> medication profile on Pill Plan.
+    </p>
+    <p class="invite-card__hint">
+      Once accepted, this profile will appear in your account alongside your own profiles.
+      You will have full access to view and edit medications.
+    </p>
+    <form action="/app/invite/<%= it.token %>/accept" method="POST">
+      <button type="submit" class="btn btn--primary">Accept &amp; open profile</button>
+    </form>
+
+    <% } %>
+
+  </div>
+</main>
+
+<style>
+.invite-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80dvh;
+  padding: 2rem 1rem;
+}
+.invite-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  max-width: 32rem;
+  width: 100%;
+}
+.invite-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+  margin-block-end: 1.5rem;
+}
+.invite-card__title {
+  font-size: 1.5rem;
+  margin-block-end: 0.75rem;
+}
+.invite-card__hint {
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+  margin-block-end: 1.5rem;
+}
+.invite-card__auth-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+</style>

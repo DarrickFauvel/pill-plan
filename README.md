@@ -1,4 +1,4 @@
-# MediGrid
+# Pill Plan
 
 A Progressive Web App for organizing medications and verifying weekly pill organizer refills. Supports both patients and caregivers, with multiple profiles per account.
 

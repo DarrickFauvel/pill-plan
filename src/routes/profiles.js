@@ -16,6 +16,7 @@ const AVATAR_COLORS = new Set([
 
 router.get('/new', async (req, res) => {
   const profileLimit = req.user.isPro ? 5 : 1;
+  const ownedCount = req.profiles.filter((p) => p.isOwned).length;
   res.render('pages/profile-new', {
     title:        'Add profile',
     path:         '/app/profiles/new',
@@ -23,7 +24,7 @@ router.get('/new', async (req, res) => {
     profiles:     req.profiles,
     user:         req.user,
     profileLimit,
-    atLimit:      req.profiles.length >= profileLimit,
+    atLimit:      ownedCount >= profileLimit,
     error:        req.query.error === 'invalid' ? 'invalid' : (req.query.error === 'limit' ? 'limit' : null),
     formName:     String(req.query.name ?? ''),
     formColor:    AVATAR_COLORS.has(String(req.query.color ?? '')) ? String(req.query.color) : '#6EC6A0',
@@ -86,12 +87,19 @@ router.post('/', async (req, res) => {
 router.post('/switch/:id', async (req, res) => {
   const { id } = req.params;
 
-  const { rows } = await db.execute({
-    sql: 'SELECT id FROM profiles WHERE id = ? AND user_id = ?',
-    args: [id, req.user.id],
-  });
+  const [ownedRes, sharedRes] = await Promise.all([
+    db.execute({
+      sql: 'SELECT id FROM profiles WHERE id = ? AND user_id = ?',
+      args: [id, req.user.id],
+    }),
+    db.execute({
+      sql: `SELECT ps.id FROM profile_shares ps
+            WHERE ps.profile_id = ? AND ps.shared_with_user_id = ? AND ps.accepted_at IS NOT NULL`,
+      args: [id, req.user.id],
+    }),
+  ]);
 
-  if (!rows.length) {
+  if (!ownedRes.rows.length && !sharedRes.rows.length) {
     return res.redirect('/app/grid');
   }
 

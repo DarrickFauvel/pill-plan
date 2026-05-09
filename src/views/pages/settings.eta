@@ -210,6 +210,89 @@
     <% } %>
   </section>
 
+  <!-- Profile sharing (owned profiles only) -->
+  <% if (it.profile.isOwned) { %>
+  <section class="settings-section" aria-labelledby="sharing-heading">
+    <h2 id="sharing-heading">Profile sharing</h2>
+    <p class="settings-section__desc">
+      Share this profile with the person whose medications you manage.
+      They will have full access to view and edit medications.
+    </p>
+
+    <% if (it.shareError) { %>
+    <div class="alert alert--error" role="alert"><%= it.shareError %></div>
+    <% } %>
+
+    <% if (it.newInviteUrl) { %>
+    <div class="invite-created" role="status">
+      <p><strong>Invitation created.</strong> Copy the link below and send it to the person you invited.
+      <% if (it.shares.length && it.shares[it.shares.length - 1]) { %>
+        An email was also sent to <strong><%= it.shares[it.shares.length - 1].invitedEmail %></strong> if SMTP is configured.
+      <% } %>
+      </p>
+      <div class="invite-url-row">
+        <input
+          type="text"
+          class="input invite-url-input"
+          value="<%= it.newInviteUrl %>"
+          readonly
+          aria-label="Invite link"
+          id="invite-url-display"
+        >
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          onclick="navigator.clipboard.writeText(document.getElementById('invite-url-display').value).then(()=>{ this.textContent='Copied!'; setTimeout(()=>{ this.textContent='Copy'; },2000); })"
+          aria-label="Copy invite link to clipboard"
+        >Copy</button>
+      </div>
+    </div>
+    <% } %>
+
+    <form action="/api/settings/sharing" method="POST" class="invite-form">
+      <div class="form-group invite-form__field">
+        <label for="invite-email">Email address</label>
+        <input
+          type="email"
+          id="invite-email"
+          name="inviteEmail"
+          class="input"
+          autocomplete="email"
+          placeholder="their@email.com"
+          required
+        >
+      </div>
+      <button type="submit" class="btn btn--primary">Send invite</button>
+    </form>
+
+    <% if (it.shares.length > 0) { %>
+    <ul class="share-list" role="list" aria-label="People with access">
+      <% it.shares.forEach(function(share) { %>
+      <li class="share-item" id="share-<%= share.id %>">
+        <div class="share-item__info">
+          <span class="share-item__email"><%= share.invitedEmail %></span>
+          <span class="share-item__status<%= share.accepted ? ' share-item__status--active' : '' %>">
+            <%= share.accepted ? 'Active' : 'Pending' %>
+          </span>
+        </div>
+        <form action="/api/settings/sharing/<%= share.id %>/revoke" method="POST">
+          <button
+            type="submit"
+            class="btn btn--danger btn--sm"
+            aria-label="Revoke access for <%= share.invitedEmail %>"
+            aria-describedby="revoke-warn-<%= share.id %>"
+          >Revoke</button>
+          <span id="revoke-warn-<%= share.id %>" class="sr-only">
+            This will immediately remove their access to this profile.
+          </span>
+        </form>
+      </li>
+      <% }); %>
+    </ul>
+    <% } %>
+  </section>
+  <% } %>
+
   <!-- Your data -->
   <section class="settings-section" aria-labelledby="data-heading">
     <h2 id="data-heading">Your data</h2>

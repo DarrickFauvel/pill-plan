@@ -417,6 +417,27 @@
   }
 
 
+  /* ─── Profile shared badge ───────────────────────────────── */
+
+  .profile-option__name-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125em;
+    min-inline-size: 0;
+  }
+
+  .profile-option__name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .profile-option__shared-by {
+    font-size: 0.75rem;
+    color: var(--color-muted);
+    font-weight: 400;
+  }
+
   /* ─── High contrast ──────────────────────────────────────── */
 
   @media (prefers-contrast: more) {

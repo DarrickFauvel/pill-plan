@@ -1,4 +1,4 @@
-const CACHE = 'medigrid-v2';
+const CACHE = 'pillplan-v1';
 
 const PRECACHE = [
   '/css/tokens.css',

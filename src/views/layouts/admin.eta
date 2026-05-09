@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/admin.css">
-  <title><%= it.title ?? 'Admin — MediGrid' %></title>
+  <title><%= it.title ?? 'Admin — Pill Plan' %></title>
 </head>
 <body class="admin-body">
   <a href="#main" class="skip-link">Skip to content</a>
@@ -18,7 +18,7 @@
 
     <nav class="admin-sidebar" aria-label="Admin navigation">
       <a href="/admin/dashboard" class="admin-brand">
-        <span class="admin-brand__plus">+</span> MediGrid
+        <span class="admin-brand__plus">+</span> Pill Plan
         <span class="admin-brand__badge">Admin</span>
       </a>
 

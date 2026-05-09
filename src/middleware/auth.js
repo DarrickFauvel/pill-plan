@@ -52,22 +52,46 @@ export async function requireAuth(req, res, next) {
  * @param {import('express').NextFunction} next
  */
 export async function loadAppContext(req, res, next) {
-  const { rows } = await db.execute({
-    sql: `SELECT id, name, avatar_color, organizer_type, organizer_count
-          FROM profiles
-          WHERE user_id = ?
-          ORDER BY created_at ASC`,
-    args: [req.user.id],
-  });
+  const [ownedResult, sharedResult] = await Promise.all([
+    db.execute({
+      sql: `SELECT id, name, avatar_color, organizer_type, organizer_count
+            FROM profiles WHERE user_id = ? ORDER BY created_at ASC`,
+      args: [req.user.id],
+    }),
+    db.execute({
+      sql: `SELECT p.id, p.name, p.avatar_color, p.organizer_type, p.organizer_count,
+                   ps.invited_email AS shared_by_email
+            FROM profiles p
+            JOIN profile_shares ps ON ps.profile_id = p.id
+            WHERE ps.shared_with_user_id = ? AND ps.accepted_at IS NOT NULL`,
+      args: [req.user.id],
+    }),
+  ]);
 
-  /** @type {Array<{id: string, name: string, avatarColor: string, organizerType: string, organizerCount: number}>} */
-  const profiles = rows.map((r) => ({
-    id:             String(r.id),
-    name:           String(r.name),
-    avatarColor:    String(r.avatar_color),
-    organizerType:  String(r.organizer_type ?? '7x4'),
-    organizerCount: Number(r.organizer_count ?? 1),
-  }));
+  /**
+   * @typedef {{ id: string, name: string, avatarColor: string, organizerType: string, organizerCount: number, isOwned: boolean, sharedByEmail: string | null }} Profile
+   * @type {Profile[]}
+   */
+  const profiles = [
+    ...ownedResult.rows.map((r) => ({
+      id:             String(r.id),
+      name:           String(r.name),
+      avatarColor:    String(r.avatar_color),
+      organizerType:  String(r.organizer_type ?? '7x4'),
+      organizerCount: Number(r.organizer_count ?? 1),
+      isOwned:        true,
+      sharedByEmail:  null,
+    })),
+    ...sharedResult.rows.map((r) => ({
+      id:             String(r.id),
+      name:           String(r.name),
+      avatarColor:    String(r.avatar_color),
+      organizerType:  String(r.organizer_type ?? '7x4'),
+      organizerCount: Number(r.organizer_count ?? 1),
+      isOwned:        false,
+      sharedByEmail:  String(r.shared_by_email),
+    })),
+  ];
 
   const pidCookie = req.cookies?.pid;
   const active = profiles.find((p) => p.id === pidCookie) ?? profiles[0];

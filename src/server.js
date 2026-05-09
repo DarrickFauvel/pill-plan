@@ -15,6 +15,7 @@ import settingsRouter from './routes/settings.js';
 import billingRouter from './routes/billing.js';
 import adminRouter from './routes/admin.js';
 import accountRouter from './routes/account.js';
+import sharingRouter from './routes/sharing.js';
 import { requireAuth, loadAppContext } from './middleware/auth.js';
 import { requireAdmin } from './middleware/admin.js';
 import db from './db/client.js';
@@ -66,19 +67,23 @@ app.get('/', async (req, res) => {
   });
 });
 
-app.get('/login', (req, res) =>
+app.get('/login', (req, res) => {
+  const returnUrl = String(req.query.return ?? '');
   res.render('pages/login', {
-    title: 'Sign in',
-    error: req.query.error ?? null,
-  })
-);
+    title:     'Sign in',
+    error:     req.query.error ?? null,
+    returnUrl: returnUrl.startsWith('/') ? returnUrl : '',
+  });
+});
 
-app.get('/signup', (req, res) =>
+app.get('/signup', (req, res) => {
+  const returnUrl = String(req.query.return ?? '');
   res.render('pages/signup', {
-    title: 'Create account',
-    error: req.query.error ?? null,
-  })
-);
+    title:     'Create account',
+    error:     req.query.error ?? null,
+    returnUrl: returnUrl.startsWith('/') ? returnUrl : '',
+  });
+});
 
 app.get('/privacy', (req, res) =>
   res.render('pages/privacy', { title: 'Privacy Policy', saveIndicator: false })
@@ -119,6 +124,11 @@ app.get('/app', requireAuth, (req, res) => res.redirect('/app/grid'));
 
 app.use('/app/profiles', requireAuth, loadAppContext, profilesRouter);
 
+// Public invite page (no auth required for display)
+app.use('/app/invite', sharingRouter);
+// Sharing API (auth applied per-route inside)
+app.use('/', sharingRouter);
+
 app.use('/', gridRouter);
 
 app.use('/', settingsRouter);
@@ -135,5 +145,5 @@ app.use(/** @type {import('express').ErrorRequestHandler} */ (err, req, res, _ne
 
 const PORT = Number(process.env.PORT ?? 3000);
 app.listen(PORT, () => {
-  console.log(`MediGrid running → http://localhost:${PORT}`);
+  console.log(`Pill Plan running → http://localhost:${PORT}`);
 });

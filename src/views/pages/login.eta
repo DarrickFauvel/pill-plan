@@ -3,7 +3,7 @@
 <main id="main" class="auth-layout">
   <div class="auth-card">
     <div class="auth-brand">
-      <h1 class="auth-logo">MediGrid</h1>
+      <h1 class="auth-logo">Pill Plan</h1>
       <p class="auth-tagline">Your medication organizer</p>
     </div>
 
@@ -18,6 +18,9 @@
     <% } %>
 
     <form action="/api/auth/login" method="POST" class="auth-form">
+      <% if (it.returnUrl) { %>
+      <input type="hidden" name="return" value="<%= it.returnUrl %>">
+      <% } %>
       <div class="form-group">
         <label for="email">Email address</label>
         <input
@@ -50,7 +53,8 @@
     </form>
 
     <p class="auth-switch">
-      Don't have an account? <a href="/signup">Create one</a>
+      Don't have an account?
+      <a href="/signup<%= it.returnUrl ? '?return=' + encodeURIComponent(it.returnUrl) : '' %>">Create one</a>
     </p>
   </div>
 </main>

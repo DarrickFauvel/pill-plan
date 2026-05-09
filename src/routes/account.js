@@ -24,7 +24,7 @@ router.get('/export', requireAuth, async (req, res) => {
   };
 
   res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Content-Disposition', 'attachment; filename="medigrid-data.json"');
+  res.setHeader('Content-Disposition', 'attachment; filename="pillplan-data.json"');
   res.send(JSON.stringify(payload, null, 2));
 });
 

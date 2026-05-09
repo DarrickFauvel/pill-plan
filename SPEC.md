@@ -1,8 +1,8 @@
-# MediGrid — App Specification
+# Pill Plan — App Specification
 
 ## Overview
 
-MediGrid is a Progressive Web App (PWA) for organizing medications and verifying weekly pill organizer refills. It serves both patients managing their own medications and caregivers managing medications for others. A single account supports multiple named profiles (e.g., "Mom", "Self", "Dad").
+Pill Plan is a Progressive Web App (PWA) for organizing medications and verifying weekly pill organizer refills. It serves both patients managing their own medications and caregivers managing medications for others. A single account supports multiple named profiles (e.g., "Mom", "Self", "Dad").
 
 The centerpiece is **The Grid** — a visual, date-aware representation of a physical 7-day pill organizer that spans a full month, supports custom time slots, and can be printed.
 
@@ -87,7 +87,7 @@ A significant portion of users are seniors or caregivers for seniors. Accessibil
 - The Grid uses `role="grid"`, `role="row"`, `role="gridcell"` with descriptive `aria-label` per cell (e.g., "Wednesday April 15, Morning slot, 2 medications, all taken")
 
 ### Mobile-First
-MediGrid is primarily used on phones — patients checking doses, caregivers logging refills on the go. Desktop is an enhancement, not the baseline.
+Pill Plan is primarily used on phones — patients checking doses, caregivers logging refills on the go. Desktop is an enhancement, not the baseline.
 
 - All CSS written mobile-first: base styles target small screens, `@media (min-width: ...)` adds desktop enhancements
 - Minimum tap target size: `44px × 44px` (WCAG 2.5.5)
@@ -212,7 +212,7 @@ qty_added     INTEGER NOT NULL
 
 ## Autosave Pattern
 
-All data input in MediGrid uses **debounced autosave** — no manual save buttons. A persistent save indicator in the bottom-right corner reflects the current save state.
+All data input in Pill Plan uses **debounced autosave** — no manual save buttons. A persistent save indicator in the bottom-right corner reflects the current save state.
 
 ### Behavior
 - User edits any field → a 1000ms debounce timer starts (resets on each keystroke)
@@ -471,7 +471,7 @@ The server maintains one persistent SSE connection per authenticated session at 
 ## Project Structure
 
 ```
-medigrid/
+pill-plan/
 ├── public/
 │   ├── index.html
 │   ├── manifest.json

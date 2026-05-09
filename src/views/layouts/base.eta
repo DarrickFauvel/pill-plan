@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/grid.css">
   <% if (it.extraCss) { %><link rel="stylesheet" href="<%= it.extraCss %>"><% } %>
-  <title><%= it.title ? it.title + ' — MediGrid' : 'MediGrid' %></title>
+  <title><%= it.title ? it.title + ' — Pill Plan' : 'Pill Plan' %></title>
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -38,7 +38,7 @@
       <a href="/privacy">Privacy Policy</a>
       <a href="/terms">Terms of Service</a>
     </nav>
-    <p>&copy; <%= new Date().getFullYear() %> MediGrid</p>
+    <p>&copy; <%= new Date().getFullYear() %> Pill Plan</p>
   </footer>
 
   <script type="module" src="/js/vendor/datastar.js"></script>
