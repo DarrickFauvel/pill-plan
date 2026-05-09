@@ -6,32 +6,59 @@ import { sendInviteEmail } from '../services/email.js';
 
 const router = Router();
 
+/**
+ * @param {import('express').Response} res
+ */
+function sseHeaders(res) {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+}
+
+/**
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/**
+ * Build a share list item HTML string (single line, safe for SSE data).
+ * @param {{ id: string, invitedEmail: string }} share
+ * @returns {string}
+ */
+function shareItemHtml({ id, invitedEmail }) {
+  const email = escapeHtml(invitedEmail);
+  const revokeUrl = `/api/settings/sharing/${id}/revoke`;
+  return `<li class="share-item" id="share-${id}"><div class="share-item__info"><span class="share-item__email">${email}</span><span class="share-item__status">Pending</span></div><form action="${revokeUrl}" method="POST"><button type="submit" class="btn btn--danger btn--sm" aria-label="Revoke access for ${email}" aria-describedby="revoke-warn-${id}">Revoke</button><span id="revoke-warn-${id}" class="sr-only">This will immediately remove their access to this profile.</span></form></li>`;
+}
+
 /* ─────────────────────────────────────────────────────────────
    Create invite  POST /api/settings/sharing
    ───────────────────────────────────────────────────────────── */
 
 router.post('/api/settings/sharing', requireAuth, loadAppContext, async (req, res) => {
-  if (!req.profile.isOwned) {
-    return res.redirect('/app/settings?shareError=not-owner');
-  }
+  sseHeaders(res);
+
+  /** @param {string} msg */
+  const sendError = (msg) => {
+    res.write(`event: datastar-patch-signals\ndata: signals ${JSON.stringify({ shareError: msg })}\n\n`);
+    res.end();
+  };
+
+  if (!req.profile.isOwned) return sendError('You can only share profiles you own.');
 
   const email = String(req.body.inviteEmail ?? '').trim().toLowerCase();
 
-  if (!email || !email.includes('@')) {
-    return res.redirect('/app/settings?shareError=invalid-email');
-  }
-
-  if (email === req.user.email.toLowerCase()) {
-    return res.redirect('/app/settings?shareError=self');
-  }
+  if (!email || !email.includes('@')) return sendError('Please enter a valid email address.');
+  if (email === req.user.email.toLowerCase()) return sendError('You cannot share a profile with yourself.');
 
   const existing = await db.execute({
     sql:  'SELECT id FROM profile_shares WHERE profile_id = ? AND invited_email = ?',
     args: [req.profile.id, email],
   });
-  if (existing.rows.length) {
-    return res.redirect('/app/settings?shareError=duplicate');
-  }
+  if (existing.rows.length) return sendError('An invitation has already been sent to that email address.');
 
   const id    = randomUUID();
   const token = randomUUID();
@@ -54,7 +81,9 @@ router.post('/api/settings/sharing', requireAuth, loadAppContext, async (req, re
     inviteUrl,
   });
 
-  res.redirect(`/app/settings?newInvite=${token}`);
+  res.write(`event: datastar-patch-signals\ndata: signals ${JSON.stringify({ inviteEmail: '', inviteUrl, shareError: '' })}\n\n`);
+  res.write(`event: datastar-patch-elements\ndata: selector #share-list\ndata: mode append\ndata: elements ${shareItemHtml({ id, invitedEmail: email })}\n\n`);
+  res.end();
 });
 
 

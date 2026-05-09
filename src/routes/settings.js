@@ -59,14 +59,13 @@ router.get('/app/settings', requireAuth, loadAppContext, async (req, res) => {
   const slots = await loadSlots(req.profile.id);
 
   /** @type {Record<string, string | number>} */
-  const signals = { saveStatus: 'idle', newSlotLabel: '', organizerType: req.profile.organizerType, organizerCount: req.profile.organizerCount };
+  const signals = { saveStatus: 'idle', newSlotLabel: '', organizerType: req.profile.organizerType, organizerCount: req.profile.organizerCount, inviteEmail: '', inviteUrl: '', shareError: '' };
   for (const slot of slots) {
     signals[slotSignalKey(slot.id)] = slot.label;
   }
 
   // Load shares for owned profiles only
   let shares = [];
-  let newInviteUrl = null;
   if (req.profile.isOwned) {
     const sharesRes = await db.execute({
       sql:  `SELECT id, invited_email, shared_with_user_id, accepted_at
@@ -80,20 +79,7 @@ router.get('/app/settings', requireAuth, loadAppContext, async (req, res) => {
       invitedEmail: String(r.invited_email),
       accepted:     !!r.accepted_at,
     }));
-
-    // Show invite URL after creation (fallback or confirmation)
-    if (req.query.newInvite) {
-      const siteUrl = process.env.SITE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
-      newInviteUrl = `${siteUrl}/app/invite/${req.query.newInvite}`;
-    }
   }
-
-  const shareErrorMessages = {
-    'not-owner':     'You can only share profiles you own.',
-    'invalid-email': 'Please enter a valid email address.',
-    'self':          'You cannot share a profile with yourself.',
-    'duplicate':     'An invitation has already been sent to that email address.',
-  };
 
   res.render('pages/settings', {
     title:         'Settings',
@@ -107,8 +93,6 @@ router.get('/app/settings', requireAuth, loadAppContext, async (req, res) => {
     signals:       JSON.stringify(signals),
     extraCss:      '/css/settings.css',
     shares,
-    newInviteUrl,
-    shareError:    shareErrorMessages[req.query.shareError] ?? null,
   });
 });
 
