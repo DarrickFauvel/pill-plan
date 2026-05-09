@@ -4,70 +4,72 @@
   data-signals='{"toggleMedId":"","toggleSlotId":"","toggleDate":"","toggleError":"","pendingToggleId":"","pendingToggleNewState":false}'
 >
 
-  <header class="grid-header">
-    <a
-      href="<%= it.grid.prevLink %>"
-      class="grid-nav-btn"
-      aria-label="Previous"
-    >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-    </a>
-    <h1 class="grid-month-title"><%= it.grid.rangeLabel %></h1>
-    <%
-      var printMonth = it.grid.year + '-' + String(it.grid.month + 1).padStart(2, '0');
-    %>
-    <a
-      href="/app/grid/print?month=<%= printMonth %>"
-      class="grid-nav-btn"
-      aria-label="Print this period"
-    >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/>
-      </svg>
-    </a>
-    <a
-      href="<%= it.grid.nextLink %>"
-      class="grid-nav-btn"
-      aria-label="Next"
-    >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
-    </a>
-  </header>
-
-  <% if (it.grid.refillAlerts.length > 0) { %>
-  <div class="refill-banner" role="alert">
-    <svg class="refill-banner__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-    </svg>
-    <div class="refill-banner__body">
-      <strong class="refill-banner__title">Refill needed</strong>
-      <ul class="refill-banner__list" role="list">
-        <% it.grid.refillAlerts.forEach(function(med) { %>
-        <li>
-          <a href="/app/medications/<%= med.id %>" class="refill-banner__link"><%= med.name %></a>
-          — <%= med.daysRemaining %> day<%= med.daysRemaining === 1 ? '' : 's' %> left
-        </li>
-        <% }); %>
-      </ul>
-    </div>
-  </div>
-  <% } %>
-
   <% var hasAnyMeds = it.grid.slots.some(function(s) { return s.meds.length > 0; }); %>
-
-  <% if (!hasAnyMeds) { %>
-  <div class="grid-empty">
-    <p class="grid-empty__title">No medications scheduled</p>
-    <p>Add medications and set their time slots to start tracking doses.</p>
-    <a href="/app/medications/new" class="btn btn--primary">Add medication</a>
-  </div>
-  <% } else { %>
+  <% var hasToday = it.grid.days.some(function(d) { return d.isToday; }); %>
 
   <div class="grid-scroll-container" id="grid-scroll">
+
+    <header class="grid-header">
+      <a
+        href="<%= it.grid.prevLink %>"
+        class="grid-nav-btn"
+        aria-label="Previous"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </a>
+      <h1 class="grid-month-title"><%= it.grid.rangeLabel %></h1>
+      <%
+        var printMonth = it.grid.year + '-' + String(it.grid.month + 1).padStart(2, '0');
+      %>
+      <a
+        href="/app/grid/print?month=<%= printMonth %>"
+        class="grid-nav-btn"
+        aria-label="Print this period"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/>
+        </svg>
+      </a>
+      <a
+        href="<%= it.grid.nextLink %>"
+        class="grid-nav-btn"
+        aria-label="Next"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </a>
+    </header>
+
+    <% if (it.grid.refillAlerts.length > 0) { %>
+    <div class="refill-banner" role="alert">
+      <svg class="refill-banner__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <div class="refill-banner__body">
+        <strong class="refill-banner__title">Refill needed</strong>
+        <ul class="refill-banner__list" role="list">
+          <% it.grid.refillAlerts.forEach(function(med) { %>
+          <li>
+            <a href="/app/medications/<%= med.id %>" class="refill-banner__link"><%= med.name %></a>
+            — <%= med.daysRemaining %> day<%= med.daysRemaining === 1 ? '' : 's' %> left
+          </li>
+          <% }); %>
+        </ul>
+      </div>
+    </div>
+    <% } %>
+
+    <% if (!hasAnyMeds) { %>
+    <div class="grid-empty">
+      <p class="grid-empty__title">No medications scheduled</p>
+      <p>Add medications and set their time slots to start tracking doses.</p>
+      <a href="/app/medications/new" class="btn btn--primary">Add medication</a>
+    </div>
+    <% } else { %>
+
     <table
       role="grid"
       class="grid-table"
@@ -177,10 +179,12 @@
         <% }); %>
       </tbody>
     </table>
+
+    <% } %>
+
   </div>
 
-  <% var hasToday = it.grid.days.some(function(d) { return d.isToday; }); %>
-  <% if (hasToday) { %>
+  <% if (hasAnyMeds && hasToday) { %>
   <div class="grid-footer">
     <button
       type="button"
@@ -188,8 +192,6 @@
       onclick="document.querySelector('.grid-th--today')?.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'})"
     >Today</button>
   </div>
-  <% } %>
-
   <% } %>
 
 </div>

@@ -1,4 +1,4 @@
-const CACHE = 'pillplan-v1';
+const CACHE = 'pillplan-v5';
 
 const PRECACHE = [
   '/css/tokens.css',

@@ -2,6 +2,19 @@
 
   /* ── Page shell ──────────────────────────────────────────── */
 
+  /* Fix height chain so .grid-scroll-container creates real overflow */
+  .app-main:has(.grid-page) {
+    block-size: calc(100dvh - var(--header-height) - var(--bottom-nav-height));
+    padding: 0;
+    overflow: hidden;
+  }
+
+  @media (min-width: 768px) {
+    .app-main:has(.grid-page) {
+      block-size: 100dvh;
+    }
+  }
+
   .grid-page {
     display: flex;
     flex-direction: column;
@@ -18,7 +31,10 @@
     padding: var(--space-3) var(--space-4);
     background: color-mix(in srgb, var(--color-warning) 12%, var(--color-surface));
     border-bottom: 2px solid var(--color-warning);
-    flex-shrink: 0;
+    position: sticky;
+    left: 0;
+    inline-size: 100dvw;
+    z-index: 9;
   }
 
   .refill-banner__icon {
@@ -76,8 +92,11 @@
     gap: var(--space-2);
     padding: var(--space-3) var(--space-4);
     border-bottom: 1px solid var(--color-border);
-    flex-shrink: 0;
     background: var(--color-surface);
+    position: sticky;
+    left: 0;
+    inline-size: 100dvw;
+    z-index: 10;
   }
 
   .grid-month-title {
@@ -153,24 +172,30 @@
 
   /* ── Sticky positioning ──────────────────────────────────── */
 
-  .grid-th--label {
+  /* Entire thead sticks as a unit — avoids border-collapse gap bug where
+     the collapsed th/td border scrolls with tbody instead of the header. */
+  .grid-table thead {
     position: sticky;
-    left: 0;
     top: 0;
     z-index: 4;
     background: var(--color-surface);
+    box-shadow: 0 3px 0 var(--color-border);
+  }
+
+  /* Corner cell: also sticky on the left axis within the sticky thead */
+  .grid-th--label {
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background: var(--color-surface);
+    border-bottom: none;
+    box-shadow: 0 2px 0 0 var(--color-border);
   }
 
   .grid-th--day {
-    position: sticky;
-    top: 0;
-    z-index: 2;
     background: var(--color-surface);
-  }
-
-  /* When organizer row is present, push day headers below it */
-  .grid-organizer-row ~ tr .grid-th--day {
-    top: 2.25rem;
+    border-bottom: none;
+    box-shadow: 0 2px 0 0 var(--color-border);
   }
 
   .grid-th--med,
@@ -207,15 +232,13 @@
     border-bottom: 1px solid var(--color-border);
     box-shadow: inset 2px 0 0 var(--color-border), inset -2px 0 0 var(--color-border);
     background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
-    position: sticky;
-    top: 0;
-    z-index: 2;
   }
 
+  /* Organizer-row corner: sticky on left axis within the sticky thead */
   .grid-organizer-row .grid-td {
     position: sticky;
     left: 0;
-    z-index: 4;
+    z-index: 5;
     background: var(--color-surface);
   }
 
@@ -241,6 +264,15 @@
   .grid-th--org-end,
   .grid-td--org-end {
     box-shadow: inset -2px 0 0 var(--color-border);
+  }
+
+  /* Day header cells need the bottom box-shadow combined with any side borders */
+  .grid-th--day.grid-th--week-start {
+    box-shadow: inset 2px 0 0 var(--color-border), 0 2px 0 0 var(--color-border);
+  }
+
+  .grid-th--day.grid-th--org-end {
+    box-shadow: inset -2px 0 0 var(--color-border), 0 2px 0 0 var(--color-border);
   }
 
   /* ── Header cells ────────────────────────────────────────── */
