@@ -1,38 +1,29 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-/** @type {import('nodemailer').Transporter | null} */
-let _transporter = null;
+/** @type {Resend | null} */
+let _client = null;
 
-function getTransporter() {
-  if (!process.env.SMTP_HOST) return null;
-  if (!_transporter) {
-    _transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT ?? 587),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-  }
-  return _transporter;
+function getClient() {
+  if (!process.env.RESEND_API_KEY) return null;
+  if (!_client) _client = new Resend(process.env.RESEND_API_KEY);
+  return _client;
 }
 
 /**
  * Send a profile share invitation email.
- * Returns false (without throwing) if SMTP is not configured.
+ * Returns false (without throwing) if Resend is not configured or the send fails.
  *
  * @param {{ to: string, profileName: string, ownerEmail: string, inviteUrl: string }} opts
  * @returns {Promise<boolean>}
  */
 export async function sendInviteEmail({ to, profileName, ownerEmail, inviteUrl }) {
-  const t = getTransporter();
-  if (!t) return false;
+  const client = getClient();
+  if (!client) return false;
 
-  const from = process.env.SMTP_FROM ?? 'Pill Plan <noreply@example.com>';
+  const from = process.env.RESEND_FROM ?? 'Pill Plan <pillplan@darrickdevelops.com>';
+
   try {
-    await t.sendMail({
+    await client.emails.send({
       from,
       to,
       subject: `${ownerEmail} shared a Pill Plan profile with you`,
@@ -51,8 +42,9 @@ export async function sendInviteEmail({ to, profileName, ownerEmail, inviteUrl }
       `,
     });
   } catch (err) {
-    console.error('[email] sendMail failed:', err.message);
+    console.error('[email] sendInviteEmail failed:', err.message);
     return false;
   }
+
   return true;
 }
