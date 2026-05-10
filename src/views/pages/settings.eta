@@ -226,7 +226,7 @@
     <div class="alert alert--error" role="alert" data-show="$shareError !== ''" data-text="$shareError"></div>
 
     <div class="invite-created" role="status" data-show="$inviteUrl !== ''">
-      <p><strong>Invitation created.</strong> Copy the link below and send it to the person you invited.</p>
+      <p><strong>Invitation created.</strong> Copy the link below and send it to the person you invited.<span data-text="$emailNote"></span></p>
       <div class="invite-url-row">
         <input
           type="text"

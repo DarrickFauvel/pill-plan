@@ -59,7 +59,7 @@ router.get('/app/settings', requireAuth, loadAppContext, async (req, res) => {
   const slots = await loadSlots(req.profile.id);
 
   /** @type {Record<string, string | number>} */
-  const signals = { saveStatus: 'idle', newSlotLabel: '', organizerType: req.profile.organizerType, organizerCount: req.profile.organizerCount, inviteEmail: '', inviteUrl: '', shareError: '' };
+  const signals = { saveStatus: 'idle', newSlotLabel: '', organizerType: req.profile.organizerType, organizerCount: req.profile.organizerCount, inviteEmail: '', inviteUrl: '', shareError: '', emailNote: '' };
   for (const slot of slots) {
     signals[slotSignalKey(slot.id)] = slot.label;
   }

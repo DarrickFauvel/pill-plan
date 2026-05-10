@@ -74,14 +74,15 @@ router.post('/api/settings/sharing', requireAuth, loadAppContext, async (req, re
   const siteUrl   = process.env.SITE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
   const inviteUrl = `${siteUrl}/app/invite/${token}`;
 
-  await sendInviteEmail({
+  const emailSent = await sendInviteEmail({
     to:          email,
     profileName: req.profile.name,
     ownerEmail:  req.user.email,
     inviteUrl,
   });
 
-  res.write(`event: datastar-patch-signals\ndata: signals ${JSON.stringify({ inviteEmail: '', inviteUrl, shareError: '' })}\n\n`);
+  const emailNote = emailSent ? '' : ' (SMTP not configured — copy the link below to share manually)';
+  res.write(`event: datastar-patch-signals\ndata: signals ${JSON.stringify({ inviteEmail: '', inviteUrl, shareError: '', emailNote })}\n\n`);
   res.write(`event: datastar-patch-elements\ndata: selector #share-list\ndata: mode append\ndata: elements ${shareItemHtml({ id, invitedEmail: email })}\n\n`);
   res.end();
 });
