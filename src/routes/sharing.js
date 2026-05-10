@@ -31,7 +31,7 @@ function escapeHtml(str) {
 function shareItemHtml({ id, invitedEmail }) {
   const email = escapeHtml(invitedEmail);
   const revokeUrl = `/api/settings/sharing/${id}/revoke`;
-  return `<li class="share-item" id="share-${id}"><div class="share-item__info"><span class="share-item__email">${email}</span><span class="share-item__status">Pending</span></div><form action="${revokeUrl}" method="POST"><button type="submit" class="btn btn--danger btn--sm" aria-label="Revoke access for ${email}" aria-describedby="revoke-warn-${id}">Revoke</button><span id="revoke-warn-${id}" class="sr-only">This will immediately remove their access to this profile.</span></form></li>`;
+  return `<li class="share-item" id="share-${id}"><div class="share-item__info"><span class="share-item__email">${email}</span><span class="share-item__status">Pending</span></div><button type="button" class="btn btn--danger btn--sm" aria-label="Revoke access for ${email}" aria-describedby="revoke-warn-${id}" data-on:click="@post('${revokeUrl}')">Revoke</button><span id="revoke-warn-${id}" class="sr-only">This will immediately remove their access to this profile.</span></li>`;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -93,8 +93,11 @@ router.post('/api/settings/sharing', requireAuth, loadAppContext, async (req, re
    ───────────────────────────────────────────────────────────── */
 
 router.post('/api/settings/sharing/:id/revoke', requireAuth, loadAppContext, async (req, res) => {
+  sseHeaders(res);
+
   if (!req.profile.isOwned) {
-    return res.redirect('/app/settings');
+    res.write(`event: datastar-patch-signals\ndata: signals ${JSON.stringify({ shareError: 'You can only revoke shares on profiles you own.' })}\n\n`);
+    return res.end();
   }
 
   await db.execute({
@@ -102,7 +105,8 @@ router.post('/api/settings/sharing/:id/revoke', requireAuth, loadAppContext, asy
     args: [req.params.id, req.profile.id, req.user.id],
   });
 
-  res.redirect('/app/settings');
+  res.write(`event: datastar-patch-elements\ndata: selector #share-${req.params.id}\ndata: mode remove\n\n`);
+  res.end();
 });
 
 

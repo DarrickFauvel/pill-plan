@@ -213,11 +213,7 @@
   <!-- Profile sharing (owned profiles only) -->
   <% if (it.profile.isOwned) { %>
   <section class="settings-section" aria-labelledby="sharing-heading">
-    <h2 id="sharing-heading">Profile sharing</h2>
-    <p class="sharing-profile-name" aria-label="Profile being shared">
-      <span class="sharing-profile-name__label">Sharing:</span>
-      <strong><%= it.profile.name %></strong>
-    </p>
+    <h2 id="sharing-heading">Profile sharing &mdash; <%= it.profile.name %></h2>
     <p class="settings-section__desc">
       Share this profile with the person whose medications you manage.
       They will have full access to view and edit medications.
@@ -243,9 +239,14 @@
           aria-label="Copy invite link to clipboard"
         >Copy</button>
       </div>
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        data-on:click="$inviteUrl = ''"
+      >Send another invite</button>
     </div>
 
-    <form class="invite-form">
+    <form class="invite-form" data-show="$inviteUrl === ''">
       <div class="form-group invite-form__field">
         <label for="invite-email">Email address</label>
         <input
@@ -270,17 +271,16 @@
             <%= share.accepted ? 'Active' : 'Pending' %>
           </span>
         </div>
-        <form action="/api/settings/sharing/<%= share.id %>/revoke" method="POST">
-          <button
-            type="submit"
-            class="btn btn--danger btn--sm"
-            aria-label="Revoke access for <%= share.invitedEmail %>"
-            aria-describedby="revoke-warn-<%= share.id %>"
-          >Revoke</button>
-          <span id="revoke-warn-<%= share.id %>" class="sr-only">
-            This will immediately remove their access to this profile.
-          </span>
-        </form>
+        <button
+          type="button"
+          class="btn btn--danger btn--sm"
+          aria-label="Revoke access for <%= share.invitedEmail %>"
+          aria-describedby="revoke-warn-<%= share.id %>"
+          data-on:click="@post('/api/settings/sharing/<%= share.id %>/revoke')"
+        >Revoke</button>
+        <span id="revoke-warn-<%= share.id %>" class="sr-only">
+          This will immediately remove their access to this profile.
+        </span>
       </li>
       <% }); %>
     </ul>
