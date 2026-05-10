@@ -226,21 +226,6 @@
 
   /* ── Profile sharing ─────────────────────────────────────── */
 
-  .sharing-profile-name {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: 0.3em 0.75em;
-    margin-block-end: var(--space-3);
-    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
-    border-radius: var(--radius-full);
-    font-size: var(--font-size-sm);
-  }
-
-  .sharing-profile-name__label {
-    color: var(--color-muted);
-  }
 
   .invite-form {
     display: flex;
