@@ -96,6 +96,12 @@ export async function loadAppContext(req, res, next) {
   const pidCookie = req.cookies?.pid;
   const active = profiles.find((p) => p.id === pidCookie) ?? profiles[0];
 
+  if (!active) {
+    res.clearCookie('sid');
+    res.clearCookie('pid');
+    return res.redirect('/signup');
+  }
+
   res.cookie('pid', active.id, {
     httpOnly: true,
     sameSite: 'strict',

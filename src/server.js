@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import 'express-async-errors';
 import express from 'express';
+import { migrate } from './db/migrate.js';
 import cookieParser from 'cookie-parser';
 import { Eta } from 'eta';
 import { fileURLToPath } from 'url';
@@ -144,6 +145,11 @@ app.use(/** @type {import('express').ErrorRequestHandler} */ (err, req, res, _ne
 });
 
 const PORT = Number(process.env.PORT ?? 3000);
-app.listen(PORT, () => {
-  console.log(`Pill Plan running → http://localhost:${PORT}`);
+migrate().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Pill Plan running → http://localhost:${PORT}`);
+  });
+}).catch((err) => {
+  console.error('Migration failed, server not started:', err);
+  process.exit(1);
 });
