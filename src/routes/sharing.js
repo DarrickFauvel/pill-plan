@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import db from '../db/client.js';
 import { requireAuth, loadAppContext } from '../middleware/auth.js';
-import { sendInviteEmail } from '../services/email.js';
 
 const router = Router();
 
@@ -31,7 +30,7 @@ function escapeHtml(str) {
  * @returns {string}
  */
 function shareItemHtml({ id, invitedEmail }) {
-  const email = escapeHtml(invitedEmail);
+  const email = escapeHtml(invitedEmail || 'Link share');
   const revokeUrl = `/api/settings/sharing/${id}/revoke`;
   return `<li class="share-item" id="share-${id}"><div class="share-item__info"><span class="share-item__email">${email}</span><span class="share-item__status">Pending</span></div><button type="button" class="btn btn--danger btn--sm" aria-label="Revoke access for ${email}" aria-describedby="revoke-warn-${id}" data-on:click="@post('${revokeUrl}')">Revoke</button><span id="revoke-warn-${id}" class="sr-only">This will immediately remove their access to this profile.</span></li>`;
 }
@@ -43,24 +42,10 @@ function shareItemHtml({ id, invitedEmail }) {
 router.post('/api/settings/sharing', requireAuth, loadAppContext, async (req, res) => {
   sseHeaders(res);
 
-  /** @param {string} msg */
-  const sendError = (msg) => {
-    res.write(`event: datastar-patch-signals\ndata: signals ${JSON.stringify({ shareError: msg })}\n\n`);
-    res.end();
-  };
-
-  if (!req.profile.isOwned) return sendError('You can only share profiles you own.');
-
-  const email = String(req.body.inviteEmail ?? '').trim().toLowerCase();
-
-  if (!email || !email.includes('@')) return sendError('Please enter a valid email address.');
-  if (email === req.user.email.toLowerCase()) return sendError('You cannot share a profile with yourself.');
-
-  const existing = await db.execute({
-    sql:  'SELECT id FROM profile_shares WHERE profile_id = ? AND invited_email = ?',
-    args: [req.profile.id, email],
-  });
-  if (existing.rows.length) return sendError('An invitation has already been sent to that email address.');
+  if (!req.profile.isOwned) {
+    res.write(`event: datastar-patch-signals\ndata: signals ${JSON.stringify({ shareError: 'You can only share profiles you own.' })}\n\n`);
+    return res.end();
+  }
 
   const id    = randomUUID();
   const token = randomUUID();
@@ -70,22 +55,14 @@ router.post('/api/settings/sharing', requireAuth, loadAppContext, async (req, re
     sql:  `INSERT INTO profile_shares
              (id, profile_id, owner_user_id, invited_email, invite_token, created_at)
            VALUES (?, ?, ?, ?, ?, ?)`,
-    args: [id, req.profile.id, req.user.id, email, token, now],
+    args: [id, req.profile.id, req.user.id, '', token, now],
   });
 
-  const siteUrl   = process.env.SITE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
+  const siteUrl   = (process.env.SITE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`).replace(/\/+$/, '');
   const inviteUrl = `${siteUrl}/app/invite/${token}`;
 
-  const emailSent = await sendInviteEmail({
-    to:          email,
-    profileName: req.profile.name,
-    ownerEmail:  req.user.email,
-    inviteUrl,
-  });
-
-  const emailNote = emailSent ? '' : ' (Email not configured — copy the link below to share manually)';
-  res.write(`event: datastar-patch-signals\ndata: signals ${JSON.stringify({ inviteEmail: '', inviteUrl, shareError: '', emailNote })}\n\n`);
-  res.write(`event: datastar-patch-elements\ndata: selector #share-list\ndata: mode append\ndata: elements ${shareItemHtml({ id, invitedEmail: email })}\n\n`);
+  res.write(`event: datastar-patch-signals\ndata: signals ${JSON.stringify({ inviteUrl, shareError: '' })}\n\n`);
+  res.write(`event: datastar-patch-elements\ndata: selector #share-list\ndata: mode append\ndata: elements ${shareItemHtml({ id, invitedEmail: null })}\n\n`);
   res.end();
 });
 

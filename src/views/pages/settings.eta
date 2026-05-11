@@ -210,82 +210,11 @@
     <% } %>
   </section>
 
-  <!-- Profile sharing (owned profiles only) -->
-  <% if (it.profile.isOwned) { %>
-  <section class="settings-section" aria-labelledby="sharing-heading">
-    <h2 id="sharing-heading">Profile sharing &mdash; <%= it.profile.name %></h2>
-    <p class="settings-section__desc">
-      Share this profile with the person whose medications you manage.
-      They will have full access to view and edit medications.
-    </p>
-
-    <div class="alert alert--error" role="alert" data-show="$shareError !== ''" data-text="$shareError"></div>
-
-    <div class="invite-created" role="status" data-show="$inviteUrl !== ''">
-      <p><strong>Invitation created.</strong> Copy the link below and send it to the person you invited.<span data-text="$emailNote"></span></p>
-      <div class="invite-url-row">
-        <input
-          type="text"
-          class="input invite-url-input"
-          data-bind="inviteUrl"
-          readonly
-          aria-label="Invite link"
-          id="invite-url-display"
-        >
-        <button
-          type="button"
-          class="btn btn--secondary btn--sm"
-          onclick="navigator.clipboard.writeText(document.getElementById('invite-url-display').value).then(()=>{ this.textContent='Copied!'; setTimeout(()=>{ this.textContent='Copy'; },2000); })"
-          aria-label="Copy invite link to clipboard"
-        >Copy</button>
-      </div>
-      <button
-        type="button"
-        class="btn btn--secondary btn--sm"
-        data-on:click="$inviteUrl = ''"
-      >Send another invite</button>
-    </div>
-
-    <form class="invite-form" data-show="$inviteUrl === ''">
-      <div class="form-group invite-form__field">
-        <label for="invite-email">Email address</label>
-        <input
-          type="email"
-          id="invite-email"
-          name="inviteEmail"
-          class="input"
-          autocomplete="email"
-          placeholder="their@email.com"
-          data-bind="inviteEmail"
-        >
-      </div>
-      <button type="button" class="btn btn--primary" data-on:click="@post('/api/settings/sharing')">Send invite</button>
-    </form>
-
-    <ul class="share-list" role="list" aria-label="People with access" id="share-list">
-      <% it.shares.forEach(function(share) { %>
-      <li class="share-item" id="share-<%= share.id %>">
-        <div class="share-item__info">
-          <span class="share-item__email"><%= share.invitedEmail %></span>
-          <span class="share-item__status<%= share.accepted ? ' share-item__status--active' : '' %>">
-            <%= share.accepted ? 'Active' : 'Pending' %>
-          </span>
-        </div>
-        <button
-          type="button"
-          class="btn btn--danger btn--sm"
-          aria-label="Revoke access for <%= share.invitedEmail %>"
-          aria-describedby="revoke-warn-<%= share.id %>"
-          data-on:click="@post('/api/settings/sharing/<%= share.id %>/revoke')"
-        >Revoke</button>
-        <span id="revoke-warn-<%= share.id %>" class="sr-only">
-          This will immediately remove their access to this profile.
-        </span>
-      </li>
-      <% }); %>
-    </ul>
+  <!-- Profile sharing (coming soon) -->
+  <section class="settings-section settings-section--muted" aria-labelledby="sharing-heading">
+    <h2 id="sharing-heading">Profile sharing</h2>
+    <p class="settings-section__desc">Coming soon — you'll be able to share this profile with a caregiver or family member.</p>
   </section>
-  <% } %>
 
   <!-- Your data -->
   <section class="settings-section" aria-labelledby="data-heading">

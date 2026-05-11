@@ -86,6 +86,17 @@
     color: var(--color-text);
   }
 
+  .label-optional {
+    font-weight: 400;
+    color: var(--color-muted);
+    font-size: 0.875em;
+  }
+
+  .input-hint {
+    font-size: var(--font-size-sm, 0.875rem);
+    color: var(--color-muted);
+  }
+
   .input {
     inline-size: 100%;
     min-block-size: var(--tap-min);
@@ -166,7 +177,7 @@
     padding: 1em;
     border: 1px dashed var(--color-border);
     border-radius: var(--radius-sm);
-    color: var(--color-text-muted);
+    color: var(--color-muted);
     flex-wrap: wrap;
   }
 
