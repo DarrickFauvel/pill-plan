@@ -24,6 +24,7 @@ import db from '../db/client.js';
  * @property {number} doseQty
  * @property {number[]} scheduledDays  - 0=Sun … 6=Sat
  * @property {Record<string, GridEntry>} entries  - keyed by YYYY-MM-DD
+ * @property {string | null} imageUrl  - first image URL for this med, or null
  */
 
 /**
@@ -261,7 +262,7 @@ export async function buildMonthGrid(profileId, year, month) {
   const startDate = toDateStr(firstDay);
   const endDate   = toDateStr(lastDay);
 
-  const [slotsRes, medsRes, entriesRes] = await Promise.all([
+  const [slotsRes, medsRes, entriesRes, imagesRes] = await Promise.all([
     db.execute({
       sql:  'SELECT id, label, sort_order FROM time_slots WHERE profile_id = ? ORDER BY sort_order ASC',
       args: [profileId],
@@ -281,7 +282,21 @@ export async function buildMonthGrid(profileId, year, month) {
             WHERE profile_id = ? AND taken_date >= ? AND taken_date <= ?`,
       args: [profileId, startDate, endDate],
     }),
+    db.execute({
+      sql: `SELECT mi.med_id, mi.url FROM medication_images mi
+            JOIN medications m ON m.id = mi.med_id
+            WHERE m.profile_id = ?
+            ORDER BY mi.sort_order ASC`,
+      args: [profileId],
+    }),
   ]);
+
+  /** @type {Record<string, string>} */
+  const medImageMap = {};
+  for (const row of imagesRes.rows) {
+    const key = String(row.med_id);
+    if (!medImageMap[key]) medImageMap[key] = String(row.url);
+  }
 
   /** @type {Record<string, GridEntry>} */
   const entryIndex = {};
@@ -339,6 +354,7 @@ export async function buildMonthGrid(profileId, year, month) {
       doseQty:        Number(row.dose_qty ?? 1),
       scheduledDays,
       entries:        medEntries,
+      imageUrl:       medImageMap[medId] ?? null,
     });
   }
 
@@ -431,7 +447,7 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
   const startStr = toDateStr(startDate);
   const endStr   = toDateStr(endDate);
 
-  const [slotsRes, medsRes, entriesRes] = await Promise.all([
+  const [slotsRes, medsRes, entriesRes, imagesRes] = await Promise.all([
     db.execute({
       sql:  'SELECT id, label, sort_order FROM time_slots WHERE profile_id = ? ORDER BY sort_order ASC',
       args: [profileId],
@@ -451,7 +467,21 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
             WHERE profile_id = ? AND taken_date >= ? AND taken_date <= ?`,
       args: [profileId, startStr, endStr],
     }),
+    db.execute({
+      sql: `SELECT mi.med_id, mi.url FROM medication_images mi
+            JOIN medications m ON m.id = mi.med_id
+            WHERE m.profile_id = ?
+            ORDER BY mi.sort_order ASC`,
+      args: [profileId],
+    }),
   ]);
+
+  /** @type {Record<string, string>} */
+  const medImageMap = {};
+  for (const row of imagesRes.rows) {
+    const key = String(row.med_id);
+    if (!medImageMap[key]) medImageMap[key] = String(row.url);
+  }
 
   /** @type {Record<string, GridEntry>} */
   const entryIndex = {};
@@ -508,6 +538,7 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
       doseQty:        Number(row.dose_qty ?? 1),
       scheduledDays,
       entries:        medEntries,
+      imageUrl:       medImageMap[medId] ?? null,
     });
   }
 

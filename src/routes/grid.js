@@ -69,12 +69,17 @@ function cellId(medId, slotId, takenDate) {
  * @param {string} dayLabel
  * @param {number} dayNum
  * @param {boolean} taken
+ * @param {string | null} imageUrl
  * @returns {string}
  */
-function cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken) {
-  const cls    = taken ? 'grid-cell grid-cell--taken' : 'grid-cell';
+function cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken, imageUrl) {
   const label  = `${esc(medName)}, ${esc(slotLabel)}, ${esc(dayLabel)} ${dayNum}${taken ? ', taken' : ', not taken'}`;
   const action = `$pendingToggleId='${id}';$pendingToggleNewState=${!taken};$saveStatus='idle';$toggleMedId='${esc(medId)}';$toggleSlotId='${esc(slotId)}';$toggleDate='${takenDate}';@post('/api/grid/toggle')`;
+  if (imageUrl) {
+    const imgDataShow = `$pendingToggleId === '${id}' ? !$pendingToggleNewState : ${!taken}`;
+    return `<button id="${id}" class="grid-cell grid-cell--image-cell" data-on:click="${action}" data-class="{'grid-cell--pending': $pendingToggleId === '${id}'}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"><img src="${esc(imageUrl)}" alt="" data-show="${imgDataShow}"></button>`;
+  }
+  const cls       = taken ? 'grid-cell grid-cell--taken' : 'grid-cell';
   const dataClass = `{'grid-cell--taken': $pendingToggleId === '${id}' ? $pendingToggleNewState : ${taken}, 'grid-cell--pending': $pendingToggleId === '${id}'}`;
   return `<button id="${id}" class="${cls}" data-on:click="${action}" data-class="${dataClass}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"></button>`;
 }
@@ -293,9 +298,22 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
   }
 
   const isBottles = req.profile.organizerType === 'bottles';
+
+  let imageUrl = null;
+  if (!isBottles) {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (takenDate === todayStr) {
+      const imgRow = await db.execute({
+        sql:  'SELECT url FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC LIMIT 1',
+        args: [medId],
+      });
+      imageUrl = imgRow.rows.length ? String(imgRow.rows[0].url) : null;
+    }
+  }
+
   const html = isBottles
     ? bottlesCellHtml(id, medId, slotId, takenDate, medName, slotLabel, taken)
-    : cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken);
+    : cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken, imageUrl);
 
   res.write('event: datastar-patch-elements\n');
   res.write('data: mode outer\n');
