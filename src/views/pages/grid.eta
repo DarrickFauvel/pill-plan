@@ -159,6 +159,19 @@
             headers="col-<%= day.date %>"
           >
             <% if (isScheduled) { %>
+            <% if (day.isToday && med.imageUrl) { %>
+            <%
+              var imgDataShow = "$pendingToggleId === '" + cid + "' ? !$pendingToggleNewState : " + (!isTaken);
+            %>
+            <button
+              id="<%= cid %>"
+              class="grid-cell grid-cell--image-cell"
+              data-on:click="<%= clickAction %>"
+              data-class="{'grid-cell--pending': $pendingToggleId === '<%= cid %>'}"
+              aria-label="<%= ariaLabel %>"
+              aria-pressed="<%= isTaken ? 'true' : 'false' %>"
+            ><img src="<%= med.imageUrl %>" alt="" loading="lazy" data-show="<%= imgDataShow %>"></button>
+            <% } else { %>
             <button
               id="<%= cid %>"
               class="grid-cell<%= isTaken ? ' grid-cell--taken' : '' %>"
@@ -167,6 +180,7 @@
               aria-label="<%= ariaLabel %>"
               aria-pressed="<%= isTaken ? 'true' : 'false' %>"
             ></button>
+            <% } %>
             <% } else { %>
             <span class="grid-cell grid-cell--empty" aria-hidden="true"></span>
             <% } %>
