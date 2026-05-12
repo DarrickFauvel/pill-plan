@@ -533,12 +533,21 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
   const endFmt     = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const rangeLabel = `${startFmt} – ${endFmt}`;
 
-  const organizers = Array.from({ length: numWeeks }, (_, i) => String.fromCharCode(65 + i));
+  // Dec 14 2025 (a Sunday) is the anchor: that week = organizer A.
+  // Each subsequent week advances the letter; the cycle repeats every numWeeks weeks.
+  const REF_SUNDAY_MS = Date.UTC(2025, 11, 14);
+  const MS_PER_WEEK   = 7 * 24 * 60 * 60 * 1000;
+  const weeksSinceRef = Math.round((startDate.getTime() - REF_SUNDAY_MS) / MS_PER_WEEK);
+  const firstOrgIdx   = ((weeksSinceRef % numWeeks) + numWeeks) % numWeeks;
+  const organizers    = Array.from({ length: numWeeks }, (_, i) =>
+    String.fromCharCode(65 + ((firstOrgIdx + i) % numWeeks))
+  );
 
+  // Step one week at a time so the rotating pattern shifts correctly.
   const prevStart = new Date(startDate);
-  prevStart.setDate(prevStart.getDate() - numWeeks * 7);
+  prevStart.setDate(prevStart.getDate() - 7);
   const nextStart = new Date(startDate);
-  nextStart.setDate(nextStart.getDate() + numWeeks * 7);
+  nextStart.setDate(nextStart.getDate() + 7);
 
   const prevStartStr = toDateStr(prevStart);
   const nextStartStr = toDateStr(nextStart);

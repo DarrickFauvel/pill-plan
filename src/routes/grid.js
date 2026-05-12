@@ -173,7 +173,10 @@ router.get('/app/grid', requireAuth, loadAppContext, async (req, res) => {
       const [y, m] = monthParam.split('-').map(Number);
       startDate = sundayOf(new Date(y, m - 1, 1));
     } else {
-      startDate = sundayOf(new Date());
+      // Start one week back so the previous organizer tray is visible on the left.
+      const d = new Date();
+      d.setDate(d.getDate() - 7);
+      startDate = sundayOf(d);
     }
 
     const grid = await buildWeekRangeGrid(req.profile.id, startDate, numWeeks);

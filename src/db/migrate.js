@@ -52,7 +52,11 @@ async function migrate() {
   console.log('migrations complete');
 }
 
-migrate().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+export { migrate };
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  migrate().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
