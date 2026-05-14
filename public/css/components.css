@@ -452,6 +452,15 @@
     line-height: 1.5;
   }
 
+  .qr-modal__url {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    text-align: center;
+    word-break: break-all;
+    font-family: monospace;
+    margin-block-start: 0.25em;
+  }
+
   /* ─── Legal pages ───────────────────────────────────────────── */
 
   .legal-page {

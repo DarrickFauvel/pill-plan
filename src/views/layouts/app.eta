@@ -289,6 +289,7 @@
       </div>
       <img src="/qrcode.svg" alt="QR code linking to Pill Plan" class="qr-modal__code" width="256" height="256">
       <p class="qr-modal__hint">Scan with your phone camera to open Pill Plan</p>
+      <p class="qr-modal__url"><%= it.siteUrl %></p>
     </div>
   </dialog>
 

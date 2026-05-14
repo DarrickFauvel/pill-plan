@@ -23,12 +23,15 @@ async function handlePhotoInput(input) {
   fd.append('photo', file);
   input.value = '';
 
+  const statusEl = document.getElementById('photo-upload-error');
+  if (statusEl) statusEl.hidden = true;
+
   try {
     const res = await fetch(`/api/medications/${medId}/images/upload`, { method: 'POST', body: fd });
     if (!res.ok) throw new Error('Upload failed');
     appendImageItem(await res.json());
   } catch {
-    // silently fail — user can retry by selecting again
+    if (statusEl) statusEl.hidden = false;
   }
 }
 

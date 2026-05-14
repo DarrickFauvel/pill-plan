@@ -9,7 +9,7 @@ cloudinary.config({
 });
 
 /**
- * Upload an image buffer to Cloudinary using authenticated (private) delivery.
+ * Upload an image buffer to Cloudinary.
  *
  * @param {Buffer} buffer
  * @param {string} folder - Cloudinary folder path, e.g. `pill-plan/{medId}`
@@ -18,7 +18,7 @@ cloudinary.config({
 export async function uploadImage(buffer, folder) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: 'image', type: 'authenticated' },
+      { folder, resource_type: 'image' },
       (error, result) => {
         if (error || !result) return reject(error ?? new Error('Cloudinary upload failed'));
         resolve({ publicId: result.public_id });
@@ -29,19 +29,13 @@ export async function uploadImage(buffer, folder) {
 }
 
 /**
- * Generate a short-lived signed URL for a private Cloudinary image.
- * Signing is done locally using the API secret — no network call.
+ * Return the HTTPS delivery URL for a Cloudinary image.
  *
  * @param {string} publicId
  * @returns {string}
  */
 export function signImageUrl(publicId) {
-  return cloudinary.url(publicId, {
-    type:        'authenticated',
-    sign_url:    true,
-    secure:      true,
-    expires_at:  Math.floor(Date.now() / 1000) + 4 * 3600, // 4-hour window
-  });
+  return cloudinary.url(publicId, { secure: true });
 }
 
 /**
@@ -51,5 +45,5 @@ export function signImageUrl(publicId) {
  * @returns {Promise<void>}
  */
 export async function destroyImage(publicId) {
-  await cloudinary.uploader.destroy(publicId, { type: 'authenticated' });
+  await cloudinary.uploader.destroy(publicId);
 }
