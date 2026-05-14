@@ -43,10 +43,10 @@ let recropImageId = null;
  * @param {{ x: number, y: number, width: number, height: number } | null} [initialCrop]
  */
 function openCropModal(src, initialCrop) {
-  cropPreview.src = src;
   cropModal.showModal();
+  if (cropConfirmBtn) cropConfirmBtn.textContent = pendingFile ? 'Upload' : 'Save crop';
 
-  cropPreview.onload = () => {
+  function initCropper() {
     if (cropper) { cropper.destroy(); cropper = null; }
     cropper = new Cropper(cropPreview, {
       aspectRatio: 1,
@@ -86,12 +86,25 @@ function openCropModal(src, initialCrop) {
         isAdjusting = false;
       },
     });
+  }
+
+  cropPreview.onload = null;
+  cropPreview.onload = function () {
+    cropPreview.onload = null;
+    initCropper();
   };
+  cropPreview.src = src;
+  // Cached images won't re-fire onload; defer so the dialog has been laid out
+  if (cropPreview.complete && cropPreview.naturalWidth > 0) {
+    cropPreview.onload = null;
+    requestAnimationFrame(() => initCropper());
+  }
 }
 
 function closeCropModal() {
   cropModal.close();
   if (cropper) { cropper.destroy(); cropper = null; }
+  cropPreview.onload = null;
   pendingFile   = null;
   recropImageId = null;
   cropCenter    = null;
