@@ -254,22 +254,48 @@ async function submitRecrop(imageId, cropData) {
 
 /* ─── Delete image ────────────────────────────────────────── */
 
-imageList?.addEventListener('click', async (e) => {
+const photoDeleteModal     = /** @type {HTMLDialogElement} */ (document.getElementById('photo-delete-modal'));
+const photoDeleteConfirmBtn = document.getElementById('photo-delete-confirm-btn');
+const photoDeleteCancelBtn  = document.getElementById('photo-delete-cancel-btn');
+
+/** @type {{ imageId: string, li: Element } | null} */
+let pendingDelete = null;
+
+imageList?.addEventListener('click', (e) => {
   const btn = /** @type {Element} */ (e.target).closest('[data-delete-image]');
   if (!btn) return;
 
-  const imageId = /** @type {HTMLElement} */ (btn).dataset.deleteImage;
-  const li      = btn.closest('.med-image-item');
+  pendingDelete = {
+    imageId: /** @type {HTMLElement} */ (btn).dataset.deleteImage ?? '',
+    li:      /** @type {Element} */ (btn.closest('.med-image-item')),
+  };
+  photoDeleteModal?.showModal();
+});
 
-  /** @type {HTMLButtonElement} */ (btn).disabled = true;
+photoDeleteCancelBtn?.addEventListener('click', () => {
+  photoDeleteModal?.close();
+  pendingDelete = null;
+});
+
+photoDeleteModal?.addEventListener('click', (e) => {
+  if (e.target === photoDeleteModal) { photoDeleteModal.close(); pendingDelete = null; }
+});
+
+photoDeleteConfirmBtn?.addEventListener('click', async () => {
+  if (!pendingDelete) return;
+  const { imageId, li } = pendingDelete;
+  pendingDelete = null;
+  photoDeleteModal?.close();
+
+  /** @type {HTMLButtonElement | null} */ (photoDeleteConfirmBtn).disabled = true;
 
   try {
     const res = await fetch(`/api/medications/${medId}/images/${imageId}/delete`, { method: 'POST' });
     if (!res.ok) throw new Error('Delete failed');
     li?.remove();
-    if (!imageList.children.length && emptyMsg) emptyMsg.hidden = false;
+    if (imageList && !imageList.children.length && emptyMsg) emptyMsg.hidden = false;
   } catch {
-    /** @type {HTMLButtonElement} */ (btn).disabled = false;
+    if (photoDeleteConfirmBtn) /** @type {HTMLButtonElement} */ (photoDeleteConfirmBtn).disabled = false;
   }
 });
 
