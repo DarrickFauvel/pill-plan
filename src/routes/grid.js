@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import db from '../db/client.js';
 import { requireAuth, loadAppContext } from '../middleware/auth.js';
 import { buildMonthGrid, buildDayGrid, buildWeekRangeGrid } from '../services/gridBuilder.js';
+import { imageUrl } from '../services/cloudinary.js';
 
 const router = Router();
 
@@ -299,21 +300,27 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
 
   const isBottles = req.profile.organizerType === 'bottles';
 
-  let imageUrl = null;
+  let cellImageUrl = null;
   if (!isBottles) {
     const todayStr = new Date().toISOString().slice(0, 10);
     if (takenDate === todayStr) {
       const imgRow = await db.execute({
-        sql:  'SELECT url FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC LIMIT 1',
+        sql:  'SELECT source, url, crop_data FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC LIMIT 1',
         args: [medId],
       });
-      imageUrl = imgRow.rows.length ? String(imgRow.rows[0].url) : null;
+      if (imgRow.rows.length) {
+        const row      = imgRow.rows[0];
+        const source   = String(row.source);
+        const rawUrl   = String(row.url);
+        const cropData = row.crop_data ? JSON.parse(String(row.crop_data)) : null;
+        cellImageUrl   = source === 'cloudinary' ? imageUrl(rawUrl, cropData) : rawUrl;
+      }
     }
   }
 
   const html = isBottles
     ? bottlesCellHtml(id, medId, slotId, takenDate, medName, slotLabel, taken)
-    : cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken, imageUrl);
+    : cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken, cellImageUrl);
 
   res.write('event: datastar-patch-elements\n');
   res.write('data: mode outer\n');
