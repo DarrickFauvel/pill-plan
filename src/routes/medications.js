@@ -801,32 +801,6 @@ router.post('/api/medications/:id/fill-organizer', requireAuth, loadAppContext, 
 
 
 
-/* ────────────────────────────────────────────────────────────
-   Save an image by URL
-   POST /api/medications/:id/images/url
-   ──────────────────────────────────────────────────────────── */
-
-router.post('/api/medications/:id/images/url', requireAuth, loadAppContext, requireProJson, async (req, res) => {
-  const { id } = req.params;
-
-  const ownerCheck = await db.execute({
-    sql: 'SELECT id FROM medications WHERE id = ? AND profile_id = ?',
-    args: [id, req.profile.id],
-  });
-  if (!ownerCheck.rows.length) return res.status(403).json({ error: 'Not found' });
-
-  const url = String(req.body.url ?? '').trim();
-  if (!/^https?:\/\/.+/.test(url)) return res.status(400).json({ error: 'Invalid URL' });
-
-  const imageId = randomUUID();
-  await db.execute({
-    sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
-    args: [imageId, id, 'url', url, new Date().toISOString()],
-  });
-
-  res.json({ id: imageId, url, source: 'url' });
-});
-
 
 /* ────────────────────────────────────────────────────────────
    Upload a camera / gallery photo

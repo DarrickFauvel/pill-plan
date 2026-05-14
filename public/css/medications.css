@@ -910,17 +910,6 @@
     align-items: center;
   }
 
-  .med-image-url-row {
-    display: flex;
-    gap: var(--space-2);
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .med-image-url-row .input {
-    flex: 1;
-    min-inline-size: 12rem;
-  }
 
   /* ─── New medication form photos label ────────────────────── */
 
