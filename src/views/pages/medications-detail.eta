@@ -219,11 +219,16 @@
       <% } %>
 
       <div class="med-image-actions">
-        <label class="btn btn--secondary" for="camera-input">
+        <label class="btn btn--secondary" for="camera-capture-input">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          Add photo
+          Take photo
         </label>
-        <input id="camera-input" type="file" accept="image/*" class="sr-only" aria-label="Add a pill photo from camera or gallery">
+        <input id="camera-capture-input" type="file" accept="image/*" capture="environment" class="sr-only" aria-label="Take a photo with camera">
+        <label class="btn btn--secondary" for="camera-input">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+          Choose photo
+        </label>
+        <input id="camera-input" type="file" accept="image/*" class="sr-only" aria-label="Choose a photo from library">
       </div>
       <div class="med-image-url-row">
         <label for="image-url-input" class="sr-only">Add photo from URL</label>

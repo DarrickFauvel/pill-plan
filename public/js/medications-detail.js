@@ -12,13 +12,16 @@ if (!medId) throw new Error('med-images element missing');
 
 /* ─── Camera / gallery upload ─────────────────────────────── */
 
-document.getElementById('camera-input')?.addEventListener('change', async (e) => {
-  const file = /** @type {HTMLInputElement} */ (e.currentTarget).files?.[0];
+/**
+ * @param {HTMLInputElement} input
+ */
+async function handlePhotoInput(input) {
+  const file = input.files?.[0];
   if (!file) return;
 
   const fd = new FormData();
   fd.append('photo', file);
-  /** @type {HTMLInputElement} */ (e.currentTarget).value = '';
+  input.value = '';
 
   try {
     const res = await fetch(`/api/medications/${medId}/images/upload`, { method: 'POST', body: fd });
@@ -27,6 +30,14 @@ document.getElementById('camera-input')?.addEventListener('change', async (e) =>
   } catch {
     // silently fail — user can retry by selecting again
   }
+}
+
+document.getElementById('camera-capture-input')?.addEventListener('change', (e) => {
+  handlePhotoInput(/** @type {HTMLInputElement} */ (e.currentTarget));
+});
+
+document.getElementById('camera-input')?.addEventListener('change', (e) => {
+  handlePhotoInput(/** @type {HTMLInputElement} */ (e.currentTarget));
 });
 
 /* ─── URL input ───────────────────────────────────────────── */
