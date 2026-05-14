@@ -210,7 +210,7 @@
         <li class="med-image-item"
           data-image-id="<%= img.id %>"
           data-original-url="<%= img.originalUrl %>"
-          <% if (img.cropData) { %>data-crop-data="<%~ JSON.stringify(img.cropData) %>"<% } %>
+          <% if (img.cropData) { %>data-crop-data="<%= JSON.stringify(img.cropData) %>"<% } %>
         >
           <img src="<%= img.url %>" alt="Pill photo" class="med-image-thumb" loading="lazy">
           <% if (img.source === 'cloudinary') { %>

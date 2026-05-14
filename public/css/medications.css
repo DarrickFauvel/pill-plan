@@ -940,13 +940,14 @@
   /* ─── Crop modal ─────────────────────────────────────────── */
 
   .crop-modal {
-    border: none;
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: 0;
+    background-color: var(--color-card);
     width: min(96dvw, 680px);
     max-height: 90dvh;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    box-shadow: var(--shadow-lg);
     /* explicit centering — dialog default varies across mobile browsers */
     position: fixed;
     top: 50%;
@@ -956,7 +957,8 @@
   }
 
   .crop-modal::backdrop {
-    background: rgba(0,0,0,0.55);
+    background-color: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
   }
 
   .crop-modal__inner {
@@ -969,36 +971,41 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-4) var(--space-5);
+    padding: var(--space-4) var(--space-6);
     border-bottom: 1px solid var(--color-border);
   }
 
   .crop-modal__title {
-    font-size: 1.125rem;
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: var(--color-text);
     margin: 0;
   }
 
   .crop-modal__close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border: none;
-    background: none;
+    all: unset;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
     border-radius: var(--radius-sm);
+    color: var(--color-muted);
     cursor: pointer;
-    color: var(--color-text);
     touch-action: manipulation;
+    transition: color var(--transition), background-color var(--transition);
   }
 
-  .crop-modal__close:hover { background: var(--color-surface-alt); }
+  .crop-modal__close:hover {
+    color: var(--color-text);
+    background-color: color-mix(in srgb, var(--color-text) 8%, transparent);
+  }
+
   .crop-modal__close:focus-visible {
-    outline: 3px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
   }
 
-  .crop-modal__close svg { width: 1.25rem; height: 1.25rem; }
+  .crop-modal__close svg { width: 1.125rem; height: 1.125rem; }
 
   .crop-modal__canvas-wrap {
     flex: 1;
@@ -1017,7 +1024,7 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    padding: var(--space-4) var(--space-5);
+    padding: var(--space-4) var(--space-6);
     border-top: 1px solid var(--color-border);
   }
 
