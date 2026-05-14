@@ -20,6 +20,11 @@ const cropCancelBtn  = document.getElementById('crop-cancel-btn');
 /** @type {Cropper | null} */
 let cropper = null;
 
+const RESIZE_ACTIONS = new Set(['e', 'w', 'n', 's', 'ne', 'nw', 'se', 'sw']);
+/** @type {{ x: number, y: number } | null} */
+let cropCenter  = null;
+let isAdjusting = false;
+
 /**
  * Pending original File for a new upload (set before crop modal opens).
  * @type {File | null}
@@ -58,6 +63,28 @@ function openCropModal(src, initialCrop) {
       ready() {
         if (initialCrop) cropper?.setData(initialCrop);
       },
+      cropstart(e) {
+        if (RESIZE_ACTIONS.has(e.detail.action)) {
+          const box = cropper.getCropBoxData();
+          cropCenter = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+        }
+      },
+      cropmove(e) {
+        if (!cropCenter || isAdjusting || !RESIZE_ACTIONS.has(e.detail.action)) return;
+        isAdjusting = true;
+        requestAnimationFrame(() => {
+          const box = cropper.getCropBoxData();
+          cropper.setCropBoxData({
+            left: cropCenter.x - box.width  / 2,
+            top:  cropCenter.y - box.height / 2,
+          });
+          isAdjusting = false;
+        });
+      },
+      cropend() {
+        cropCenter  = null;
+        isAdjusting = false;
+      },
     });
   };
 }
@@ -67,10 +94,28 @@ function closeCropModal() {
   if (cropper) { cropper.destroy(); cropper = null; }
   pendingFile   = null;
   recropImageId = null;
+  cropCenter    = null;
+  isAdjusting   = false;
 }
 
 cropCancelBtn?.addEventListener('click', closeCropModal);
 cropModal?.addEventListener('click', (e) => { if (e.target === cropModal) closeCropModal(); });
+
+const CROP_STEP = 20;
+
+/** @param {number} delta */
+function adjustCropSize(delta) {
+  if (!cropper) return;
+  const box    = cropper.getCropBoxData();
+  const canvas = cropper.getCanvasData();
+  const newSize = Math.max(40, Math.min(Math.min(canvas.width, canvas.height), box.width + delta));
+  const cx = box.left + box.width  / 2;
+  const cy = box.top  + box.height / 2;
+  cropper.setCropBoxData({ width: newSize, height: newSize, left: cx - newSize / 2, top: cy - newSize / 2 });
+}
+
+document.getElementById('crop-plus-btn') ?.addEventListener('click', () => adjustCropSize(+CROP_STEP));
+document.getElementById('crop-minus-btn')?.addEventListener('click', () => adjustCropSize(-CROP_STEP));
 
 cropConfirmBtn?.addEventListener('click', async () => {
   if (!cropper) return;
