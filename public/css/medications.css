@@ -483,6 +483,45 @@
     max-inline-size: 52rem;
   }
 
+  .medications-detail-page .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+
+  #pill-photos {
+    scroll-margin-top: calc(var(--header-height) + var(--space-4));
+  }
+
+  .page-header__title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+  }
+
+  .med-header-thumb-link {
+    flex-shrink: 0;
+    display: block;
+    border-radius: var(--radius-md);
+    touch-action: manipulation;
+  }
+
+  .med-header-thumb-link:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 3px;
+  }
+
+  .med-header-thumb {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    border: 1px solid var(--color-border);
+    display: block;
+  }
+
   .detail-section {
     margin-block-end: var(--space-8);
     padding-block-end: var(--space-8);

@@ -6,7 +6,14 @@
 
   <header class="page-header">
     <a href="/app/medications" class="back-link">← Medications</a>
-    <h1 data-text="$name || 'Medication'"></h1>
+    <div class="page-header__title-row">
+      <h1 data-text="$name || 'Medication'"></h1>
+      <% if (it.images.length > 0) { %>
+      <a href="#pill-photos" class="med-header-thumb-link" aria-label="View pill photos">
+        <img src="<%= it.images[0].url %>" alt="" class="med-header-thumb" aria-hidden="true">
+      </a>
+      <% } %>
+    </div>
   </header>
 
   <!-- Supply & refill -->
@@ -191,7 +198,7 @@
   </section>
 
   <!-- Pill photos -->
-  <section class="detail-section" aria-labelledby="images-heading">
+  <section class="detail-section" id="pill-photos" aria-labelledby="images-heading">
     <h2 id="images-heading">Pill photos</h2>
 
     <% if (it.user && it.user.isPro) { %>
