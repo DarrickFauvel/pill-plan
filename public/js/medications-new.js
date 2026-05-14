@@ -6,6 +6,7 @@
 const imageList      = document.getElementById('med-image-list');
 const emptyMsg       = document.getElementById('med-image-empty');
 const cameraInput    = /** @type {HTMLInputElement} */ (document.getElementById('camera-input'));
+const captureInput   = /** @type {HTMLInputElement} */ (document.getElementById('camera-capture-input'));
 const imageUrlsInput = /** @type {HTMLInputElement} */ (document.getElementById('image-urls-input'));
 
 /* ─── Uploaded files tracking ─────────────────────────────── */
@@ -13,15 +14,19 @@ const imageUrlsInput = /** @type {HTMLInputElement} */ (document.getElementById(
 /** @type {Map<string, File>} */
 const uploadedFiles = new Map();
 
-cameraInput?.addEventListener('change', () => {
-  for (const file of Array.from(cameraInput.files ?? [])) {
+/** @param {HTMLInputElement} input */
+function handleFileInput(input) {
+  for (const file of Array.from(input.files ?? [])) {
     const id = uid();
     uploadedFiles.set(id, file);
     addUploadPreview(id, file);
   }
-  cameraInput.value = '';
+  input.value = '';
   syncFileInput();
-});
+}
+
+cameraInput?.addEventListener('change', () => handleFileInput(cameraInput));
+captureInput?.addEventListener('change', () => handleFileInput(captureInput));
 
 /** Rebuild the file input's FileList from uploadedFiles. */
 function syncFileInput() {

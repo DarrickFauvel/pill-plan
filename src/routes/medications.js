@@ -1,52 +1,35 @@
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import { fileURLToPath } from 'url';
-import { dirname, join, extname } from 'path';
-import { mkdirSync, unlinkSync } from 'fs';
+import { dirname, join } from 'path';
+import { unlinkSync } from 'fs';
 import multer from 'multer';
 import db from '../db/client.js';
 import { requireAuth, loadAppContext } from '../middleware/auth.js';
 import { requirePro } from '../middleware/plan.js';
 import { searchMeds, getMedDetails } from '../services/rxnorm.js';
+import { uploadImage, signImageUrl, destroyImage } from '../services/cloudinary.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir  = join(__dirname, '..', '..', 'public');
-const uploadsDir = join(publicDir, 'uploads', 'med-images');
 
-mkdirSync(uploadsDir, { recursive: true });
+const imageFileFilter = (_req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) return cb(null, true);
+  cb(new Error('Only image files are allowed'));
+};
 
-/** Multer for the detail page — stores under uploads/med-images/{medId}/ */
+/** Memory-buffered multer for detail-page single upload */
 const upload = multer({
-  storage: multer.diskStorage({
-    destination(req, _file, cb) {
-      const dir = join(uploadsDir, req.params.id);
-      mkdirSync(dir, { recursive: true });
-      cb(null, dir);
-    },
-    filename(_req, file, cb) {
-      cb(null, randomUUID() + (extname(file.originalname) || '.jpg'));
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter(_req, file, cb) {
-    if (file.mimetype.startsWith('image/')) return cb(null, true);
-    cb(new Error('Only image files are allowed'));
-  },
+  fileFilter: imageFileFilter,
 });
 
-/** Multer for the create form — flat directory (no med ID yet) */
+/** Memory-buffered multer for new-medication multi-upload */
 const uploadFlat = multer({
-  storage: multer.diskStorage({
-    destination(_req, _file, cb) { cb(null, uploadsDir); },
-    filename(_req, file, cb) {
-      cb(null, randomUUID() + (extname(file.originalname) || '.jpg'));
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter(_req, file, cb) {
-    if (file.mimetype.startsWith('image/')) return cb(null, true);
-    cb(new Error('Only image files are allowed'));
-  },
+  fileFilter: imageFileFilter,
 });
 
 const router = Router();
@@ -152,7 +135,15 @@ async function loadMedImages(medId) {
     sql: 'SELECT id, source, url FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC, created_at ASC',
     args: [medId],
   });
-  return rows.map((r) => ({ id: String(r.id), source: String(r.source), url: String(r.url) }));
+  return rows.map((r) => {
+    const source = String(r.source);
+    const rawUrl = String(r.url);
+    return {
+      id:     String(r.id),
+      source,
+      url:    source === 'cloudinary' ? signImageUrl(rawUrl) : rawUrl,
+    };
+  });
 }
 
 function calcDaysRemaining(organizerQty, bottleQty, refillThreshold, scheduleRaw) {
@@ -465,6 +456,17 @@ router.post('/api/medications', requireAuth, loadAppContext, uploadFlat.array('p
   try { imageUrls = JSON.parse(body.imageUrls || '[]'); } catch {}
   imageUrls = imageUrls.filter((u) => typeof u === 'string' && /^https?:\/\/.+/.test(u));
 
+  const uploadedPublicIds = await Promise.all(
+    (req.files ?? []).map(async (f) => {
+      try {
+        const { publicId } = await uploadImage(f.buffer, `pill-plan/${medId}`);
+        return publicId;
+      } catch {
+        return null;
+      }
+    })
+  );
+
   /** @type {Array<{sql: string, args: Array<string|number>}>} */
   const statements = [
     {
@@ -478,9 +480,9 @@ router.post('/api/medications', requireAuth, loadAppContext, uploadFlat.array('p
       sql: 'INSERT INTO schedules (id, med_id, slot_id, days, dose_qty) VALUES (?, ?, ?, ?, ?)',
       args: [randomUUID(), medId, slotId, '[0,1,2,3,4,5,6]', doseQty],
     })),
-    ...(req.files ?? []).map((f) => ({
+    ...uploadedPublicIds.filter(Boolean).map((publicId) => ({
       sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
-      args: [randomUUID(), medId, 'upload', `/uploads/med-images/${f.filename}`, now],
+      args: [randomUUID(), medId, 'cloudinary', publicId, now],
     })),
     ...imageUrls.map((url) => ({
       sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
@@ -840,21 +842,18 @@ router.post('/api/medications/:id/images/upload',
       sql: 'SELECT id FROM medications WHERE id = ? AND profile_id = ?',
       args: [id, req.profile.id],
     });
-    if (!ownerCheck.rows.length) {
-      if (req.file) try { unlinkSync(req.file.path); } catch {}
-      return res.status(403).json({ error: 'Not found' });
-    }
-
+    if (!ownerCheck.rows.length) return res.status(403).json({ error: 'Not found' });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-    const url = `/uploads/med-images/${id}/${req.file.filename}`;
+    const { publicId } = await uploadImage(req.file.buffer, `pill-plan/${id}`);
+    const signedUrl = signImageUrl(publicId);
     const imageId = randomUUID();
     await db.execute({
       sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
-      args: [imageId, id, 'upload', url, new Date().toISOString()],
+      args: [imageId, id, 'cloudinary', publicId, new Date().toISOString()],
     });
 
-    res.json({ id: imageId, url, source: 'upload' });
+    res.json({ id: imageId, url: signedUrl, source: 'cloudinary' });
   }
 );
 
@@ -877,9 +876,12 @@ router.post('/api/medications/:id/images/:imageId/delete', requireAuth, loadAppC
 
   if (!rows.length) return res.status(404).json({ error: 'Not found' });
 
-  if (String(rows[0].source) === 'upload') {
+  const src = String(rows[0].source);
+  if (src === 'upload') {
     const filePath = join(publicDir, String(rows[0].url));
     try { unlinkSync(filePath); } catch {}
+  } else if (src === 'cloudinary') {
+    try { await destroyImage(String(rows[0].url)); } catch {}
   }
 
   await db.execute({ sql: 'DELETE FROM medication_images WHERE id = ?', args: [imageId] });
