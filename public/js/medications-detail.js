@@ -251,35 +251,6 @@ async function submitRecrop(imageId, cropData) {
   }
 }
 
-/* ─── URL input ───────────────────────────────────────────── */
-
-const urlInput  = /** @type {HTMLInputElement} */ (document.getElementById('image-url-input'));
-const addUrlBtn = document.getElementById('add-image-url-btn');
-
-addUrlBtn?.addEventListener('click', async () => {
-  const url = urlInput.value.trim();
-  if (!url || !/^https?:\/\/.+/.test(url)) return;
-
-  /** @type {HTMLButtonElement} */ (addUrlBtn).disabled = true;
-  try {
-    const res = await fetch(`/api/medications/${medId}/images/url`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ url }),
-    });
-    if (!res.ok) throw new Error('Failed');
-    appendImageItem(await res.json());
-    urlInput.value = '';
-  } catch {
-    // silently fail — bad URL or server error
-  } finally {
-    /** @type {HTMLButtonElement} */ (addUrlBtn).disabled = false;
-  }
-});
-
-urlInput?.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); addUrlBtn?.click(); }
-});
 
 /* ─── Delete image ────────────────────────────────────────── */
 

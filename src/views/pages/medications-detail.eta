@@ -253,11 +253,6 @@
         </label>
         <input id="camera-input" type="file" accept="image/*" class="sr-only" aria-label="Choose a photo from library">
       </div>
-      <div class="med-image-url-row">
-        <label for="image-url-input" class="sr-only">Add photo from URL</label>
-        <input id="image-url-input" type="url" class="input input--small" placeholder="Paste image URL…" aria-label="Image URL">
-        <button type="button" class="btn btn--secondary" id="add-image-url-btn">Add URL</button>
-      </div>
     </div>
 
     <% } else { %>
