@@ -51,6 +51,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());
 
+app.use((req, res, next) => {
+  const envUrl = process.env.NODE_ENV !== 'production' ? process.env.DEV_URL : process.env.SITE_URL;
+  res.locals.siteUrl = envUrl ?? `${req.protocol}://${req.get('host')}`;
+  next();
+});
+
 // Public pages
 app.get('/', async (req, res) => {
   const sid = req.cookies?.sid;
@@ -96,7 +102,8 @@ app.get('/terms', (req, res) =>
 
 // QR code for the site URL
 app.get('/qrcode.svg', async (req, res) => {
-  const url = process.env.SITE_URL ?? `${req.protocol}://${req.get('host')}`;
+  const envUrl = process.env.NODE_ENV !== 'production' ? process.env.DEV_URL : process.env.SITE_URL;
+  const url = envUrl ?? `${req.protocol}://${req.get('host')}`;
   const svg = await QRCode.toString(url, {
     type: 'svg',
     color: { dark: '#1A2E2A', light: '#FFFFFF' },

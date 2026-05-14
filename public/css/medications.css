@@ -798,6 +798,12 @@
     margin: 0;
   }
 
+  .med-image-error {
+    color: var(--color-error, #c0392b);
+    font-size: var(--font-size-sm);
+    margin: 0;
+  }
+
   .med-image-actions {
     display: flex;
     flex-wrap: wrap;
