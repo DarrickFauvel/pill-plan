@@ -29,14 +29,30 @@ export async function uploadImage(buffer, folder) {
 }
 
 /**
- * Return the HTTPS delivery URL for a Cloudinary image.
+ * Return the HTTPS delivery URL for a Cloudinary image, optionally with a
+ * non-destructive crop transformation applied.
  *
  * @param {string} publicId
+ * @param {{ x: number, y: number, width: number, height: number } | null} [cropData]
  * @returns {string}
  */
-export function signImageUrl(publicId) {
-  return cloudinary.url(publicId, { secure: true });
+export function imageUrl(publicId, cropData) {
+  if (!cropData) return cloudinary.url(publicId, { secure: true });
+  return cloudinary.url(publicId, {
+    secure: true,
+    transformation: [{
+      crop: 'crop',
+      gravity: 'north_west',
+      x: Math.round(cropData.x),
+      y: Math.round(cropData.y),
+      width:  Math.round(cropData.width),
+      height: Math.round(cropData.height),
+    }],
+  });
 }
+
+/** @deprecated use imageUrl */
+export const signImageUrl = imageUrl;
 
 /**
  * Permanently delete an image from Cloudinary.
