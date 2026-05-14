@@ -248,6 +248,26 @@
 
   </section>
 
+  <!-- Crop modal -->
+  <dialog id="crop-modal" class="crop-modal" aria-labelledby="crop-modal-title">
+    <div class="crop-modal__inner">
+      <div class="crop-modal__header">
+        <h2 id="crop-modal-title" class="crop-modal__title">Crop photo</h2>
+        <button type="button" class="crop-modal__close" aria-label="Cancel and discard photo" id="crop-cancel-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="crop-modal__canvas-wrap">
+        <img id="crop-preview" alt="Photo to crop" class="crop-modal__img">
+      </div>
+      <div class="crop-modal__actions">
+        <button type="button" id="crop-confirm-btn" class="btn btn--primary">Upload</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Schedule -->
   <section class="detail-section" aria-labelledby="schedule-heading">
     <h2 id="schedule-heading">Schedule</h2>
