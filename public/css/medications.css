@@ -838,4 +838,87 @@
     font-size: var(--font-size-sm);
   }
 
+  /* ─── Crop modal ─────────────────────────────────────────── */
+
+  .crop-modal {
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: 0;
+    width: min(96dvw, 680px);
+    max-height: 90dvh;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    /* explicit centering — dialog default varies across mobile browsers */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+  }
+
+  .crop-modal::backdrop {
+    background: rgba(0,0,0,0.55);
+  }
+
+  .crop-modal__inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .crop-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .crop-modal__title {
+    font-size: 1.125rem;
+    margin: 0;
+  }
+
+  .crop-modal__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: none;
+    background: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--color-text);
+    touch-action: manipulation;
+  }
+
+  .crop-modal__close:hover { background: var(--color-surface-alt); }
+  .crop-modal__close:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .crop-modal__close svg { width: 1.25rem; height: 1.25rem; }
+
+  .crop-modal__canvas-wrap {
+    flex: 1;
+    overflow: hidden;
+    background: #111;
+    max-height: calc(90dvh - 9rem);
+  }
+
+  .crop-modal__img {
+    display: block;
+    max-width: 100%;
+  }
+
+  .crop-modal__actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--color-border);
+  }
+
 }

@@ -20,5 +20,8 @@
     "qrcode": "^1.5.4",
     "resend": "^6.12.3",
     "stripe": "^22.1.1"
+  },
+  "devDependencies": {
+    "cropperjs": "^1.6.2"
   }
 }

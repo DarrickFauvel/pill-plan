@@ -1,6 +1,6 @@
 /**
  * Medication detail page — pill photo management.
- * Handles camera/gallery upload and API image browser.
+ * Handles camera/gallery upload (with crop) and API image browser.
  */
 
 const gallery   = document.getElementById('med-images');
@@ -10,19 +10,99 @@ const emptyMsg  = document.getElementById('med-image-empty');
 
 if (!medId) throw new Error('med-images element missing');
 
+/* ─── Crop modal ───────────────────────────────────────────── */
+
+const cropModal      = /** @type {HTMLDialogElement} */ (document.getElementById('crop-modal'));
+const cropPreview    = /** @type {HTMLImageElement}  */ (document.getElementById('crop-preview'));
+const cropConfirmBtn = document.getElementById('crop-confirm-btn');
+const cropCancelBtn  = document.getElementById('crop-cancel-btn');
+
+/** @type {Cropper | null} */
+let cropper = null;
+
+/**
+ * Open the crop modal with the given file.
+ * @param {File} file
+ */
+function openCropModal(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    cropPreview.src = /** @type {string} */ (e.target?.result);
+    cropModal.showModal();
+
+    cropPreview.onload = () => {
+      if (cropper) { cropper.destroy(); cropper = null; }
+      cropper = new Cropper(cropPreview, {
+        aspectRatio: 1,
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 0.92,
+        restore: false,
+        guides: true,
+        center: true,
+        highlight: false,
+        cropBoxMovable: true,
+        cropBoxResizable: true,
+        toggleDragModeOnDblclick: false,
+      });
+    };
+  };
+  reader.readAsDataURL(file);
+}
+
+
+cropCancelBtn?.addEventListener('click', () => {
+  cropModal.close();
+  if (cropper) { cropper.destroy(); cropper = null; }
+});
+
+cropModal?.addEventListener('click', (e) => {
+  if (e.target === cropModal) {
+    cropModal.close();
+    if (cropper) { cropper.destroy(); cropper = null; }
+  }
+});
+
+cropConfirmBtn?.addEventListener('click', () => {
+  if (!cropper) return;
+  cropModal.close();
+
+  const canvas = cropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200 });
+  cropper.destroy();
+  cropper = null;
+
+  canvas.toBlob(async (blob) => {
+    if (!blob) return;
+    const fd = new FormData();
+    fd.append('photo', blob, 'photo.jpg');
+    await uploadPhoto(fd);
+  }, 'image/jpeg', 0.88);
+});
+
 /* ─── Camera / gallery upload ─────────────────────────────── */
 
 /**
  * @param {HTMLInputElement} input
  */
-async function handlePhotoInput(input) {
+function handlePhotoInput(input) {
   const file = input.files?.[0];
   if (!file) return;
-
-  const fd = new FormData();
-  fd.append('photo', file);
   input.value = '';
+  openCropModal(file);
+}
 
+document.getElementById('camera-capture-input')?.addEventListener('change', (e) => {
+  handlePhotoInput(/** @type {HTMLInputElement} */ (e.currentTarget));
+});
+
+document.getElementById('camera-input')?.addEventListener('change', (e) => {
+  handlePhotoInput(/** @type {HTMLInputElement} */ (e.currentTarget));
+});
+
+/**
+ * @param {FormData} fd
+ */
+async function uploadPhoto(fd) {
   const statusEl = document.getElementById('photo-upload-error');
   if (statusEl) statusEl.hidden = true;
 
@@ -34,14 +114,6 @@ async function handlePhotoInput(input) {
     if (statusEl) statusEl.hidden = false;
   }
 }
-
-document.getElementById('camera-capture-input')?.addEventListener('change', (e) => {
-  handlePhotoInput(/** @type {HTMLInputElement} */ (e.currentTarget));
-});
-
-document.getElementById('camera-input')?.addEventListener('change', (e) => {
-  handlePhotoInput(/** @type {HTMLInputElement} */ (e.currentTarget));
-});
 
 /* ─── URL input ───────────────────────────────────────────── */
 

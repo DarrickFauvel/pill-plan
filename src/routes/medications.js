@@ -607,7 +607,7 @@ router.get('/app/medications/:id', requireAuth, loadAppContext, async (req, res)
     organizerCount,
     images,
     extraCss: '/css/medications.css',
-    scripts: '<script type="module" src="/js/medications-detail.js"></script>',
+    scripts: '<link rel="stylesheet" href="/css/cropper.min.css"><script src="/js/vendor/cropper.min.js"></script><script type="module" src="/js/medications-detail.js"></script>',
   });
 });
 
