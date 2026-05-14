@@ -1,5 +1,5 @@
 import db from '../db/client.js';
-import { signImageUrl } from './cloudinary.js';
+import { imageUrl } from './cloudinary.js';
 
 /**
  * @typedef {Object} GridDay
@@ -284,7 +284,7 @@ export async function buildMonthGrid(profileId, year, month) {
       args: [profileId, startDate, endDate],
     }),
     db.execute({
-      sql: `SELECT mi.med_id, mi.source, mi.url FROM medication_images mi
+      sql: `SELECT mi.med_id, mi.source, mi.url, mi.crop_data FROM medication_images mi
             JOIN medications m ON m.id = mi.med_id
             WHERE m.profile_id = ?
             ORDER BY mi.sort_order ASC`,
@@ -297,8 +297,9 @@ export async function buildMonthGrid(profileId, year, month) {
   for (const row of imagesRes.rows) {
     const key = String(row.med_id);
     if (!medImageMap[key]) {
-      const rawUrl = String(row.url);
-      medImageMap[key] = String(row.source) === 'cloudinary' ? signImageUrl(rawUrl) : rawUrl;
+      const rawUrl  = String(row.url);
+      const cropData = row.crop_data ? JSON.parse(String(row.crop_data)) : null;
+      medImageMap[key] = String(row.source) === 'cloudinary' ? imageUrl(rawUrl, cropData) : rawUrl;
     }
   }
 
@@ -472,7 +473,7 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
       args: [profileId, startStr, endStr],
     }),
     db.execute({
-      sql: `SELECT mi.med_id, mi.source, mi.url FROM medication_images mi
+      sql: `SELECT mi.med_id, mi.source, mi.url, mi.crop_data FROM medication_images mi
             JOIN medications m ON m.id = mi.med_id
             WHERE m.profile_id = ?
             ORDER BY mi.sort_order ASC`,
@@ -485,8 +486,9 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
   for (const row of imagesRes.rows) {
     const key = String(row.med_id);
     if (!medImageMap[key]) {
-      const rawUrl = String(row.url);
-      medImageMap[key] = String(row.source) === 'cloudinary' ? signImageUrl(rawUrl) : rawUrl;
+      const rawUrl  = String(row.url);
+      const cropData = row.crop_data ? JSON.parse(String(row.crop_data)) : null;
+      medImageMap[key] = String(row.source) === 'cloudinary' ? imageUrl(rawUrl, cropData) : rawUrl;
     }
   }
 

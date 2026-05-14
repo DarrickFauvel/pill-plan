@@ -754,6 +754,43 @@
     display: block;
   }
 
+  .med-image-recrop {
+    position: absolute;
+    inset-block-start: var(--space-1);
+    inset-inline-start: var(--space-1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    background-color: rgba(0, 0, 0, 0.55);
+    border: none;
+    border-radius: var(--radius-full);
+    color: #fff;
+    cursor: pointer;
+    touch-action: manipulation;
+    opacity: 0;
+    transition: opacity var(--transition);
+  }
+
+  .med-image-item:hover .med-image-recrop,
+  .med-image-item:focus-within .med-image-recrop {
+    opacity: 1;
+  }
+
+  @media (pointer: coarse) {
+    .med-image-recrop {
+      opacity: 1;
+      background-color: rgba(0, 0, 0, 0.45);
+    }
+  }
+
+  .med-image-recrop:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+    opacity: 1;
+  }
+
   .med-image-delete {
     position: absolute;
     inset-block-start: var(--space-1);

@@ -1,6 +1,6 @@
 /**
  * Medication detail page — pill photo management.
- * Handles camera/gallery upload (with crop) and API image browser.
+ * Handles camera/gallery upload (with crop) and re-crop of existing photos.
  */
 
 const gallery   = document.getElementById('med-images');
@@ -21,62 +21,71 @@ const cropCancelBtn  = document.getElementById('crop-cancel-btn');
 let cropper = null;
 
 /**
- * Open the crop modal with the given file.
- * @param {File} file
+ * Pending original File for a new upload (set before crop modal opens).
+ * @type {File | null}
  */
-function openCropModal(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    cropPreview.src = /** @type {string} */ (e.target?.result);
-    cropModal.showModal();
+let pendingFile = null;
 
-    cropPreview.onload = () => {
-      if (cropper) { cropper.destroy(); cropper = null; }
-      cropper = new Cropper(cropPreview, {
-        aspectRatio: 1,
-        viewMode: 1,
-        dragMode: 'move',
-        autoCropArea: 0.92,
-        restore: false,
-        guides: true,
-        center: true,
-        highlight: false,
-        cropBoxMovable: true,
-        cropBoxResizable: true,
-        toggleDragModeOnDblclick: false,
-      });
-    };
+/**
+ * Image ID being re-cropped (set when re-crop flow is active).
+ * @type {string | null}
+ */
+let recropImageId = null;
+
+/**
+ * Open the crop modal.
+ * @param {string} src  - data URL or https URL to load into Cropper
+ * @param {{ x: number, y: number, width: number, height: number } | null} [initialCrop]
+ */
+function openCropModal(src, initialCrop) {
+  cropPreview.src = src;
+  cropModal.showModal();
+
+  cropPreview.onload = () => {
+    if (cropper) { cropper.destroy(); cropper = null; }
+    cropper = new Cropper(cropPreview, {
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 0.92,
+      restore: false,
+      guides: true,
+      center: true,
+      highlight: false,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: false,
+      ready() {
+        if (initialCrop) cropper?.setData(initialCrop);
+      },
+    });
   };
-  reader.readAsDataURL(file);
 }
 
-
-cropCancelBtn?.addEventListener('click', () => {
+function closeCropModal() {
   cropModal.close();
   if (cropper) { cropper.destroy(); cropper = null; }
-});
+  pendingFile   = null;
+  recropImageId = null;
+}
 
-cropModal?.addEventListener('click', (e) => {
-  if (e.target === cropModal) {
-    cropModal.close();
-    if (cropper) { cropper.destroy(); cropper = null; }
-  }
-});
+cropCancelBtn?.addEventListener('click', closeCropModal);
+cropModal?.addEventListener('click', (e) => { if (e.target === cropModal) closeCropModal(); });
 
-cropConfirmBtn?.addEventListener('click', () => {
+cropConfirmBtn?.addEventListener('click', async () => {
   if (!cropper) return;
-  cropModal.close();
 
-  const canvas = cropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200 });
-  cropper.destroy();
-  cropper = null;
+  const cropData = (({ x, y, width, height }) => ({ x, y, width, height }))(cropper.getData(true));
+  const file     = pendingFile;
+  const imageId  = recropImageId;
 
-  canvas.toBlob(async (blob) => {
-    if (!blob) return;
-    const fd = new FormData();
-    fd.append('photo', blob, 'photo.jpg');
-    await uploadPhoto(fd);
-  }, 'image/jpeg', 0.88);
+  closeCropModal();
+
+  if (file) {
+    await uploadPhoto(file, cropData);
+  } else if (imageId) {
+    await submitRecrop(imageId, cropData);
+  }
 });
 
 /* ─── Camera / gallery upload ─────────────────────────────── */
@@ -88,7 +97,13 @@ function handlePhotoInput(input) {
   const file = input.files?.[0];
   if (!file) return;
   input.value = '';
-  openCropModal(file);
+
+  pendingFile   = file;
+  recropImageId = null;
+
+  const reader = new FileReader();
+  reader.onload = (e) => openCropModal(/** @type {string} */ (e.target?.result));
+  reader.readAsDataURL(file);
 }
 
 document.getElementById('camera-capture-input')?.addEventListener('change', (e) => {
@@ -100,16 +115,70 @@ document.getElementById('camera-input')?.addEventListener('change', (e) => {
 });
 
 /**
- * @param {FormData} fd
+ * Upload the original file + crop coordinates.
+ * @param {File} file
+ * @param {{ x: number, y: number, width: number, height: number }} cropData
  */
-async function uploadPhoto(fd) {
+async function uploadPhoto(file, cropData) {
   const statusEl = document.getElementById('photo-upload-error');
   if (statusEl) statusEl.hidden = true;
+
+  const fd = new FormData();
+  fd.append('photo', file, file.name);
+  fd.append('cropData', JSON.stringify(cropData));
 
   try {
     const res = await fetch(`/api/medications/${medId}/images/upload`, { method: 'POST', body: fd });
     if (!res.ok) throw new Error('Upload failed');
     appendImageItem(await res.json());
+  } catch {
+    if (statusEl) statusEl.hidden = false;
+  }
+}
+
+/* ─── Re-crop existing photo ───────────────────────────────── */
+
+imageList?.addEventListener('click', (e) => {
+  const btn = /** @type {Element} */ (e.target).closest('[data-recrop-image]');
+  if (!btn) return;
+
+  const li        = btn.closest('.med-image-item');
+  const imageId   = /** @type {HTMLElement} */ (btn).dataset.recropImage;
+  const origUrl   = /** @type {HTMLElement} */ (li).dataset.originalUrl ?? '';
+  const cropRaw   = /** @type {HTMLElement} */ (li).dataset.cropData;
+
+  /** @type {{ x: number, y: number, width: number, height: number } | null} */
+  const initialCrop = cropRaw ? JSON.parse(cropRaw) : null;
+
+  pendingFile   = null;
+  recropImageId = imageId ?? null;
+
+  openCropModal(origUrl, initialCrop);
+});
+
+/**
+ * @param {string} imageId
+ * @param {{ x: number, y: number, width: number, height: number }} cropData
+ */
+async function submitRecrop(imageId, cropData) {
+  const statusEl = document.getElementById('photo-upload-error');
+  if (statusEl) statusEl.hidden = true;
+
+  try {
+    const res = await fetch(`/api/medications/${medId}/images/${imageId}/recrop`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ cropData: JSON.stringify(cropData) }),
+    });
+    if (!res.ok) throw new Error('Recrop failed');
+    const { url } = await res.json();
+
+    const li  = imageList?.querySelector(`[data-image-id="${imageId}"]`);
+    const img = li?.querySelector('img');
+    if (img) img.src = url;
+    if (li) {
+      /** @type {HTMLElement} */ (li).dataset.cropData = JSON.stringify(cropData);
+    }
   } catch {
     if (statusEl) statusEl.hidden = false;
   }
@@ -169,15 +238,17 @@ imageList?.addEventListener('click', async (e) => {
 /* ─── DOM helper ──────────────────────────────────────────── */
 
 /**
- * @param {{id: string, url: string}} img
+ * @param {{ id: string, url: string, originalUrl?: string, cropData?: object | null }} img
  */
-function appendImageItem({ id, url }) {
+function appendImageItem({ id, url, originalUrl, cropData }) {
   if (!imageList) return;
-
   if (emptyMsg) emptyMsg.hidden = true;
 
-  const li  = document.createElement('li');
-  li.className = 'med-image-item';
+  const li = document.createElement('li');
+  li.className           = 'med-image-item';
+  li.dataset.imageId     = id;
+  li.dataset.originalUrl = originalUrl ?? url;
+  if (cropData) li.dataset.cropData = JSON.stringify(cropData);
 
   const img = document.createElement('img');
   img.src       = url;
@@ -185,13 +256,20 @@ function appendImageItem({ id, url }) {
   img.className = 'med-image-thumb';
   img.loading   = 'lazy';
 
-  const btn = document.createElement('button');
-  btn.type      = 'button';
-  btn.className = 'med-image-delete';
-  btn.setAttribute('aria-label', 'Remove photo');
-  btn.dataset.deleteImage = id;
-  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  const recropBtn = document.createElement('button');
+  recropBtn.type      = 'button';
+  recropBtn.className = 'med-image-recrop';
+  recropBtn.setAttribute('aria-label', 'Re-crop photo');
+  recropBtn.dataset.recropImage = id;
+  recropBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>';
 
-  li.append(img, btn);
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type      = 'button';
+  deleteBtn.className = 'med-image-delete';
+  deleteBtn.setAttribute('aria-label', 'Remove photo');
+  deleteBtn.dataset.deleteImage = id;
+  deleteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
+  li.append(img, recropBtn, deleteBtn);
   imageList.append(li);
 }

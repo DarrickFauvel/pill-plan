@@ -8,7 +8,7 @@ import db from '../db/client.js';
 import { requireAuth, loadAppContext } from '../middleware/auth.js';
 import { requirePro, requireProJson } from '../middleware/plan.js';
 import { searchMeds, getMedDetails } from '../services/rxnorm.js';
-import { uploadImage, signImageUrl, destroyImage } from '../services/cloudinary.js';
+import { uploadImage, imageUrl, destroyImage } from '../services/cloudinary.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir  = join(__dirname, '..', '..', 'public');
@@ -132,16 +132,19 @@ function isNotInOrganizer(form) {
  */
 async function loadMedImages(medId) {
   const { rows } = await db.execute({
-    sql: 'SELECT id, source, url FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC, created_at ASC',
+    sql: 'SELECT id, source, url, crop_data FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC, created_at ASC',
     args: [medId],
   });
   return rows.map((r) => {
-    const source = String(r.source);
-    const rawUrl = String(r.url);
+    const source   = String(r.source);
+    const rawUrl   = String(r.url);
+    const cropData = r.crop_data ? JSON.parse(String(r.crop_data)) : null;
     return {
-      id:     String(r.id),
+      id:          String(r.id),
       source,
-      url:    source === 'cloudinary' ? signImageUrl(rawUrl) : rawUrl,
+      url:         source === 'cloudinary' ? imageUrl(rawUrl, cropData) : rawUrl,
+      originalUrl: source === 'cloudinary' ? imageUrl(rawUrl) : rawUrl,
+      cropData,
     };
   });
 }
@@ -481,7 +484,7 @@ router.post('/api/medications', requireAuth, loadAppContext, uploadFlat.array('p
       args: [randomUUID(), medId, slotId, '[0,1,2,3,4,5,6]', doseQty],
     })),
     ...uploadedPublicIds.filter(Boolean).map((publicId) => ({
-      sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
+      sql: 'INSERT INTO medication_images (id, med_id, source, url, crop_data, sort_order, created_at) VALUES (?, ?, ?, ?, NULL, 0, ?)',
       args: [randomUUID(), medId, 'cloudinary', publicId, now],
     })),
     ...imageUrls.map((url) => ({
@@ -845,17 +848,54 @@ router.post('/api/medications/:id/images/upload',
     if (!ownerCheck.rows.length) return res.status(403).json({ error: 'Not found' });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
+    let cropData = null;
+    try { cropData = req.body.cropData ? JSON.parse(req.body.cropData) : null; } catch {}
+
     const { publicId } = await uploadImage(req.file.buffer, `pill-plan/${id}`);
-    const signedUrl = signImageUrl(publicId);
     const imageId = randomUUID();
     await db.execute({
-      sql: 'INSERT INTO medication_images (id, med_id, source, url, sort_order, created_at) VALUES (?, ?, ?, ?, 0, ?)',
-      args: [imageId, id, 'cloudinary', publicId, new Date().toISOString()],
+      sql: 'INSERT INTO medication_images (id, med_id, source, url, crop_data, sort_order, created_at) VALUES (?, ?, ?, ?, ?, 0, ?)',
+      args: [imageId, id, 'cloudinary', publicId, cropData ? JSON.stringify(cropData) : null, new Date().toISOString()],
     });
 
-    res.json({ id: imageId, url: signedUrl, source: 'cloudinary' });
+    res.json({
+      id:          imageId,
+      url:         imageUrl(publicId, cropData),
+      originalUrl: imageUrl(publicId),
+      cropData,
+      source:      'cloudinary',
+    });
   }
 );
+
+
+/* ────────────────────────────────────────────────────────────
+   Re-crop an existing medication image (original untouched)
+   POST /api/medications/:id/images/:imageId/recrop
+   ──────────────────────────────────────────────────────────── */
+
+router.post('/api/medications/:id/images/:imageId/recrop', requireAuth, loadAppContext, requireProJson, async (req, res) => {
+  const { id, imageId } = req.params;
+
+  const { rows } = await db.execute({
+    sql: `SELECT mi.id, mi.url FROM medication_images mi
+          JOIN medications m ON m.id = mi.med_id
+          WHERE mi.id = ? AND m.id = ? AND m.profile_id = ? AND mi.source = 'cloudinary'`,
+    args: [imageId, id, req.profile.id],
+  });
+  if (!rows.length) return res.status(404).json({ error: 'Not found' });
+
+  let cropData = null;
+  try { cropData = req.body.cropData ? JSON.parse(req.body.cropData) : null; } catch {}
+
+  const publicId = String(rows[0].url);
+  await db.execute({
+    sql: 'UPDATE medication_images SET crop_data = ? WHERE id = ?',
+    args: [cropData ? JSON.stringify(cropData) : null, imageId],
+  });
+
+  res.json({ url: imageUrl(publicId, cropData), cropData });
+});
 
 
 /* ────────────────────────────────────────────────────────────
