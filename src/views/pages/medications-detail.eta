@@ -264,6 +264,18 @@
 
   </section>
 
+  <!-- Photo delete confirmation -->
+  <dialog id="photo-delete-modal" class="confirm-modal" aria-labelledby="photo-delete-modal-title">
+    <div class="confirm-modal__inner">
+      <h2 id="photo-delete-modal-title" class="confirm-modal__title">Remove photo?</h2>
+      <p class="confirm-modal__body">This photo will be permanently deleted.</p>
+      <div class="confirm-modal__actions">
+        <button type="button" class="btn btn--secondary" id="photo-delete-cancel-btn">Cancel</button>
+        <button type="button" class="btn btn--danger" id="photo-delete-confirm-btn">Remove</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Crop modal -->
   <dialog id="crop-modal" class="crop-modal" aria-labelledby="crop-modal-title">
     <div class="crop-modal__inner">
