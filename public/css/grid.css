@@ -771,6 +771,23 @@
     pointer-events: none;
   }
 
+  /* Taken image cell: light checkmark only — no blue fill */
+  .grid-cell--image-cell.grid-cell--taken {
+    background: transparent;
+    border-color: var(--color-border);
+  }
+
+  .grid-cell--image-cell.grid-cell--taken:hover {
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    border-color: var(--color-primary);
+  }
+
+  .grid-cell--image-cell.grid-cell--taken::after {
+    border-left-color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    opacity: 0.6;
+  }
+
   /* ── Empty state ─────────────────────────────────────────── */
 
   .grid-empty {

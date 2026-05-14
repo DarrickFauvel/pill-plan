@@ -78,7 +78,10 @@ function cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, da
   const action = `$pendingToggleId='${id}';$pendingToggleNewState=${!taken};$saveStatus='idle';$toggleMedId='${esc(medId)}';$toggleSlotId='${esc(slotId)}';$toggleDate='${takenDate}';@post('/api/grid/toggle')`;
   if (imageUrl) {
     const imgDataShow = `$pendingToggleId === '${id}' ? !$pendingToggleNewState : ${!taken}`;
-    return `<button id="${id}" class="grid-cell grid-cell--image-cell" data-on:click="${action}" data-class="{'grid-cell--pending': $pendingToggleId === '${id}'}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"><img src="${esc(imageUrl)}" alt="" data-show="${imgDataShow}"></button>`;
+    const takenExpr   = `$pendingToggleId === '${id}' ? $pendingToggleNewState : ${taken}`;
+    const dataClass   = `{'grid-cell--pending': $pendingToggleId === '${id}', 'grid-cell--taken': ${takenExpr}}`;
+    const initClass   = `grid-cell grid-cell--image-cell${taken ? ' grid-cell--taken' : ''}`;
+    return `<button id="${id}" class="${initClass}" data-on:click="${action}" data-class="${dataClass}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"><img src="${esc(imageUrl)}" alt="" data-show="${imgDataShow}"></button>`;
   }
   const cls       = taken ? 'grid-cell grid-cell--taken' : 'grid-cell';
   const dataClass = `{'grid-cell--taken': $pendingToggleId === '${id}' ? $pendingToggleNewState : ${taken}, 'grid-cell--pending': $pendingToggleId === '${id}'}`;
