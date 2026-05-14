@@ -122,6 +122,13 @@ document.getElementById('camera-input')?.addEventListener('change', (e) => {
 async function uploadPhoto(file, cropData) {
   const statusEl = document.getElementById('photo-upload-error');
   if (statusEl) statusEl.hidden = true;
+  if (emptyMsg) emptyMsg.hidden = true;
+
+  const placeholder = document.createElement('li');
+  placeholder.className = 'med-image-item med-image-item--uploading';
+  placeholder.setAttribute('aria-label', 'Uploading photo…');
+  placeholder.innerHTML = '<span class="med-image-spinner" aria-hidden="true"></span>';
+  imageList?.append(placeholder);
 
   const fd = new FormData();
   fd.append('photo', file, file.name);
@@ -130,8 +137,10 @@ async function uploadPhoto(file, cropData) {
   try {
     const res = await fetch(`/api/medications/${medId}/images/upload`, { method: 'POST', body: fd });
     if (!res.ok) throw new Error('Upload failed');
-    appendImageItem(await res.json());
+    placeholder.replaceWith(createImageItem(await res.json()));
   } catch {
+    placeholder.remove();
+    if (!imageList?.children.length && emptyMsg) emptyMsg.hidden = false;
     if (statusEl) statusEl.hidden = false;
   }
 }
@@ -239,11 +248,9 @@ imageList?.addEventListener('click', async (e) => {
 
 /**
  * @param {{ id: string, url: string, originalUrl?: string, cropData?: object | null }} img
+ * @returns {HTMLLIElement}
  */
-function appendImageItem({ id, url, originalUrl, cropData }) {
-  if (!imageList) return;
-  if (emptyMsg) emptyMsg.hidden = true;
-
+function createImageItem({ id, url, originalUrl, cropData }) {
   const li = document.createElement('li');
   li.className           = 'med-image-item';
   li.dataset.imageId     = id;
@@ -271,5 +278,14 @@ function appendImageItem({ id, url, originalUrl, cropData }) {
   deleteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
 
   li.append(img, recropBtn, deleteBtn);
-  imageList.append(li);
+  return li;
+}
+
+/**
+ * @param {{ id: string, url: string, originalUrl?: string, cropData?: object | null }} img
+ */
+function appendImageItem(img) {
+  if (!imageList) return;
+  if (emptyMsg) emptyMsg.hidden = true;
+  imageList.append(createImageItem(img));
 }

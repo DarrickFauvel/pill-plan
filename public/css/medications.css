@@ -754,6 +754,29 @@
     display: block;
   }
 
+  .med-image-item--uploading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .med-image-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: med-image-spin 0.7s linear infinite;
+  }
+
+  @keyframes med-image-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .med-image-spinner { animation: none; opacity: 0.5; }
+  }
+
   .med-image-recrop {
     position: absolute;
     inset-block-start: var(--space-1);
