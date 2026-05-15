@@ -341,7 +341,7 @@
     align-items: center;
     gap: 0.05em;
     background: var(--color-primary);
-    color: var(--color-text);
+    color: #1A2840;
     border-radius: var(--radius-sm);
     padding: 0.2em 0.4em;
   }
