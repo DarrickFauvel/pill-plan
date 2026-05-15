@@ -334,6 +334,25 @@
     color: var(--color-primary);
   }
 
+  /* Filled circle badge around today's date number */
+  .grid-th--today .grid-day-num {
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: 50%;
+    width: 1.75rem;
+    height: 1.75rem;
+    line-height: 1.75rem;
+    text-align: center;
+    margin: 0 auto 0.15em;
+    font-weight: 700;
+  }
+
+  /* Today's day name: bold and fully opaque */
+  .grid-th--today .grid-day-name {
+    font-weight: 700;
+    opacity: 1;
+  }
+
   .grid-day-num {
     display: block;
     font-size: var(--font-size-sm);
@@ -1087,6 +1106,22 @@
 
   .fill-th--today {
     color: var(--color-primary);
+    font-weight: 700;
+  }
+
+  .fill-th--today .fill-day-num {
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    line-height: 1.5rem;
+    text-align: center;
+    margin: 0 auto 0.1em;
+    font-weight: 700;
+  }
+
+  .fill-th--today .fill-day-name {
     font-weight: 700;
   }
 
