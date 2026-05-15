@@ -117,8 +117,15 @@
             role="columnheader"
             id="col-<%= day.date %>"
           >
+            <% if (day.isToday) { %>
+            <span class="grid-today-badge">
+              <span class="grid-day-num"><%= day.dayNum %></span>
+              <span class="grid-day-name"><%= day.dayLabel %></span>
+            </span>
+            <% } else { %>
             <span class="grid-day-num"><%= day.dayNum %></span>
             <span class="grid-day-name"><%= day.dayLabel %></span>
+            <% } %>
           </th>
           <% }); %>
         </tr>
