@@ -1,13 +1,20 @@
 <% layout('../layouts/app') %>
 <div
   class="grid-page"
-  data-signals='{"toggleMedId":"","toggleSlotId":"","toggleDate":"","toggleError":"","pendingToggleId":"","pendingToggleNewState":false}'
+  data-signals='{"toggleMedId":"","toggleSlotId":"","toggleDate":"","toggleError":"","pendingToggleId":"","pendingToggleNewState":false,"gridMode":"take","fillMedId":"","fillSlotId":"","fillDate":"","fillCount":1}'
 >
 
   <% var hasAnyMeds = it.grid.slots.some(function(s) { return s.meds.length > 0; }); %>
   <% var hasToday = it.grid.days.some(function(d) { return d.isToday; }); %>
 
-  <div class="grid-scroll-container" id="grid-scroll">
+  <% if (hasAnyMeds) { %>
+  <div class="grid-mode-toggle" role="group" aria-label="Grid mode">
+    <button type="button" class="grid-mode-btn" data-class="{'grid-mode-btn--active': $gridMode === 'take'}" data-on:click="$gridMode='take'">Take</button>
+    <button type="button" class="grid-mode-btn" data-class="{'grid-mode-btn--active': $gridMode === 'fill'}" data-on:click="$gridMode='fill'">Fill</button>
+  </div>
+  <% } %>
+
+  <div class="grid-scroll-container" id="grid-scroll" data-show="$gridMode === 'take'">
 
     <header class="grid-header">
       <a
@@ -146,6 +153,7 @@
             var isScheduled = med.scheduledDays.indexOf(dayOfWeek) !== -1;
             var entry       = med.entries[day.date];
             var isTaken     = !!(entry && entry.status === 'taken');
+            var isFilled    = !!(entry && entry.filled);
             var cid         = 'gc-' + med.id.replace(/-/g,'') + '-' + slot.id.replace(/-/g,'') + '-' + day.date.replace(/-/g,'');
             var ariaLabel   = med.name + ', ' + slot.label + ', ' + day.dayLabel + ' ' + day.dayNum + (isTaken ? ', taken' : ', not taken');
             var clickAction = "$pendingToggleId='" + cid + "';$pendingToggleNewState=" + (!isTaken) + ";$saveStatus='idle';$toggleMedId='" + med.id + "';$toggleSlotId='" + slot.id + "';$toggleDate='" + day.date + "';@post('/api/grid/toggle')";
@@ -174,9 +182,9 @@
             <% } else { %>
             <button
               id="<%= cid %>"
-              class="grid-cell<%= isTaken ? ' grid-cell--taken' : '' %>"
+              class="grid-cell<%= isTaken ? ' grid-cell--taken' : isFilled ? ' grid-cell--filled' : '' %>"
               data-on:click="<%= clickAction %>"
-              data-class="{'grid-cell--taken': $pendingToggleId === '<%= cid %>' ? $pendingToggleNewState : <%= isTaken %>, 'grid-cell--pending': $pendingToggleId === '<%= cid %>'}"
+              data-class="{'grid-cell--taken': $pendingToggleId === '<%= cid %>' ? $pendingToggleNewState : <%= isTaken %>, 'grid-cell--filled': !($pendingToggleId === '<%= cid %>' ? $pendingToggleNewState : <%= isTaken %>) && <%= isFilled %>, 'grid-cell--pending': $pendingToggleId === '<%= cid %>'}"
               aria-label="<%= ariaLabel %>"
               aria-pressed="<%= isTaken ? 'true' : 'false' %>"
             ></button>
@@ -198,8 +206,29 @@
 
   </div>
 
+  <div class="fill-mode-section" data-show="$gridMode === 'fill'">
+    <div class="fill-controls">
+      <div class="fill-controls__row">
+        <label for="fill-med-select" class="fill-controls__label">Medication</label>
+        <select id="fill-med-select" class="fill-controls__select" data-bind="fillMedId" data-on:change="@post('/api/grid/fill-grid')">
+          <option value="">— choose —</option>
+          <% var _meds = it.meds || []; _meds.forEach(function(med) { %>
+          <option value="<%= med.id %>"><%= med.name %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="fill-controls__actions" data-show="$fillMedId !== ''">
+        <label for="fill-count" class="fill-controls__label">Pills to fill</label>
+        <input id="fill-count" type="number" min="1" max="366" class="fill-controls__input" data-bind="fillCount" placeholder="count">
+        <button type="button" class="btn btn--primary btn--sm" data-on:click="@post('/api/grid/fill-auto')">Fill</button>
+        <button type="button" class="btn btn--secondary btn--sm" data-on:click="@post('/api/grid/fill-catchup')">Catch up to today</button>
+      </div>
+    </div>
+    <div id="fill-grid-container" class="fill-grid-wrap" aria-live="polite"></div>
+  </div>
+
   <% if (hasAnyMeds && hasToday) { %>
-  <div class="grid-footer">
+  <div class="grid-footer" data-show="$gridMode === 'take'">
     <button
       type="button"
       class="btn btn--secondary btn--sm"
