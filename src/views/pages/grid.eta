@@ -234,9 +234,6 @@
           <% }); %>
         </select>
       </div>
-      <div class="fill-controls__actions" data-show="$fillMedId !== ''">
-        <button type="button" class="btn btn--secondary btn--sm" data-on:click="@post('/api/grid/fill-catchup')">Catch up to today</button>
-      </div>
     </div>
     <div id="fill-grid-container" class="fill-grid-wrap" aria-live="polite"></div>
   </div>

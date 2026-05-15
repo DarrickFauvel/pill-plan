@@ -396,16 +396,6 @@ function buildFillGridHtml(fillGrid) {
 
   let h = '<div id="fill-grid-container" class="fill-grid-wrap" aria-live="polite">';
 
-  if (slots.length > 0) {
-    h += '<div class="fill-quick" role="group" aria-label="Fill all slots">';
-    h += '<span class="fill-quick__label">Fill all</span>';
-    for (const slot of slots) {
-      const action = `$fillSlotId='${esc(slot.id)}';@post('/api/grid/fill-slot')`;
-      h += `<button class="btn btn--sm btn--secondary" data-on:click="${action}" aria-label="Fill all ${esc(slot.label)} slots">${esc(slot.label)}</button>`;
-    }
-    h += '</div>';
-  }
-
   for (let w = 0; w < numWeeks; w++) {
     const weekDays = days.slice(w * 7, w * 7 + 7);
     const ws  = weekDays[0];
