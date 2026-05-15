@@ -77,11 +77,10 @@ function cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, da
   const label  = `${esc(medName)}, ${esc(slotLabel)}, ${esc(dayLabel)} ${dayNum}${taken ? ', taken' : ', not taken'}`;
   const action = `$pendingToggleId='${id}';$pendingToggleNewState=${!taken};$saveStatus='idle';$toggleMedId='${esc(medId)}';$toggleSlotId='${esc(slotId)}';$toggleDate='${takenDate}';@post('/api/grid/toggle')`;
   if (imageUrl) {
-    const imgDataShow = `$pendingToggleId === '${id}' ? !$pendingToggleNewState : ${!taken}`;
-    const takenExpr   = `$pendingToggleId === '${id}' ? $pendingToggleNewState : ${taken}`;
-    const dataClass   = `{'grid-cell--pending': $pendingToggleId === '${id}', 'grid-cell--taken': ${takenExpr}}`;
-    const initClass   = `grid-cell grid-cell--image-cell${taken ? ' grid-cell--taken' : ''}`;
-    return `<button id="${id}" class="${initClass}" data-on:click="${action}" data-class="${dataClass}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"><img src="${esc(imageUrl)}" alt="" data-show="${imgDataShow}"></button>`;
+    const takenExpr = `$pendingToggleId === '${id}' ? $pendingToggleNewState : ${taken}`;
+    const dataClass = `{'grid-cell--pending': $pendingToggleId === '${id}', 'grid-cell--taken': ${takenExpr}}`;
+    const initClass = `grid-cell grid-cell--image-cell${taken ? ' grid-cell--taken' : ''}`;
+    return `<button id="${id}" class="${initClass}" data-on:click="${action}" data-class="${dataClass}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"><img src="${esc(imageUrl)}" alt=""></button>`;
   }
   const initClass = taken ? 'grid-cell grid-cell--taken'
     : filled       ? 'grid-cell grid-cell--filled'
@@ -314,7 +313,8 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
 
   let cellImageUrl = null;
   if (!isBottles) {
-    const todayStr = req.localDate;
+    const localDateBody = String(req.body.localDate ?? '');
+    const todayStr = /^\d{4}-\d{2}-\d{2}$/.test(localDateBody) ? localDateBody : req.localDate;
     if (takenDate === todayStr) {
       const imgRow = await db.execute({
         sql:  'SELECT source, url, crop_data FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC LIMIT 1',

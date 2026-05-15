@@ -709,25 +709,20 @@
     outline-offset: var(--focus-offset);
   }
 
-  /* Taken state — filled with checkmark */
-  .grid-cell--taken {
-    background: var(--color-primary);
-    border-color: var(--color-primary);
+  /* Taken state — transparent with muted checkmark (pill is gone from slot) */
+  .grid-cell--taken:not(.grid-cell--image-cell) {
+    background: transparent;
+    border-color: var(--color-border);
   }
 
-  .grid-cell--taken:hover {
-    background: color-mix(in srgb, var(--color-primary) 85%, black);
-    border-color: color-mix(in srgb, var(--color-primary) 85%, black);
-  }
-
-  /* Checkmark via CSS */
+  /* Checkmark via CSS — muted primary so it reads as "done" without drawing the eye */
   .grid-cell--taken::after {
     content: '';
     display: block;
     width: 0.65rem;
     height: 0.4rem;
-    border-left: 2.5px solid white;
-    border-bottom: 2.5px solid white;
+    border-left: 2.5px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
+    border-bottom: 2.5px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
     transform: rotate(-45deg) translateY(-1px);
     flex-shrink: 0;
   }
@@ -739,6 +734,7 @@
     overflow: hidden;
   }
 
+  /* Default shimmer: primary tint — visible on transparent "taken" bg when taking */
   .grid-cell--pending::before {
     content: '';
     position: absolute;
@@ -746,19 +742,19 @@
     background: linear-gradient(
       -45deg,
       transparent 30%,
-      rgba(255, 255, 255, 0.45) 50%,
+      color-mix(in srgb, var(--color-primary) 35%, transparent) 50%,
       transparent 70%
     );
     background-size: 300% 300%;
     animation: cell-pending 0.9s ease-in-out infinite;
   }
 
-  /* Shimmer on empty (un-taking) cell uses primary tint instead of white */
+  /* Shimmer on filled (un-taking) cell uses white — visible on the teal filled bg */
   .grid-cell--pending:not(.grid-cell--taken)::before {
     background: linear-gradient(
       -45deg,
       transparent 30%,
-      color-mix(in srgb, var(--color-primary) 35%, transparent) 50%,
+      rgba(255, 255, 255, 0.45) 50%,
       transparent 70%
     );
     background-size: 300% 300%;
@@ -806,6 +802,7 @@
   .grid-cell--image-cell {
     padding: 0;
     overflow: hidden;
+    position: relative;
   }
 
   .grid-cell--image-cell img {
@@ -817,21 +814,19 @@
     pointer-events: none;
   }
 
-  /* Taken image cell: light checkmark only — no blue fill */
-  .grid-cell--image-cell.grid-cell--taken {
-    background: transparent;
-    border-color: var(--color-border);
-  }
-
-  .grid-cell--image-cell.grid-cell--taken:hover {
-    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  /* Not-taken image cell: filled appearance — pill is present in the slot */
+  .grid-cell--image-cell:not(.grid-cell--taken) {
     border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   }
 
-  .grid-cell--image-cell.grid-cell--taken::after {
-    border-left-color: var(--color-primary);
-    border-bottom-color: var(--color-primary);
-    opacity: 0.6;
+  .grid-cell--image-cell:not(.grid-cell--taken):hover {
+    background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  }
+
+  /* Taken image cell: hide image, muted checkmark centered by flex */
+  .grid-cell--image-cell.grid-cell--taken img {
+    display: none;
   }
 
   /* ── Empty state ─────────────────────────────────────────── */

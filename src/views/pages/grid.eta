@@ -14,7 +14,7 @@
 </script>
 <div
   class="grid-page"
-  data-signals='{"toggleMedId":"","toggleSlotId":"","toggleDate":"","toggleError":"","pendingToggleId":"","pendingToggleNewState":false,"gridMode":"take","fillMedId":"","fillSlotId":"","fillDate":"","fillCount":1}'
+  data-signals='{"toggleMedId":"","toggleSlotId":"","toggleDate":"","toggleError":"","pendingToggleId":"","pendingToggleNewState":false,"gridMode":"take","fillMedId":"","fillSlotId":"","fillDate":"","fillCount":1,"localDate":"<%= it.grid.todayStr %>"}'
 >
 
   <% var hasAnyMeds = it.grid.slots.some(function(s) { return s.meds.length > 0; }); %>
@@ -181,17 +181,14 @@
           >
             <% if (isScheduled) { %>
             <% if (day.isToday && med.imageUrl) { %>
-            <%
-              var imgDataShow = "$pendingToggleId === '" + cid + "' ? !$pendingToggleNewState : " + (!isTaken);
-            %>
             <button
               id="<%= cid %>"
-              class="grid-cell grid-cell--image-cell"
+              class="grid-cell grid-cell--image-cell<%= isTaken ? ' grid-cell--taken' : '' %>"
               data-on:click="<%= clickAction %>"
-              data-class="{'grid-cell--pending': $pendingToggleId === '<%= cid %>'}"
+              data-class="{'grid-cell--pending': $pendingToggleId === '<%= cid %>', 'grid-cell--taken': $pendingToggleId === '<%= cid %>' ? $pendingToggleNewState : <%= isTaken %>}"
               aria-label="<%= ariaLabel %>"
               aria-pressed="<%= isTaken ? 'true' : 'false' %>"
-            ><img src="<%= med.imageUrl %>" alt="" loading="lazy" data-show="<%= imgDataShow %>"></button>
+            ><img src="<%= med.imageUrl %>" alt="" loading="lazy"></button>
             <% } else { %>
             <button
               id="<%= cid %>"
