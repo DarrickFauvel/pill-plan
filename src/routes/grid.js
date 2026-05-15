@@ -414,7 +414,10 @@ function buildFillGridHtml(fillGrid) {
     const day    = days[i];
     const isEnd  = i % 7 === 6;
     const cls    = ['fill-th fill-th--day', day.isToday ? 'fill-th--today' : '', day.isPast ? 'fill-th--past' : '', isEnd ? 'fill-th--org-end' : ''].filter(Boolean).join(' ');
-    h += `<th scope="col" class="${cls}"><span class="fill-day-num">${day.dayNum}</span><span class="fill-day-name">${esc(day.dayLabel)}</span></th>`;
+    const inner = day.isToday
+      ? `<span class="grid-today-badge"><span class="fill-day-num">${day.dayNum}</span><span class="fill-day-name">${esc(day.dayLabel)}</span></span>`
+      : `<span class="fill-day-num">${day.dayNum}</span><span class="fill-day-name">${esc(day.dayLabel)}</span>`;
+    h += `<th scope="col" class="${cls}">${inner}</th>`;
   }
   h += '</tr></thead><tbody>';
 
