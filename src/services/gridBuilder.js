@@ -117,14 +117,13 @@ function toMonthParam(y, m) {
  * Build a single-day grid for the bottles organizer view.
  *
  * @param {string} profileId
- * @param {string} dateStr  - YYYY-MM-DD
+ * @param {string} dateStr   - YYYY-MM-DD
+ * @param {string} todayStr  - YYYY-MM-DD client local date
  * @returns {Promise<DayGrid>}
  */
-export async function buildDayGrid(profileId, dateStr) {
+export async function buildDayGrid(profileId, dateStr, todayStr) {
   const dateObj   = new Date(dateStr + 'T12:00:00');
   const dayOfWeek = dateObj.getDay();
-  const today     = new Date();
-  const todayStr  = toDateStr(today);
 
   const [slotsRes, medsRes, entriesRes] = await Promise.all([
     db.execute({
@@ -237,14 +236,13 @@ export async function buildDayGrid(profileId, dateStr) {
  *
  * @param {string} profileId
  * @param {number} year
- * @param {number} month - 0-based (0=Jan, 11=Dec)
+ * @param {number} month    - 0-based (0=Jan, 11=Dec)
+ * @param {string} todayStr - YYYY-MM-DD client local date
  * @returns {Promise<GridMonth>}
  */
-export async function buildMonthGrid(profileId, year, month) {
+export async function buildMonthGrid(profileId, year, month, todayStr) {
   const firstDay = new Date(year, month, 1);
   const lastDay  = new Date(year, month + 1, 0);
-  const today    = new Date();
-  const todayStr = toDateStr(today);
 
   /** @type {GridDay[]} */
   const days = [];
@@ -437,17 +435,15 @@ function toSunday(date) {
  * @param {string} profileId
  * @param {string} startDateStr - YYYY-MM-DD (snapped to Monday internally)
  * @param {number} numWeeks     - 1–8
+ * @param {string} todayStr     - YYYY-MM-DD client local date
  * @returns {Promise<GridMonth>}
  */
-export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
+export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks, todayStr) {
   const monday    = toSunday(new Date(startDateStr + 'T12:00:00'));
   const startDate = new Date(monday + 'T12:00:00');
   const totalDays = numWeeks * 7;
   const endDate   = new Date(startDate);
   endDate.setDate(endDate.getDate() + totalDays - 1);
-
-  const today    = new Date();
-  const todayStr = toDateStr(today);
 
   /** @type {GridDay[]} */
   const days = [];
@@ -667,14 +663,11 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
  * @param {number} numWeeks
  * @returns {Promise<FillGrid>}
  */
-export async function buildFillGrid(profileId, medId, startSunday, numWeeks) {
+export async function buildFillGrid(profileId, medId, startSunday, numWeeks, todayStr) {
   const startDate = new Date(startSunday + 'T12:00:00');
   const totalDays = numWeeks * 7;
   const endDate   = new Date(startDate);
   endDate.setDate(endDate.getDate() + totalDays - 1);
-
-  const today    = new Date();
-  const todayStr = toDateStr(today);
 
   /** @type {GridDay[]} */
   const days = [];

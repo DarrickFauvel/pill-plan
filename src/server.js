@@ -57,6 +57,15 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use((req, res, next) => {
+  const raw = req.cookies?.['local-date'] ?? '';
+  req.localDate = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
+  next();
+});
+
 // Public pages
 app.get('/', async (req, res) => {
   const sid = req.cookies?.sid;

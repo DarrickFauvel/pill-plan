@@ -41,6 +41,14 @@
     <p>&copy; <%= new Date().getFullYear() %> Pill Plan</p>
   </footer>
 
+  <script>
+    (function () {
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const local = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      document.cookie = `local-date=${local};path=/;SameSite=Lax;Secure;Max-Age=86400`;
+    })();
+  </script>
   <script type="module" src="/js/vendor/datastar.js"></script>
   <script type="module" src="/js/app.js"></script>
   <%~ it.scripts ?? '' %>
