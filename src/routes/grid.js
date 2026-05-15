@@ -311,25 +311,6 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
 
   const isBottles = req.profile.organizerType === 'bottles';
 
-  let cellImageUrl = null;
-  if (!isBottles) {
-    const localDateBody = String(req.body.localDate ?? '');
-    const todayStr = /^\d{4}-\d{2}-\d{2}$/.test(localDateBody) ? localDateBody : req.localDate;
-    if (takenDate === todayStr) {
-      const imgRow = await db.execute({
-        sql:  'SELECT source, url, crop_data FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC LIMIT 1',
-        args: [medId],
-      });
-      if (imgRow.rows.length) {
-        const row      = imgRow.rows[0];
-        const source   = String(row.source);
-        const rawUrl   = String(row.url);
-        const cropData = row.crop_data ? JSON.parse(String(row.crop_data)) : null;
-        cellImageUrl   = source === 'cloudinary' ? imageUrl(rawUrl, cropData) : rawUrl;
-      }
-    }
-  }
-
   let cellFilled = false;
   if (!isBottles) {
     const fillCheck = await db.execute({
@@ -337,6 +318,23 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
       args: [medId, slotId, takenDate],
     });
     cellFilled = fillCheck.rows.length > 0;
+  }
+
+  const localDateBody = String(req.body.localDate ?? '');
+  const todayStr = /^\d{4}-\d{2}-\d{2}$/.test(localDateBody) ? localDateBody : req.localDate;
+  let cellImageUrl = null;
+  if (!isBottles && (takenDate === todayStr || cellFilled)) {
+    const imgRow = await db.execute({
+      sql:  'SELECT source, url, crop_data FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC LIMIT 1',
+      args: [medId],
+    });
+    if (imgRow.rows.length) {
+      const row      = imgRow.rows[0];
+      const source   = String(row.source);
+      const rawUrl   = String(row.url);
+      const cropData = row.crop_data ? JSON.parse(String(row.crop_data)) : null;
+      cellImageUrl   = source === 'cloudinary' ? imageUrl(rawUrl, cropData) : rawUrl;
+    }
   }
 
   const html = isBottles
@@ -375,7 +373,7 @@ function fillCellId(slotId, date) {
  * @param {boolean} isToday
  * @returns {string}
  */
-function fillCellHtml(id, slotId, date, slotLabel, dayLabel, dayNum, isFilled, isPast, isToday) {
+function fillCellHtml(id, slotId, date, slotLabel, dayLabel, dayNum, isFilled, isPast, isToday, medImageUrl = null) {
   const label  = `${esc(slotLabel)}, ${esc(dayLabel)} ${dayNum}${isFilled ? ', filled' : ', not filled'}`;
   const action = `$fillSlotId='${esc(slotId)}';$fillDate='${date}';@post('/api/grid/fill-toggle')`;
   const cls    = [
@@ -384,7 +382,8 @@ function fillCellHtml(id, slotId, date, slotLabel, dayLabel, dayNum, isFilled, i
     isPast   ? 'fill-cell--past'   : '',
     isToday  ? 'fill-cell--today'  : '',
   ].filter(Boolean).join(' ');
-  return `<button id="${id}" class="${cls}" data-on:click="${action}" aria-label="${label}" aria-pressed="${isFilled ? 'true' : 'false'}"></button>`;
+  const inner = (isFilled && medImageUrl) ? `<img src="${esc(medImageUrl)}" alt="">` : '';
+  return `<button id="${id}" class="${cls}" data-on:click="${action}" aria-label="${label}" aria-pressed="${isFilled ? 'true' : 'false'}">${inner}</button>`;
 }
 
 /**
@@ -392,58 +391,66 @@ function fillCellHtml(id, slotId, date, slotLabel, dayLabel, dayNum, isFilled, i
  * @returns {string}
  */
 function buildFillGridHtml(fillGrid) {
-  const { days, slots, organizers } = fillGrid;
+  const { days, slots, organizers, imageUrl: medImageUrl } = fillGrid;
   const numWeeks = organizers.length;
 
   let h = '<div id="fill-grid-container" class="fill-grid-wrap" aria-live="polite">';
-  h += '<table class="fill-grid-table" role="grid" aria-label="Fill organizer"><thead>';
 
-  // Organizer header row
-  h += '<tr><th class="fill-th fill-th--label" scope="col">Slot</th>';
-  for (let w = 0; w < numWeeks; w++) {
-    const ws  = days[w * 7];
-    const we  = days[w * 7 + 6];
-    const lbl = `${organizers[w]} · ${ws.dayLabel} ${ws.dayNum} – ${we.dayLabel} ${we.dayNum}`;
-    h += `<th class="fill-th fill-th--org" colspan="7" scope="colgroup">${esc(lbl)}</th>`;
-  }
-  h += '</tr>';
-
-  // Day header row
-  h += '<tr><td class="fill-td fill-th fill-th--label"></td>';
-  for (let i = 0; i < days.length; i++) {
-    const day    = days[i];
-    const isEnd  = i % 7 === 6;
-    const cls    = ['fill-th fill-th--day', day.isToday ? 'fill-th--today' : '', day.isPast ? 'fill-th--past' : '', isEnd ? 'fill-th--org-end' : ''].filter(Boolean).join(' ');
-    const inner = day.isToday
-      ? `<span class="grid-today-badge"><span class="fill-day-num">${day.dayNum}</span><span class="fill-day-name">${esc(day.dayLabel)}</span></span>`
-      : `<span class="fill-day-num">${day.dayNum}</span><span class="fill-day-name">${esc(day.dayLabel)}</span>`;
-    h += `<th scope="col" class="${cls}">${inner}</th>`;
-  }
-  h += '</tr></thead><tbody>';
-
-  // Slot rows
-  for (const slot of slots) {
-    h += `<tr><th scope="row" class="fill-th fill-th--slot">${esc(slot.label)}</th>`;
-    for (let i = 0; i < days.length; i++) {
-      const day       = days[i];
-      const dow       = new Date(day.date + 'T12:00:00').getDay();
-      const scheduled = slot.scheduledDays.includes(dow);
-      const isEnd     = i % 7 === 6;
-      const tdCls     = ['fill-td', isEnd ? 'fill-td--org-end' : ''].filter(Boolean).join(' ');
-      h += `<td class="${tdCls}" role="gridcell">`;
-      if (scheduled) {
-        const filled = !!slot.fillEntries[day.date];
-        const id     = fillCellId(slot.id, day.date);
-        h += fillCellHtml(id, slot.id, day.date, slot.label, day.dayLabel, day.dayNum, filled, day.isPast, day.isToday);
-      } else {
-        h += '<span class="fill-cell fill-cell--empty" aria-hidden="true"></span>';
-      }
-      h += '</td>';
+  if (slots.length > 0) {
+    h += '<div class="fill-quick" role="group" aria-label="Fill all slots">';
+    h += '<span class="fill-quick__label">Fill all</span>';
+    for (const slot of slots) {
+      const action = `$fillSlotId='${esc(slot.id)}';@post('/api/grid/fill-slot')`;
+      h += `<button class="btn btn--sm btn--secondary" data-on:click="${action}" aria-label="Fill all ${esc(slot.label)} slots">${esc(slot.label)}</button>`;
     }
-    h += '</tr>';
+    h += '</div>';
   }
 
-  h += '</tbody></table></div>';
+  for (let w = 0; w < numWeeks; w++) {
+    const weekDays = days.slice(w * 7, w * 7 + 7);
+    const ws  = weekDays[0];
+    const we  = weekDays[6];
+    const lbl = `${organizers[w]} · ${ws.dayLabel} ${ws.dayNum} – ${we.dayLabel} ${we.dayNum}`;
+
+    h += `<section class="fill-week">`;
+    h += `<h2 class="fill-week__header">${esc(lbl)}</h2>`;
+    h += `<table class="fill-week-table" role="grid" aria-label="${esc(lbl)}"><thead><tr>`;
+    h += `<td class="fill-th fill-th--slot-corner"></td>`;
+
+    for (const day of weekDays) {
+      const cls = ['fill-th fill-th--day',
+        day.isToday ? 'fill-th--today' : '',
+        day.isPast  ? 'fill-th--past'  : '',
+      ].filter(Boolean).join(' ');
+      const inner = day.isToday
+        ? `<span class="grid-today-badge"><span class="fill-day-num">${day.dayNum}</span><span class="fill-day-name">${esc(day.dayLabel)}</span></span>`
+        : `<span class="fill-day-num">${day.dayNum}</span><span class="fill-day-name">${esc(day.dayLabel)}</span>`;
+      h += `<th scope="col" class="${cls}">${inner}</th>`;
+    }
+    h += `</tr></thead><tbody>`;
+
+    for (const slot of slots) {
+      h += `<tr><th scope="row" class="fill-th fill-th--slot">${esc(slot.label)}</th>`;
+      for (const day of weekDays) {
+        const dow       = new Date(day.date + 'T12:00:00').getDay();
+        const scheduled = slot.scheduledDays.includes(dow);
+        h += `<td class="fill-td" role="gridcell">`;
+        if (scheduled) {
+          const filled = !!slot.fillEntries[day.date];
+          const id     = fillCellId(slot.id, day.date);
+          h += fillCellHtml(id, slot.id, day.date, slot.label, day.dayLabel, day.dayNum, filled, day.isPast, day.isToday, medImageUrl);
+        } else {
+          h += '<span class="fill-cell fill-cell--empty" aria-hidden="true"></span>';
+        }
+        h += `</td>`;
+      }
+      h += `</tr>`;
+    }
+
+    h += `</tbody></table></section>`;
+  }
+
+  h += '</div>';
   return h;
 }
 
@@ -455,7 +462,7 @@ function buildFillGridHtml(fillGrid) {
  * @param {number} numWeeks
  */
 async function streamFillGrid(res, profileId, medId, numWeeks, todayStr) {
-  const fillGrid = await buildFillGrid(profileId, medId, sundayOf(new Date(todayStr + 'T12:00:00')), numWeeks, todayStr);
+  const fillGrid = await buildFillGrid(profileId, medId, sundayOf(new Date(todayStr + 'T12:00:00')), numWeeks, todayStr, numWeeks * 2);
   const html     = buildFillGridHtml(fillGrid);
   res.write('event: datastar-patch-elements\n');
   res.write('data: mode outer\n');
@@ -545,12 +552,55 @@ router.post('/api/grid/fill-toggle', requireAuth, loadAppContext, async (req, re
     isFilled = true;
   }
 
+  let fillImageUrl = null;
+  if (isFilled) {
+    const imgRow = await db.execute({
+      sql:  'SELECT source, url, crop_data FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC LIMIT 1',
+      args: [fillMedId],
+    });
+    if (imgRow.rows.length) {
+      const row      = imgRow.rows[0];
+      const src      = String(row.source);
+      const rawUrl   = String(row.url);
+      const cropData = row.crop_data ? JSON.parse(String(row.crop_data)) : null;
+      fillImageUrl   = src === 'cloudinary' ? imageUrl(rawUrl, cropData) : rawUrl;
+    }
+  }
+
   const id   = fillCellId(fillSlotId, fillDate);
-  const html = fillCellHtml(id, fillSlotId, fillDate, slotLabel, dayLabel, dayNum, isFilled, fillDate < todayStr, fillDate === todayStr);
+  const html = fillCellHtml(id, fillSlotId, fillDate, slotLabel, dayLabel, dayNum, isFilled, fillDate < todayStr, fillDate === todayStr, fillImageUrl);
+
+  const takenCheck = await db.execute({
+    sql:  'SELECT id FROM grid_entries WHERE med_id = ? AND slot_id = ? AND taken_date = ?',
+    args: [fillMedId, fillSlotId, fillDate],
+  });
+  const isTaken = takenCheck.rows.length > 0;
+
+  let takeImageUrl = fillImageUrl;
+  if (!takeImageUrl && fillDate === todayStr) {
+    const imgRow = await db.execute({
+      sql:  'SELECT source, url, crop_data FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC LIMIT 1',
+      args: [fillMedId],
+    });
+    if (imgRow.rows.length) {
+      const row      = imgRow.rows[0];
+      const src      = String(row.source);
+      const rawUrl   = String(row.url);
+      const cropData = row.crop_data ? JSON.parse(String(row.crop_data)) : null;
+      takeImageUrl   = src === 'cloudinary' ? imageUrl(rawUrl, cropData) : rawUrl;
+    }
+  }
+
+  const medName      = String(medCheck.rows[0].name);
+  const takeCid      = cellId(fillMedId, fillSlotId, fillDate);
+  const takeCellHtml = cellHtml(takeCid, fillMedId, fillSlotId, fillDate, medName, slotLabel, dayLabel, dayNum, isTaken, takeImageUrl, isFilled);
 
   res.write('event: datastar-patch-elements\n');
   res.write('data: mode outer\n');
   res.write(`data: elements ${html}\n\n`);
+  res.write('event: datastar-patch-elements\n');
+  res.write('data: mode outer\n');
+  res.write(`data: elements ${takeCellHtml}\n\n`);
   res.end();
 });
 
@@ -636,6 +686,56 @@ router.post('/api/grid/fill-catchup', requireAuth, loadAppContext, async (req, r
         } catch { /* ignore duplicate */ }
       }
     }
+  }
+
+  await streamFillGrid(res, req.profile.id, fillMedId, numWeeks, req.localDate);
+  res.end();
+});
+
+
+/* ─────────────────────────────────────────────────────────────
+   Fill all cells for one slot  POST /api/grid/fill-slot
+   Body (signals): { fillMedId, fillSlotId }
+   ───────────────────────────────────────────────────────────── */
+router.post('/api/grid/fill-slot', requireAuth, loadAppContext, async (req, res) => {
+  sseHeaders(res);
+
+  const fillMedId  = String(req.body.fillMedId  ?? '').trim();
+  const fillSlotId = String(req.body.fillSlotId ?? '').trim();
+  if (!fillMedId || !fillSlotId) return res.end();
+
+  const medCheck = await db.execute({
+    sql:  'SELECT name FROM medications WHERE id = ? AND profile_id = ?',
+    args: [fillMedId, req.profile.id],
+  });
+  if (!medCheck.rows.length) return res.end();
+
+  const slotCheck = await db.execute({
+    sql:  'SELECT id FROM time_slots WHERE id = ? AND profile_id = ?',
+    args: [fillSlotId, req.profile.id],
+  });
+  if (!slotCheck.rows.length) return res.end();
+
+  const numWeeks = req.profile.organizerCount ?? 1;
+  const fillGrid = await buildFillGrid(
+    req.profile.id, fillMedId,
+    sundayOf(new Date(req.localDate + 'T12:00:00')),
+    numWeeks, req.localDate, numWeeks * 2,
+  );
+
+  const slot = fillGrid.slots.find(s => s.id === fillSlotId);
+  if (!slot) return res.end();
+
+  for (const day of fillGrid.days) {
+    const dow = new Date(day.date + 'T12:00:00').getDay();
+    if (!slot.scheduledDays.includes(dow)) continue;
+    if (slot.fillEntries[day.date]) continue;
+    try {
+      await db.execute({
+        sql:  'INSERT INTO fill_entries (id, profile_id, med_id, slot_id, fill_date, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        args: [randomUUID(), req.profile.id, fillMedId, fillSlotId, day.date, new Date().toISOString()],
+      });
+    } catch { /* ignore duplicate */ }
   }
 
   await streamFillGrid(res, req.profile.id, fillMedId, numWeeks, req.localDate);

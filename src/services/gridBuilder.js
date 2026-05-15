@@ -651,6 +651,7 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks, toda
  * @property {string[]}    organizers
  * @property {string}      todayStr
  * @property {string}      rangeLabel
+ * @property {string|null} imageUrl
  */
 
 /**
@@ -663,9 +664,9 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks, toda
  * @param {number} numWeeks
  * @returns {Promise<FillGrid>}
  */
-export async function buildFillGrid(profileId, medId, startSunday, numWeeks, todayStr) {
+export async function buildFillGrid(profileId, medId, startSunday, numWeeks, todayStr, displayWeeks = numWeeks) {
   const startDate = new Date(startSunday + 'T12:00:00');
-  const totalDays = numWeeks * 7;
+  const totalDays = displayWeeks * 7;
   const endDate   = new Date(startDate);
   endDate.setDate(endDate.getDate() + totalDays - 1);
 
@@ -688,7 +689,7 @@ export async function buildFillGrid(profileId, medId, startSunday, numWeeks, tod
   const startStr = toDateStr(startDate);
   const endStr   = toDateStr(endDate);
 
-  const [medsRes, fillRes] = await Promise.all([
+  const [medsRes, fillRes, imgRes] = await Promise.all([
     db.execute({
       sql: `SELECT s.slot_id, s.days, ts.label, ts.sort_order
             FROM schedules s
@@ -701,6 +702,10 @@ export async function buildFillGrid(profileId, medId, startSunday, numWeeks, tod
       sql: `SELECT slot_id, fill_date FROM fill_entries
             WHERE profile_id = ? AND med_id = ? AND fill_date >= ? AND fill_date <= ?`,
       args: [profileId, medId, startStr, endStr],
+    }),
+    db.execute({
+      sql:  'SELECT source, url, crop_data FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC LIMIT 1',
+      args: [medId],
     }),
   ]);
 
@@ -735,12 +740,21 @@ export async function buildFillGrid(profileId, medId, startSunday, numWeeks, tod
   const MS_PER_WEEK   = 7 * 24 * 60 * 60 * 1000;
   const weeksSinceRef = Math.round((startDate.getTime() - REF_SUNDAY_MS) / MS_PER_WEEK);
   const firstOrgIdx   = ((weeksSinceRef % numWeeks) + numWeeks) % numWeeks;
-  const organizers    = Array.from({ length: numWeeks }, (_, i) =>
+  const organizers    = Array.from({ length: displayWeeks }, (_, i) =>
     String.fromCharCode(65 + ((firstOrgIdx + i) % numWeeks))
   );
 
   const startFmt   = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const endFmt     = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  return { days, slots, organizers, todayStr, rangeLabel: `${startFmt} – ${endFmt}` };
+  let medImageUrl = null;
+  if (imgRes.rows.length) {
+    const row      = imgRes.rows[0];
+    const source   = String(row.source);
+    const rawUrl   = String(row.url);
+    const cropData = row.crop_data ? JSON.parse(String(row.crop_data)) : null;
+    medImageUrl    = source === 'cloudinary' ? imageUrl(rawUrl, cropData) : rawUrl;
+  }
+
+  return { days, slots, organizers, todayStr, rangeLabel: `${startFmt} – ${endFmt}`, imageUrl: medImageUrl };
 }
