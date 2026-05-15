@@ -1278,6 +1278,15 @@
     to { background-position: 8px 0, 0 -8px, -8px 100%, 100% 8px; }
   }
 
+  .fill-mode--remove .fill-cell--range-start::before,
+  .fill-mode--remove .fill-cell--range-preview::before {
+    background-image:
+      repeating-linear-gradient(90deg,  #dc2626 0, #dc2626 4px, transparent 4px, transparent 8px),
+      repeating-linear-gradient(180deg, #dc2626 0, #dc2626 4px, transparent 4px, transparent 8px),
+      repeating-linear-gradient(90deg,  #dc2626 0, #dc2626 4px, transparent 4px, transparent 8px),
+      repeating-linear-gradient(180deg, #dc2626 0, #dc2626 4px, transparent 4px, transparent 8px);
+  }
+
   .fill-range-hint {
     font-size: 0.9rem;
     color: var(--color-text-muted);
