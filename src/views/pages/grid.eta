@@ -14,7 +14,7 @@
 </script>
 <div
   class="grid-page"
-  data-signals='{"toggleMedId":"","toggleSlotId":"","toggleDate":"","toggleError":"","pendingToggleId":"","pendingToggleNewState":false,"gridMode":"take","fillMedId":"","fillSlotId":"","fillDate":"","localDate":"<%= it.grid.todayStr %>"}'
+  data-signals='{"toggleMedId":"","toggleSlotId":"","toggleDate":"","toggleError":"","pendingToggleId":"","pendingToggleNewState":false,"gridMode":"take","fillMedId":"","fillSlotId":"","fillDate":"","fillRangeStart":"","fillRangeSlotId":"","fillRangeEnd":"","fillAction":"fill","localDate":"<%= it.grid.todayStr %>"}'
 >
 
   <% var hasAnyMeds = it.grid.slots.some(function(s) { return s.meds.length > 0; }); %>
@@ -227,13 +227,22 @@
     <div class="fill-controls">
       <div class="fill-controls__row">
         <label for="fill-med-select" class="fill-controls__label">Medication</label>
-        <select id="fill-med-select" class="fill-controls__select" data-bind="fillMedId" data-on:change="@post('/api/grid/fill-grid')">
+        <select id="fill-med-select" class="fill-controls__select" data-bind="fillMedId" data-on:change="$fillRangeStart='';$fillRangeEnd='';$fillRangeSlotId='';@post('/api/grid/fill-grid')">
           <option value="">— choose —</option>
           <% var _meds = it.meds || []; _meds.forEach(function(med) { %>
           <option value="<%= med.id %>"><%= med.name %></option>
           <% }); %>
         </select>
       </div>
+      <div class="fill-action-toggle" role="group" aria-label="Fill action" data-show="$fillMedId !== ''">
+        <button type="button" class="fill-action-btn" data-class="{'fill-action-btn--active': $fillAction === 'fill'}" data-on:click="$fillAction='fill';$fillRangeStart='';$fillRangeEnd='';$fillRangeSlotId=''">Fill</button>
+        <button type="button" class="fill-action-btn" data-class="{'fill-action-btn--active': $fillAction === 'remove'}" data-on:click="$fillAction='remove';$fillRangeStart='';$fillRangeEnd='';$fillRangeSlotId=''">Remove</button>
+      </div>
+    </div>
+    <p class="fill-range-hint" aria-live="polite" data-show="$fillMedId !== '' && $fillRangeStart !== '' && $fillRangeEnd === ''">Start selected — tap the end date in the same row</p>
+    <div class="fill-range-confirm" data-show="$fillRangeStart !== '' && $fillRangeEnd !== ''">
+      <button type="button" class="btn btn--secondary btn--sm" data-on:click="$fillRangeStart='';$fillRangeEnd='';$fillRangeSlotId=''">Cancel</button>
+      <button type="button" class="btn btn--primary btn--sm" data-on:click="@post('/api/grid/fill-range-confirm')" data-text="$fillAction === 'fill' ? 'Fill range' : 'Remove range'">Fill range</button>
     </div>
     <div id="fill-grid-container" class="fill-grid-wrap" aria-live="polite"></div>
   </div>

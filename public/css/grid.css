@@ -1249,6 +1249,79 @@
     display: none;
   }
 
+  .fill-cell--range-start,
+  .fill-cell--range-preview {
+    border-color: transparent;
+    position: relative;
+  }
+
+  .fill-cell--range-start::before,
+  .fill-cell--range-preview::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: var(--radius-sm);
+    pointer-events: none;
+    z-index: 1;
+    background-image:
+      repeating-linear-gradient(90deg,  #16a34a 0, #16a34a 4px, transparent 4px, transparent 8px),
+      repeating-linear-gradient(180deg, #16a34a 0, #16a34a 4px, transparent 4px, transparent 8px),
+      repeating-linear-gradient(90deg,  #16a34a 0, #16a34a 4px, transparent 4px, transparent 8px),
+      repeating-linear-gradient(180deg, #16a34a 0, #16a34a 4px, transparent 4px, transparent 8px);
+    background-size: 8px 2px, 2px 8px, 8px 2px, 2px 8px;
+    background-position: 0 0, 0 0, 0 100%, 100% 0;
+    background-repeat: repeat-x, repeat-y, repeat-x, repeat-y;
+    animation: march 0.4s linear infinite;
+  }
+
+  @keyframes march {
+    to { background-position: 8px 0, 0 -8px, -8px 100%, 100% 8px; }
+  }
+
+  .fill-range-hint {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    padding: 0.25em 1em;
+    margin: 0;
+  }
+
+  .fill-cell--range-preview {
+    background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+    border-color: var(--color-primary);
+  }
+
+  .fill-action-toggle {
+    display: flex;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    width: fit-content;
+    margin: 0.5em 1em;
+  }
+
+  .fill-action-btn {
+    padding: 0.3em 1.1em;
+    font-size: 0.875rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+  }
+
+  .fill-action-btn--active {
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  .fill-range-confirm {
+    display: flex;
+    gap: 0.5em;
+    padding: 0.5em 1em;
+    align-items: center;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .fill-cell {
       transition: none;
@@ -1256,6 +1329,14 @@
 
     .fill-cell:active {
       transform: none;
+    }
+
+    .fill-cell--range-start {
+      border-color: var(--color-primary);
+    }
+
+    .fill-cell--range-start::before {
+      animation: none;
     }
   }
 

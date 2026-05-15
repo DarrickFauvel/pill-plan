@@ -374,16 +374,24 @@ function fillCellId(slotId, date) {
  * @returns {string}
  */
 function fillCellHtml(id, slotId, date, slotLabel, dayLabel, dayNum, isFilled, isPast, isToday, medImageUrl = null) {
-  const label  = `${esc(slotLabel)}, ${esc(dayLabel)} ${dayNum}${isFilled ? ', filled' : ', not filled'}`;
-  const action = `$fillSlotId='${esc(slotId)}';$fillDate='${date}';@post('/api/grid/fill-toggle')`;
-  const cls    = [
+  const label   = `${esc(slotLabel)}, ${esc(dayLabel)} ${dayNum}${isFilled ? ', filled' : ', not filled'}`;
+  const action  = `$fillSlotId='${esc(slotId)}';$fillDate='${date}';@post('/api/grid/fill-range-tap')`;
+  const baseCls = [
     'fill-cell',
     isFilled ? 'fill-cell--filled' : '',
     isPast   ? 'fill-cell--past'   : '',
     isToday  ? 'fill-cell--today'  : '',
   ].filter(Boolean).join(' ');
+
+  const slot    = esc(slotId);
+  const isStart = `$fillRangeStart === '${date}' && $fillRangeSlotId === '${slot}' && $fillRangeEnd === ''`;
+  const rMin    = `($fillRangeStart < $fillRangeEnd ? $fillRangeStart : $fillRangeEnd)`;
+  const rMax    = `($fillRangeStart < $fillRangeEnd ? $fillRangeEnd : $fillRangeStart)`;
+  const inRange = `$fillRangeSlotId === '${slot}' && $fillRangeStart !== '' && $fillRangeEnd !== '' && '${date}' >= ${rMin} && '${date}' <= ${rMax}`;
+  const dataClass = `{'fill-cell--range-start': ${isStart}, 'fill-cell--range-preview': ${inRange}}`;
+
   const inner = (isFilled && medImageUrl) ? `<img src="${esc(medImageUrl)}" alt="">` : '';
-  return `<button id="${id}" class="${cls}" data-on:click="${action}" aria-label="${label}" aria-pressed="${isFilled ? 'true' : 'false'}">${inner}</button>`;
+  return `<button id="${id}" class="${baseCls}" data-class="${dataClass}" data-on:click="${action}" aria-label="${label}" aria-pressed="${isFilled ? 'true' : 'false'}">${inner}</button>`;
 }
 
 /**
@@ -457,6 +465,20 @@ async function streamFillGrid(res, profileId, medId, numWeeks, todayStr) {
   res.write('event: datastar-patch-elements\n');
   res.write('data: mode outer\n');
   res.write(`data: elements ${html}\n\n`);
+
+  let defaultStart  = '';
+  let defaultSlotId = '';
+  outer: for (const day of fillGrid.days) {
+    for (const slot of fillGrid.slots) {
+      const dow = new Date(day.date + 'T12:00:00').getDay();
+      if (slot.scheduledDays.includes(dow) && !slot.fillEntries[day.date]) {
+        defaultStart  = day.date;
+        defaultSlotId = slot.id;
+        break outer;
+      }
+    }
+  }
+  res.write(`event: datastar-patch-signals\ndata: signals {"fillRangeStart":"${defaultStart}","fillRangeSlotId":"${defaultSlotId}","fillRangeEnd":""}\n\n`);
 }
 
 
@@ -729,6 +751,179 @@ router.post('/api/grid/fill-slot', requireAuth, loadAppContext, async (req, res)
   }
 
   await streamFillGrid(res, req.profile.id, fillMedId, numWeeks, req.localDate);
+  res.end();
+});
+
+
+/* ─────────────────────────────────────────────────────────────
+   Fill range tap  POST /api/grid/fill-range-tap
+   Body (signals): { fillMedId, fillSlotId, fillDate, fillRangeStart, fillRangeSlotId, fillRangeEnd }
+   Never writes to DB — only updates selection signals.
+   Tap 1: set range start. Tap 2: set range end. Tap on new slot: restart.
+   ───────────────────────────────────────────────────────────── */
+
+router.post('/api/grid/fill-range-tap', requireAuth, loadAppContext, async (req, res) => {
+  sseHeaders(res);
+
+  const fillMedId       = String(req.body.fillMedId       ?? '').trim();
+  const fillSlotId      = String(req.body.fillSlotId      ?? '').trim();
+  const fillDate        = String(req.body.fillDate        ?? '').trim();
+  const fillRangeStart  = String(req.body.fillRangeStart  ?? '').trim();
+  const fillRangeEnd    = String(req.body.fillRangeEnd    ?? '').trim();
+  const fillRangeSlotId = String(req.body.fillRangeSlotId ?? '').trim();
+
+  if (!fillMedId || !fillSlotId || !/^\d{4}-\d{2}-\d{2}$/.test(fillDate)) return res.end();
+
+  const [medCheck, slotCheck] = await Promise.all([
+    db.execute({ sql: 'SELECT id FROM medications WHERE id = ? AND profile_id = ?', args: [fillMedId, req.profile.id] }),
+    db.execute({ sql: 'SELECT id FROM time_slots WHERE id = ? AND profile_id = ?',  args: [fillSlotId, req.profile.id] }),
+  ]);
+  if (!medCheck.rows.length || !slotCheck.rows.length) return res.end();
+
+  let patch;
+  if (!fillRangeStart || fillRangeSlotId !== fillSlotId || fillRangeEnd !== '') {
+    // First tap, different slot, or restarting after a confirmed range
+    patch = `{"fillRangeStart":"${fillDate}","fillRangeSlotId":"${fillSlotId}","fillRangeEnd":""}`;
+  } else {
+    // Second tap on the same slot — set the end
+    patch = `{"fillRangeEnd":"${fillDate}"}`;
+  }
+  res.write(`event: datastar-patch-signals\ndata: signals ${patch}\n\n`);
+  res.end();
+});
+
+
+/* ─────────────────────────────────────────────────────────────
+   Fill range confirm  POST /api/grid/fill-range-confirm
+   Body (signals): { fillMedId, fillRangeSlotId, fillRangeStart, fillRangeEnd, fillAction }
+   Writes to DB: inserts or deletes fill_entries for the selected range.
+   ───────────────────────────────────────────────────────────── */
+
+router.post('/api/grid/fill-range-confirm', requireAuth, loadAppContext, async (req, res) => {
+  sseHeaders(res);
+
+  const fillMedId       = String(req.body.fillMedId       ?? '').trim();
+  const fillRangeSlotId = String(req.body.fillRangeSlotId ?? '').trim();
+  const fillRangeStart  = String(req.body.fillRangeStart  ?? '').trim();
+  const fillRangeEnd    = String(req.body.fillRangeEnd    ?? '').trim();
+  const fillAction      = String(req.body.fillAction      ?? 'fill').trim();
+
+  if (!fillMedId || !fillRangeSlotId ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(fillRangeStart) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(fillRangeEnd)) return res.end();
+
+  const [medCheck, slotCheck] = await Promise.all([
+    db.execute({ sql: 'SELECT name FROM medications WHERE id = ? AND profile_id = ?', args: [fillMedId, req.profile.id] }),
+    db.execute({ sql: 'SELECT label FROM time_slots WHERE id = ? AND profile_id = ?', args: [fillRangeSlotId, req.profile.id] }),
+  ]);
+  if (!medCheck.rows.length || !slotCheck.rows.length) return res.end();
+
+  const rangeStart = fillRangeStart < fillRangeEnd ? fillRangeStart : fillRangeEnd;
+  const rangeEnd   = fillRangeStart < fillRangeEnd ? fillRangeEnd   : fillRangeStart;
+
+  // Enumerate every date in the range
+  const rangeDates = [];
+  const cursor = new Date(rangeStart + 'T12:00:00');
+  const end    = new Date(rangeEnd   + 'T12:00:00');
+  while (cursor <= end) {
+    const y = cursor.getFullYear();
+    const m = String(cursor.getMonth() + 1).padStart(2, '0');
+    const d = String(cursor.getDate()).padStart(2, '0');
+    rangeDates.push(`${y}-${m}-${d}`);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  const [scheduleRes, existingFillRes] = await Promise.all([
+    db.execute({
+      sql:  'SELECT days FROM schedules WHERE med_id = ? AND slot_id = ?',
+      args: [fillMedId, fillRangeSlotId],
+    }),
+    db.execute({
+      sql:  'SELECT fill_date FROM fill_entries WHERE profile_id = ? AND med_id = ? AND slot_id = ? AND fill_date >= ? AND fill_date <= ?',
+      args: [req.profile.id, fillMedId, fillRangeSlotId, rangeStart, rangeEnd],
+    }),
+  ]);
+
+  let scheduledDays;
+  try { scheduledDays = JSON.parse(String(scheduleRes.rows[0]?.days ?? '[0,1,2,3,4,5,6]')); }
+  catch { scheduledDays = [0, 1, 2, 3, 4, 5, 6]; }
+
+  const filledSet = new Set(existingFillRes.rows.map(r => String(r.fill_date)));
+
+  const scheduledDates = rangeDates.filter(date => {
+    const dow = new Date(date + 'T12:00:00').getDay();
+    return scheduledDays.includes(dow);
+  });
+
+  const affected = [];
+
+  if (fillAction === 'remove') {
+    for (const date of scheduledDates) {
+      if (!filledSet.has(date)) continue;
+      await db.execute({
+        sql:  'DELETE FROM fill_entries WHERE profile_id = ? AND med_id = ? AND slot_id = ? AND fill_date = ?',
+        args: [req.profile.id, fillMedId, fillRangeSlotId, date],
+      });
+      affected.push(date);
+    }
+  } else {
+    for (const date of scheduledDates) {
+      if (filledSet.has(date)) continue;
+      try {
+        await db.execute({
+          sql:  'INSERT INTO fill_entries (id, profile_id, med_id, slot_id, fill_date, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+          args: [randomUUID(), req.profile.id, fillMedId, fillRangeSlotId, date, new Date().toISOString()],
+        });
+        affected.push(date);
+      } catch { /* ignore duplicate */ }
+    }
+  }
+
+  const numWeeks = req.profile.organizerCount ?? 1;
+  await streamFillGrid(res, req.profile.id, fillMedId, numWeeks, req.localDate);
+
+  // Update take-mode cells for all affected dates
+  if (affected.length > 0) {
+    const slotLabel = String(slotCheck.rows[0].label);
+    const medName   = String(medCheck.rows[0].name);
+
+    let affectedImageUrl = null;
+    if (fillAction !== 'remove') {
+      const imgRow = await db.execute({
+        sql:  'SELECT source, url, crop_data FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC LIMIT 1',
+        args: [fillMedId],
+      });
+      if (imgRow.rows.length) {
+        const row      = imgRow.rows[0];
+        const src      = String(row.source);
+        const rawUrl   = String(row.url);
+        const cropData = row.crop_data ? JSON.parse(String(row.crop_data)) : null;
+        affectedImageUrl = src === 'cloudinary' ? imageUrl(rawUrl, cropData) : rawUrl;
+      }
+    }
+
+    const placeholders = affected.map(() => '?').join(',');
+    const takenRes = await db.execute({
+      sql:  `SELECT taken_date FROM grid_entries WHERE med_id = ? AND slot_id = ? AND taken_date IN (${placeholders})`,
+      args: [fillMedId, fillRangeSlotId, ...affected],
+    });
+    const takenSet = new Set(takenRes.rows.map(r => String(r.taken_date)));
+
+    const nowFilled = fillAction !== 'remove';
+    for (const date of affected) {
+      const isTaken  = takenSet.has(date);
+      const dateObj  = new Date(date + 'T12:00:00');
+      const dayLabel = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayNum   = dateObj.getDate();
+      const cid      = cellId(fillMedId, fillRangeSlotId, date);
+      const useImg   = nowFilled ? affectedImageUrl : null;
+      const html     = cellHtml(cid, fillMedId, fillRangeSlotId, date, medName, slotLabel, dayLabel, dayNum, isTaken, useImg, nowFilled);
+      res.write('event: datastar-patch-elements\n');
+      res.write('data: mode outer\n');
+      res.write(`data: elements ${html}\n\n`);
+    }
+  }
+
   res.end();
 });
 
