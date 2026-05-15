@@ -14,7 +14,7 @@
 </script>
 <div
   class="grid-page"
-  data-signals='{"toggleMedId":"","toggleSlotId":"","toggleDate":"","toggleError":"","pendingToggleId":"","pendingToggleNewState":false,"gridMode":"take","fillMedId":"","fillSlotId":"","fillDate":"","fillCount":1,"localDate":"<%= it.grid.todayStr %>"}'
+  data-signals='{"toggleMedId":"","toggleSlotId":"","toggleDate":"","toggleError":"","pendingToggleId":"","pendingToggleNewState":false,"gridMode":"take","fillMedId":"","fillSlotId":"","fillDate":"","localDate":"<%= it.grid.todayStr %>"}'
 >
 
   <% var hasAnyMeds = it.grid.slots.some(function(s) { return s.meds.length > 0; }); %>
@@ -235,9 +235,6 @@
         </select>
       </div>
       <div class="fill-controls__actions" data-show="$fillMedId !== ''">
-        <label for="fill-count" class="fill-controls__label">Pills to fill</label>
-        <input id="fill-count" type="number" min="1" max="366" class="fill-controls__input" data-bind="fillCount" placeholder="count">
-        <button type="button" class="btn btn--primary btn--sm" data-on:click="@post('/api/grid/fill-auto')">Fill</button>
         <button type="button" class="btn btn--secondary btn--sm" data-on:click="@post('/api/grid/fill-catchup')">Catch up to today</button>
       </div>
     </div>
