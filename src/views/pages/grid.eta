@@ -1,4 +1,17 @@
 <% layout('../layouts/app') %>
+<script>
+  (function () {
+    var d = new Date();
+    var local = d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+    var url = new URL(location.href);
+    if (url.searchParams.get('today') !== local) {
+      url.searchParams.set('today', local);
+      location.replace(url.toString());
+    }
+  })();
+</script>
 <div
   class="grid-page"
   data-signals='{"toggleMedId":"","toggleSlotId":"","toggleDate":"","toggleError":"","pendingToggleId":"","pendingToggleNewState":false,"gridMode":"take","fillMedId":"","fillSlotId":"","fillDate":"","fillCount":1}'
@@ -262,6 +275,30 @@
 </dialog>
 
 <script>
+  // Correct the "today" column highlighting using the browser's local date.
+  // The server may be in UTC; the column headers have id="col-YYYY-MM-DD" and
+  // cells have headers="col-YYYY-MM-DD" so we can fix everything without a reload.
+  (function () {
+    var d = new Date();
+    var local = d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+    var serverToday = '<%= it.grid.todayStr %>';
+    if (local === serverToday) return;
+
+    var oldTh = document.getElementById('col-' + serverToday);
+    var newTh = document.getElementById('col-' + local);
+    if (oldTh) oldTh.classList.remove('grid-th--today');
+    if (newTh) newTh.classList.add('grid-th--today');
+
+    document.querySelectorAll('td[headers="col-' + serverToday + '"]').forEach(function (td) {
+      td.classList.remove('grid-td--today');
+    });
+    document.querySelectorAll('td[headers="col-' + local + '"]').forEach(function (td) {
+      td.classList.add('grid-td--today');
+    });
+  })();
+
   // Scroll today's column into view on load
   (function () {
     var todayCol = document.querySelector('.grid-th--today');

@@ -127,12 +127,12 @@ router.get('/app/grid/print', requireAuth, loadAppContext, async (req, res) => {
     year  = y;
     month = m - 1;
   } else {
-    const now = new Date();
-    year  = now.getFullYear();
-    month = now.getMonth();
+    const [ly, lm] = req.localDate.split('-').map(Number);
+    year  = ly;
+    month = lm - 1;
   }
 
-  const grid = await buildMonthGrid(req.profile.id, year, month);
+  const grid = await buildMonthGrid(req.profile.id, year, month, req.localDate);
 
   res.render('pages/grid-print', {
     title:   `${grid.monthLabel} — ${req.profile.name}`,
@@ -147,20 +147,19 @@ router.get('/app/grid/print', requireAuth, loadAppContext, async (req, res) => {
    ───────────────────────────────────────────────────────────── */
 
 router.get('/app/grid', requireAuth, loadAppContext, async (req, res) => {
+  const todayParam = String(req.query.today ?? '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(todayParam)) req.localDate = todayParam;
+
   if (req.profile.organizerType === 'bottles') {
     const dateParam = String(req.query.date ?? '');
     let dateStr;
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
       dateStr = dateParam;
     } else {
-      const now = new Date();
-      const y   = now.getFullYear();
-      const m   = String(now.getMonth() + 1).padStart(2, '0');
-      const d   = String(now.getDate()).padStart(2, '0');
-      dateStr   = `${y}-${m}-${d}`;
+      dateStr = req.localDate;
     }
 
-    const grid = await buildDayGrid(req.profile.id, dateStr);
+    const grid = await buildDayGrid(req.profile.id, dateStr, req.localDate);
 
     return res.render('pages/grid-bottles', {
       title:    grid.dateLabel,
@@ -191,12 +190,12 @@ router.get('/app/grid', requireAuth, loadAppContext, async (req, res) => {
       startDate = sundayOf(new Date(y, m - 1, 1));
     } else {
       // Start one week back so the previous organizer tray is visible on the left.
-      const d = new Date();
+      const d = new Date(req.localDate + 'T12:00:00');
       d.setDate(d.getDate() - 7);
       startDate = sundayOf(d);
     }
 
-    const grid = await buildWeekRangeGrid(req.profile.id, startDate, numWeeks);
+    const grid = await buildWeekRangeGrid(req.profile.id, startDate, numWeeks, req.localDate);
     return res.render('pages/grid', {
       title:    grid.rangeLabel,
       path:     '/app/grid',
@@ -214,12 +213,12 @@ router.get('/app/grid', requireAuth, loadAppContext, async (req, res) => {
     year  = y;
     month = m - 1; // 0-based
   } else {
-    const now = new Date();
-    year  = now.getFullYear();
-    month = now.getMonth();
+    const [ly, lm] = req.localDate.split('-').map(Number);
+    year  = ly;
+    month = lm - 1;
   }
 
-  const grid = await buildMonthGrid(req.profile.id, year, month);
+  const grid = await buildMonthGrid(req.profile.id, year, month, req.localDate);
 
   res.render('pages/grid', {
     title:    grid.monthLabel,
@@ -315,7 +314,7 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
 
   let cellImageUrl = null;
   if (!isBottles) {
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = req.localDate;
     if (takenDate === todayStr) {
       const imgRow = await db.execute({
         sql:  'SELECT source, url, crop_data FROM medication_images WHERE med_id = ? ORDER BY sort_order ASC LIMIT 1',
@@ -452,8 +451,8 @@ function buildFillGridHtml(fillGrid) {
  * @param {string} medId
  * @param {number} numWeeks
  */
-async function streamFillGrid(res, profileId, medId, numWeeks) {
-  const fillGrid = await buildFillGrid(profileId, medId, sundayOf(new Date()), numWeeks);
+async function streamFillGrid(res, profileId, medId, numWeeks, todayStr) {
+  const fillGrid = await buildFillGrid(profileId, medId, sundayOf(new Date(todayStr + 'T12:00:00')), numWeeks, todayStr);
   const html     = buildFillGridHtml(fillGrid);
   res.write('event: datastar-patch-elements\n');
   res.write('data: mode outer\n');
@@ -489,7 +488,7 @@ router.post('/api/grid/fill-grid', requireAuth, loadAppContext, async (req, res)
     return res.end();
   }
 
-  await streamFillGrid(res, req.profile.id, fillMedId, req.profile.organizerCount ?? 1);
+  await streamFillGrid(res, req.profile.id, fillMedId, req.profile.organizerCount ?? 1, req.localDate);
   res.end();
 });
 
@@ -524,7 +523,7 @@ router.post('/api/grid/fill-toggle', requireAuth, loadAppContext, async (req, re
   const dateObj   = new Date(fillDate + 'T12:00:00');
   const dayLabel  = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
   const dayNum    = dateObj.getDate();
-  const todayStr  = new Date().toISOString().slice(0, 10);
+  const todayStr  = req.localDate;
 
   const existing = await db.execute({
     sql:  'SELECT id FROM fill_entries WHERE med_id = ? AND slot_id = ? AND fill_date = ?',
@@ -573,7 +572,7 @@ router.post('/api/grid/fill-auto', requireAuth, loadAppContext, async (req, res)
   if (!medCheck.rows.length) return res.end();
 
   const numWeeks = req.profile.organizerCount ?? 1;
-  const fillGrid = await buildFillGrid(req.profile.id, fillMedId, sundayOf(new Date()), numWeeks);
+  const fillGrid = await buildFillGrid(req.profile.id, fillMedId, sundayOf(new Date(req.localDate + 'T12:00:00')), numWeeks, req.localDate);
 
   const toFill = [];
   outer: for (const day of fillGrid.days) {
@@ -595,7 +594,7 @@ router.post('/api/grid/fill-auto', requireAuth, loadAppContext, async (req, res)
     } catch { /* ignore duplicate */ }
   }
 
-  await streamFillGrid(res, req.profile.id, fillMedId, numWeeks);
+  await streamFillGrid(res, req.profile.id, fillMedId, numWeeks, req.localDate);
   res.end();
 });
 
@@ -618,7 +617,7 @@ router.post('/api/grid/fill-catchup', requireAuth, loadAppContext, async (req, r
   if (!medCheck.rows.length) return res.end();
 
   const numWeeks = req.profile.organizerCount ?? 1;
-  const fillGrid = await buildFillGrid(req.profile.id, fillMedId, sundayOf(new Date()), numWeeks);
+  const fillGrid = await buildFillGrid(req.profile.id, fillMedId, sundayOf(new Date(req.localDate + 'T12:00:00')), numWeeks, req.localDate);
   const todayStr = fillGrid.todayStr;
 
   for (const day of fillGrid.days) {
@@ -636,7 +635,7 @@ router.post('/api/grid/fill-catchup', requireAuth, loadAppContext, async (req, r
     }
   }
 
-  await streamFillGrid(res, req.profile.id, fillMedId, numWeeks);
+  await streamFillGrid(res, req.profile.id, fillMedId, numWeeks, req.localDate);
   res.end();
 });
 
