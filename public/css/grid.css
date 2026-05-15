@@ -1264,10 +1264,10 @@
     pointer-events: none;
     z-index: 1;
     background-image:
-      repeating-linear-gradient(90deg,  #dc2626 0, #dc2626 4px, transparent 4px, transparent 8px),
-      repeating-linear-gradient(180deg, #dc2626 0, #dc2626 4px, transparent 4px, transparent 8px),
-      repeating-linear-gradient(90deg,  #dc2626 0, #dc2626 4px, transparent 4px, transparent 8px),
-      repeating-linear-gradient(180deg, #dc2626 0, #dc2626 4px, transparent 4px, transparent 8px);
+      repeating-linear-gradient(90deg,  #16a34a 0, #16a34a 4px, transparent 4px, transparent 8px),
+      repeating-linear-gradient(180deg, #16a34a 0, #16a34a 4px, transparent 4px, transparent 8px),
+      repeating-linear-gradient(90deg,  #16a34a 0, #16a34a 4px, transparent 4px, transparent 8px),
+      repeating-linear-gradient(180deg, #16a34a 0, #16a34a 4px, transparent 4px, transparent 8px);
     background-size: 8px 2px, 2px 8px, 8px 2px, 2px 8px;
     background-position: 0 0, 0 0, 0 100%, 100% 0;
     background-repeat: repeat-x, repeat-y, repeat-x, repeat-y;
