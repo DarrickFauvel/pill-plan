@@ -15,6 +15,7 @@ import { imageUrl } from './cloudinary.js';
  * @typedef {Object} GridEntry
  * @property {string} entryId
  * @property {string} status  - 'taken' | 'skipped'
+ * @property {boolean} filled - true if a fill_entry exists for this cell
  */
 
 /**
@@ -263,7 +264,7 @@ export async function buildMonthGrid(profileId, year, month) {
   const startDate = toDateStr(firstDay);
   const endDate   = toDateStr(lastDay);
 
-  const [slotsRes, medsRes, entriesRes, imagesRes] = await Promise.all([
+  const [slotsRes, medsRes, entriesRes, imagesRes, fillRes] = await Promise.all([
     db.execute({
       sql:  'SELECT id, label, sort_order FROM time_slots WHERE profile_id = ? ORDER BY sort_order ASC',
       args: [profileId],
@@ -290,6 +291,11 @@ export async function buildMonthGrid(profileId, year, month) {
             ORDER BY mi.sort_order ASC`,
       args: [profileId],
     }),
+    db.execute({
+      sql: `SELECT med_id, slot_id, fill_date FROM fill_entries
+            WHERE profile_id = ? AND fill_date >= ? AND fill_date <= ?`,
+      args: [profileId, startDate, endDate],
+    }),
   ]);
 
   /** @type {Record<string, string>} */
@@ -303,11 +309,17 @@ export async function buildMonthGrid(profileId, year, month) {
     }
   }
 
+  /** @type {Set<string>} */
+  const fillSet = new Set();
+  for (const f of fillRes.rows) {
+    fillSet.add(`${f.med_id}:${f.slot_id}:${f.fill_date}`);
+  }
+
   /** @type {Record<string, GridEntry>} */
   const entryIndex = {};
   for (const e of entriesRes.rows) {
     const key = `${e.med_id}:${e.slot_id}:${e.taken_date}`;
-    entryIndex[key] = { entryId: String(e.id), status: String(e.status) };
+    entryIndex[key] = { entryId: String(e.id), status: String(e.status), filled: fillSet.has(key) };
   }
 
   /** @type {Record<string, {name: string, totalQty: number, threshold: number, dailyDose: number}>} */
@@ -343,7 +355,11 @@ export async function buildMonthGrid(profileId, year, month) {
     const medEntries = {};
     for (const day of days) {
       const key = `${row.id}:${slotId}:${day.date}`;
-      if (entryIndex[key]) medEntries[day.date] = entryIndex[key];
+      if (entryIndex[key]) {
+        medEntries[day.date] = entryIndex[key];
+      } else if (fillSet.has(key)) {
+        medEntries[day.date] = { entryId: '', status: '', filled: true };
+      }
     }
 
     const moStrength = row.strength ? String(row.strength).replace(/^\./, '0.') : '';
@@ -452,7 +468,7 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
   const startStr = toDateStr(startDate);
   const endStr   = toDateStr(endDate);
 
-  const [slotsRes, medsRes, entriesRes, imagesRes] = await Promise.all([
+  const [slotsRes, medsRes, entriesRes, imagesRes, fillRes] = await Promise.all([
     db.execute({
       sql:  'SELECT id, label, sort_order FROM time_slots WHERE profile_id = ? ORDER BY sort_order ASC',
       args: [profileId],
@@ -479,6 +495,11 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
             ORDER BY mi.sort_order ASC`,
       args: [profileId],
     }),
+    db.execute({
+      sql: `SELECT med_id, slot_id, fill_date FROM fill_entries
+            WHERE profile_id = ? AND fill_date >= ? AND fill_date <= ?`,
+      args: [profileId, startStr, endStr],
+    }),
   ]);
 
   /** @type {Record<string, string>} */
@@ -492,11 +513,17 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
     }
   }
 
+  /** @type {Set<string>} */
+  const fillSet = new Set();
+  for (const f of fillRes.rows) {
+    fillSet.add(`${f.med_id}:${f.slot_id}:${f.fill_date}`);
+  }
+
   /** @type {Record<string, GridEntry>} */
   const entryIndex = {};
   for (const e of entriesRes.rows) {
     const key = `${e.med_id}:${e.slot_id}:${e.taken_date}`;
-    entryIndex[key] = { entryId: String(e.id), status: String(e.status) };
+    entryIndex[key] = { entryId: String(e.id), status: String(e.status), filled: fillSet.has(key) };
   }
 
   /** @type {Record<string, {name: string, totalQty: number, threshold: number, dailyDose: number}>} */
@@ -531,7 +558,11 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
     const medEntries = {};
     for (const day of days) {
       const key = `${row.id}:${slotId}:${day.date}`;
-      if (entryIndex[key]) medEntries[day.date] = entryIndex[key];
+      if (entryIndex[key]) {
+        medEntries[day.date] = entryIndex[key];
+      } else if (fillSet.has(key)) {
+        medEntries[day.date] = { entryId: '', status: '', filled: true };
+      }
     }
 
     const wrStrength = row.strength ? String(row.strength).replace(/^\./, '0.') : '';
@@ -607,4 +638,116 @@ export async function buildWeekRangeGrid(profileId, startDateStr, numWeeks) {
     todayStr,
     refillAlerts,
   };
+}
+
+/**
+ * @typedef {Object} FillSlot
+ * @property {string}   id
+ * @property {string}   label
+ * @property {number[]} scheduledDays
+ * @property {Record<string, boolean>} fillEntries  - date → true if filled
+ */
+
+/**
+ * @typedef {Object} FillGrid
+ * @property {GridDay[]}   days
+ * @property {FillSlot[]}  slots
+ * @property {string[]}    organizers
+ * @property {string}      todayStr
+ * @property {string}      rangeLabel
+ */
+
+/**
+ * Build the fill-mode grid for one medication across numWeeks organizer weeks
+ * starting from the current organizer's Sunday.
+ *
+ * @param {string} profileId
+ * @param {string} medId
+ * @param {string} startSunday  - YYYY-MM-DD (Sunday that starts the current organizer)
+ * @param {number} numWeeks
+ * @returns {Promise<FillGrid>}
+ */
+export async function buildFillGrid(profileId, medId, startSunday, numWeeks) {
+  const startDate = new Date(startSunday + 'T12:00:00');
+  const totalDays = numWeeks * 7;
+  const endDate   = new Date(startDate);
+  endDate.setDate(endDate.getDate() + totalDays - 1);
+
+  const today    = new Date();
+  const todayStr = toDateStr(today);
+
+  /** @type {GridDay[]} */
+  const days = [];
+  for (let i = 0; i < totalDays; i++) {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + i);
+    const dateStr = toDateStr(d);
+    days.push({
+      date:     dateStr,
+      dayNum:   d.getDate(),
+      dayLabel: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      isToday:  dateStr === todayStr,
+      isPast:   dateStr < todayStr,
+      isFuture: dateStr > todayStr,
+    });
+  }
+
+  const startStr = toDateStr(startDate);
+  const endStr   = toDateStr(endDate);
+
+  const [medsRes, fillRes] = await Promise.all([
+    db.execute({
+      sql: `SELECT s.slot_id, s.days, ts.label, ts.sort_order
+            FROM schedules s
+            JOIN time_slots ts ON ts.id = s.slot_id
+            WHERE s.med_id = ? AND ts.profile_id = ?
+            ORDER BY ts.sort_order ASC`,
+      args: [medId, profileId],
+    }),
+    db.execute({
+      sql: `SELECT slot_id, fill_date FROM fill_entries
+            WHERE profile_id = ? AND med_id = ? AND fill_date >= ? AND fill_date <= ?`,
+      args: [profileId, medId, startStr, endStr],
+    }),
+  ]);
+
+  /** @type {Set<string>} */
+  const fillSet = new Set();
+  for (const f of fillRes.rows) {
+    fillSet.add(`${f.slot_id}:${f.fill_date}`);
+  }
+
+  /** @type {FillSlot[]} */
+  const slots = medsRes.rows.map((row) => {
+    let scheduledDays;
+    try { scheduledDays = JSON.parse(String(row.days)); }
+    catch { scheduledDays = [0, 1, 2, 3, 4, 5, 6]; }
+
+    /** @type {Record<string, boolean>} */
+    const fillEntries = {};
+    for (const day of days) {
+      const key = `${row.slot_id}:${day.date}`;
+      if (fillSet.has(key)) fillEntries[day.date] = true;
+    }
+
+    return {
+      id:           String(row.slot_id),
+      label:        String(row.label),
+      scheduledDays,
+      fillEntries,
+    };
+  });
+
+  const REF_SUNDAY_MS = Date.UTC(2025, 11, 14);
+  const MS_PER_WEEK   = 7 * 24 * 60 * 60 * 1000;
+  const weeksSinceRef = Math.round((startDate.getTime() - REF_SUNDAY_MS) / MS_PER_WEEK);
+  const firstOrgIdx   = ((weeksSinceRef % numWeeks) + numWeeks) % numWeeks;
+  const organizers    = Array.from({ length: numWeeks }, (_, i) =>
+    String.fromCharCode(65 + ((firstOrgIdx + i) % numWeeks))
+  );
+
+  const startFmt   = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const endFmt     = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  return { days, slots, organizers, todayStr, rangeLabel: `${startFmt} – ${endFmt}` };
 }

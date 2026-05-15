@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import db from '../db/client.js';
 import { requireAuth, loadAppContext } from '../middleware/auth.js';
-import { buildMonthGrid, buildDayGrid, buildWeekRangeGrid } from '../services/gridBuilder.js';
+import { buildMonthGrid, buildDayGrid, buildWeekRangeGrid, buildFillGrid } from '../services/gridBuilder.js';
 import { imageUrl } from '../services/cloudinary.js';
 
 const router = Router();
@@ -73,7 +73,7 @@ function cellId(medId, slotId, takenDate) {
  * @param {string | null} imageUrl
  * @returns {string}
  */
-function cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken, imageUrl) {
+function cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken, imageUrl, filled = false) {
   const label  = `${esc(medName)}, ${esc(slotLabel)}, ${esc(dayLabel)} ${dayNum}${taken ? ', taken' : ', not taken'}`;
   const action = `$pendingToggleId='${id}';$pendingToggleNewState=${!taken};$saveStatus='idle';$toggleMedId='${esc(medId)}';$toggleSlotId='${esc(slotId)}';$toggleDate='${takenDate}';@post('/api/grid/toggle')`;
   if (imageUrl) {
@@ -83,9 +83,11 @@ function cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, da
     const initClass   = `grid-cell grid-cell--image-cell${taken ? ' grid-cell--taken' : ''}`;
     return `<button id="${id}" class="${initClass}" data-on:click="${action}" data-class="${dataClass}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"><img src="${esc(imageUrl)}" alt="" data-show="${imgDataShow}"></button>`;
   }
-  const cls       = taken ? 'grid-cell grid-cell--taken' : 'grid-cell';
-  const dataClass = `{'grid-cell--taken': $pendingToggleId === '${id}' ? $pendingToggleNewState : ${taken}, 'grid-cell--pending': $pendingToggleId === '${id}'}`;
-  return `<button id="${id}" class="${cls}" data-on:click="${action}" data-class="${dataClass}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"></button>`;
+  const initClass = taken ? 'grid-cell grid-cell--taken'
+    : filled       ? 'grid-cell grid-cell--filled'
+    : 'grid-cell';
+  const dataClass = `{'grid-cell--taken': $pendingToggleId === '${id}' ? $pendingToggleNewState : ${taken}, 'grid-cell--filled': !($pendingToggleId === '${id}' ? $pendingToggleNewState : ${taken}) && ${filled}, 'grid-cell--pending': $pendingToggleId === '${id}'}`;
+  return `<button id="${id}" class="${initClass}" data-on:click="${action}" data-class="${dataClass}" aria-label="${label}" aria-pressed="${taken ? 'true' : 'false'}"></button>`;
 }
 
 /**
@@ -174,6 +176,12 @@ router.get('/app/grid', requireAuth, loadAppContext, async (req, res) => {
   const startParam = String(req.query.start ?? '');
   const monthParam = String(req.query.month ?? '');
 
+  const medsRes = await db.execute({
+    sql:  'SELECT id, name FROM medications WHERE profile_id = ? AND active = 1 ORDER BY name ASC',
+    args: [req.profile.id],
+  });
+  const meds = medsRes.rows.map((r) => ({ id: String(r.id), name: String(r.name) }));
+
   if (numWeeks > 1 || /^\d{4}-\d{2}-\d{2}$/.test(startParam)) {
     let startDate;
     if (/^\d{4}-\d{2}-\d{2}$/.test(startParam)) {
@@ -195,6 +203,7 @@ router.get('/app/grid', requireAuth, loadAppContext, async (req, res) => {
       profile:  req.profile,
       profiles: req.profiles,
       grid,
+      meds,
       extraCss: '/css/grid.css',
     });
   }
@@ -218,6 +227,7 @@ router.get('/app/grid', requireAuth, loadAppContext, async (req, res) => {
     profile:  req.profile,
     profiles: req.profiles,
     grid,
+    meds,
     extraCss: '/css/grid.css',
   });
 });
@@ -321,9 +331,18 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
     }
   }
 
+  let cellFilled = false;
+  if (!isBottles) {
+    const fillCheck = await db.execute({
+      sql:  'SELECT id FROM fill_entries WHERE med_id = ? AND slot_id = ? AND fill_date = ?',
+      args: [medId, slotId, takenDate],
+    });
+    cellFilled = fillCheck.rows.length > 0;
+  }
+
   const html = isBottles
     ? bottlesCellHtml(id, medId, slotId, takenDate, medName, slotLabel, taken)
-    : cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken, cellImageUrl);
+    : cellHtml(id, medId, slotId, takenDate, medName, slotLabel, dayLabel, dayNum, taken, cellImageUrl, cellFilled);
 
   res.write('event: datastar-patch-elements\n');
   res.write('data: mode outer\n');
@@ -331,5 +350,295 @@ router.post('/api/grid/toggle', requireAuth, loadAppContext, async (req, res) =>
   res.write('event: datastar-patch-signals\ndata: signals {"pendingToggleId":"","pendingToggleNewState":false,"saveStatus":"saved"}\n\n');
   res.end();
 });
+
+/* ─────────────────────────────────────────────────────────────
+   Fill mode helpers
+   ───────────────────────────────────────────────────────────── */
+
+/**
+ * @param {string} slotId
+ * @param {string} date  YYYY-MM-DD
+ * @returns {string}
+ */
+function fillCellId(slotId, date) {
+  return `fc-${slotId.replace(/-/g, '')}-${date.replace(/-/g, '')}`;
+}
+
+/**
+ * @param {string} id
+ * @param {string} slotId
+ * @param {string} date
+ * @param {string} slotLabel
+ * @param {string} dayLabel
+ * @param {number} dayNum
+ * @param {boolean} isFilled
+ * @param {boolean} isPast
+ * @param {boolean} isToday
+ * @returns {string}
+ */
+function fillCellHtml(id, slotId, date, slotLabel, dayLabel, dayNum, isFilled, isPast, isToday) {
+  const label  = `${esc(slotLabel)}, ${esc(dayLabel)} ${dayNum}${isFilled ? ', filled' : ', not filled'}`;
+  const action = `$fillSlotId='${esc(slotId)}';$fillDate='${date}';@post('/api/grid/fill-toggle')`;
+  const cls    = [
+    'fill-cell',
+    isFilled ? 'fill-cell--filled' : '',
+    isPast   ? 'fill-cell--past'   : '',
+    isToday  ? 'fill-cell--today'  : '',
+  ].filter(Boolean).join(' ');
+  return `<button id="${id}" class="${cls}" data-on:click="${action}" aria-label="${label}" aria-pressed="${isFilled ? 'true' : 'false'}"></button>`;
+}
+
+/**
+ * @param {import('../services/gridBuilder.js').FillGrid} fillGrid
+ * @returns {string}
+ */
+function buildFillGridHtml(fillGrid) {
+  const { days, slots, organizers } = fillGrid;
+  const numWeeks = organizers.length;
+
+  let h = '<div id="fill-grid-container" class="fill-grid-wrap" aria-live="polite">';
+  h += '<table class="fill-grid-table" role="grid" aria-label="Fill organizer"><thead>';
+
+  // Organizer header row
+  h += '<tr><th class="fill-th fill-th--label" scope="col">Slot</th>';
+  for (let w = 0; w < numWeeks; w++) {
+    const ws  = days[w * 7];
+    const we  = days[w * 7 + 6];
+    const lbl = `${organizers[w]} · ${ws.dayLabel} ${ws.dayNum} – ${we.dayLabel} ${we.dayNum}`;
+    h += `<th class="fill-th fill-th--org" colspan="7" scope="colgroup">${esc(lbl)}</th>`;
+  }
+  h += '</tr>';
+
+  // Day header row
+  h += '<tr><td class="fill-td fill-th fill-th--label"></td>';
+  for (let i = 0; i < days.length; i++) {
+    const day    = days[i];
+    const isEnd  = i % 7 === 6;
+    const cls    = ['fill-th fill-th--day', day.isToday ? 'fill-th--today' : '', day.isPast ? 'fill-th--past' : '', isEnd ? 'fill-th--org-end' : ''].filter(Boolean).join(' ');
+    h += `<th scope="col" class="${cls}"><span class="fill-day-num">${day.dayNum}</span><span class="fill-day-name">${esc(day.dayLabel)}</span></th>`;
+  }
+  h += '</tr></thead><tbody>';
+
+  // Slot rows
+  for (const slot of slots) {
+    h += `<tr><th scope="row" class="fill-th fill-th--slot">${esc(slot.label)}</th>`;
+    for (let i = 0; i < days.length; i++) {
+      const day       = days[i];
+      const dow       = new Date(day.date + 'T12:00:00').getDay();
+      const scheduled = slot.scheduledDays.includes(dow);
+      const isEnd     = i % 7 === 6;
+      const tdCls     = ['fill-td', isEnd ? 'fill-td--org-end' : ''].filter(Boolean).join(' ');
+      h += `<td class="${tdCls}" role="gridcell">`;
+      if (scheduled) {
+        const filled = !!slot.fillEntries[day.date];
+        const id     = fillCellId(slot.id, day.date);
+        h += fillCellHtml(id, slot.id, day.date, slot.label, day.dayLabel, day.dayNum, filled, day.isPast, day.isToday);
+      } else {
+        h += '<span class="fill-cell fill-cell--empty" aria-hidden="true"></span>';
+      }
+      h += '</td>';
+    }
+    h += '</tr>';
+  }
+
+  h += '</tbody></table></div>';
+  return h;
+}
+
+/**
+ * Rebuild and stream the fill grid for a given med.
+ * @param {import('express').Response} res
+ * @param {string} profileId
+ * @param {string} medId
+ * @param {number} numWeeks
+ */
+async function streamFillGrid(res, profileId, medId, numWeeks) {
+  const fillGrid = await buildFillGrid(profileId, medId, sundayOf(new Date()), numWeeks);
+  const html     = buildFillGridHtml(fillGrid);
+  res.write('event: datastar-patch-elements\n');
+  res.write('data: mode outer\n');
+  res.write(`data: elements ${html}\n\n`);
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   Fill grid  POST /api/grid/fill-grid
+   Body (signals): { fillMedId }
+   ───────────────────────────────────────────────────────────── */
+
+router.post('/api/grid/fill-grid', requireAuth, loadAppContext, async (req, res) => {
+  sseHeaders(res);
+
+  const fillMedId = String(req.body.fillMedId ?? '').trim();
+
+  if (!fillMedId) {
+    res.write('event: datastar-patch-elements\n');
+    res.write('data: mode outer\n');
+    res.write('data: elements <div id="fill-grid-container" class="fill-grid-wrap" aria-live="polite"></div>\n\n');
+    return res.end();
+  }
+
+  const medCheck = await db.execute({
+    sql:  'SELECT name FROM medications WHERE id = ? AND profile_id = ?',
+    args: [fillMedId, req.profile.id],
+  });
+  if (!medCheck.rows.length) {
+    res.write('event: datastar-patch-elements\n');
+    res.write('data: mode outer\n');
+    res.write('data: elements <div id="fill-grid-container" class="fill-grid-wrap" aria-live="polite"></div>\n\n');
+    return res.end();
+  }
+
+  await streamFillGrid(res, req.profile.id, fillMedId, req.profile.organizerCount ?? 1);
+  res.end();
+});
+
+
+/* ─────────────────────────────────────────────────────────────
+   Fill toggle  POST /api/grid/fill-toggle
+   Body (signals): { fillMedId, fillSlotId, fillDate }
+   ───────────────────────────────────────────────────────────── */
+
+router.post('/api/grid/fill-toggle', requireAuth, loadAppContext, async (req, res) => {
+  sseHeaders(res);
+
+  const fillMedId  = String(req.body.fillMedId  ?? '').trim();
+  const fillSlotId = String(req.body.fillSlotId ?? '').trim();
+  const fillDate   = String(req.body.fillDate   ?? '').trim();
+
+  if (!fillMedId || !fillSlotId || !/^\d{4}-\d{2}-\d{2}$/.test(fillDate)) return res.end();
+
+  const medCheck = await db.execute({
+    sql:  'SELECT name FROM medications WHERE id = ? AND profile_id = ?',
+    args: [fillMedId, req.profile.id],
+  });
+  if (!medCheck.rows.length) return res.end();
+
+  const slotCheck = await db.execute({
+    sql:  'SELECT label FROM time_slots WHERE id = ? AND profile_id = ?',
+    args: [fillSlotId, req.profile.id],
+  });
+  if (!slotCheck.rows.length) return res.end();
+
+  const slotLabel = String(slotCheck.rows[0].label);
+  const dateObj   = new Date(fillDate + 'T12:00:00');
+  const dayLabel  = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+  const dayNum    = dateObj.getDate();
+  const todayStr  = new Date().toISOString().slice(0, 10);
+
+  const existing = await db.execute({
+    sql:  'SELECT id FROM fill_entries WHERE med_id = ? AND slot_id = ? AND fill_date = ?',
+    args: [fillMedId, fillSlotId, fillDate],
+  });
+
+  let isFilled;
+  if (existing.rows.length) {
+    await db.execute({ sql: 'DELETE FROM fill_entries WHERE id = ?', args: [String(existing.rows[0].id)] });
+    isFilled = false;
+  } else {
+    await db.execute({
+      sql:  'INSERT INTO fill_entries (id, profile_id, med_id, slot_id, fill_date, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      args: [randomUUID(), req.profile.id, fillMedId, fillSlotId, fillDate, new Date().toISOString()],
+    });
+    isFilled = true;
+  }
+
+  const id   = fillCellId(fillSlotId, fillDate);
+  const html = fillCellHtml(id, fillSlotId, fillDate, slotLabel, dayLabel, dayNum, isFilled, fillDate < todayStr, fillDate === todayStr);
+
+  res.write('event: datastar-patch-elements\n');
+  res.write('data: mode outer\n');
+  res.write(`data: elements ${html}\n\n`);
+  res.end();
+});
+
+
+/* ─────────────────────────────────────────────────────────────
+   Fill auto  POST /api/grid/fill-auto
+   Body (signals): { fillMedId, fillCount }
+   ───────────────────────────────────────────────────────────── */
+
+router.post('/api/grid/fill-auto', requireAuth, loadAppContext, async (req, res) => {
+  sseHeaders(res);
+
+  const fillMedId = String(req.body.fillMedId ?? '').trim();
+  const fillCount = Math.max(1, Math.min(366, parseInt(String(req.body.fillCount ?? '1'), 10) || 1));
+
+  if (!fillMedId) return res.end();
+
+  const medCheck = await db.execute({
+    sql:  'SELECT name FROM medications WHERE id = ? AND profile_id = ?',
+    args: [fillMedId, req.profile.id],
+  });
+  if (!medCheck.rows.length) return res.end();
+
+  const numWeeks = req.profile.organizerCount ?? 1;
+  const fillGrid = await buildFillGrid(req.profile.id, fillMedId, sundayOf(new Date()), numWeeks);
+
+  const toFill = [];
+  outer: for (const day of fillGrid.days) {
+    for (const slot of fillGrid.slots) {
+      const dow = new Date(day.date + 'T12:00:00').getDay();
+      if (slot.scheduledDays.includes(dow) && !slot.fillEntries[day.date]) {
+        toFill.push({ slotId: slot.id, date: day.date });
+        if (toFill.length >= fillCount) break outer;
+      }
+    }
+  }
+
+  for (const { slotId, date } of toFill) {
+    try {
+      await db.execute({
+        sql:  'INSERT INTO fill_entries (id, profile_id, med_id, slot_id, fill_date, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        args: [randomUUID(), req.profile.id, fillMedId, slotId, date, new Date().toISOString()],
+      });
+    } catch { /* ignore duplicate */ }
+  }
+
+  await streamFillGrid(res, req.profile.id, fillMedId, numWeeks);
+  res.end();
+});
+
+
+/* ─────────────────────────────────────────────────────────────
+   Fill catch-up  POST /api/grid/fill-catchup
+   Body (signals): { fillMedId }
+   ───────────────────────────────────────────────────────────── */
+
+router.post('/api/grid/fill-catchup', requireAuth, loadAppContext, async (req, res) => {
+  sseHeaders(res);
+
+  const fillMedId = String(req.body.fillMedId ?? '').trim();
+  if (!fillMedId) return res.end();
+
+  const medCheck = await db.execute({
+    sql:  'SELECT name FROM medications WHERE id = ? AND profile_id = ?',
+    args: [fillMedId, req.profile.id],
+  });
+  if (!medCheck.rows.length) return res.end();
+
+  const numWeeks = req.profile.organizerCount ?? 1;
+  const fillGrid = await buildFillGrid(req.profile.id, fillMedId, sundayOf(new Date()), numWeeks);
+  const todayStr = fillGrid.todayStr;
+
+  for (const day of fillGrid.days) {
+    if (day.date >= todayStr) continue;
+    for (const slot of fillGrid.slots) {
+      const dow = new Date(day.date + 'T12:00:00').getDay();
+      if (slot.scheduledDays.includes(dow) && !slot.fillEntries[day.date]) {
+        try {
+          await db.execute({
+            sql:  'INSERT INTO fill_entries (id, profile_id, med_id, slot_id, fill_date, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+            args: [randomUUID(), req.profile.id, fillMedId, slot.id, day.date, new Date().toISOString()],
+          });
+        } catch { /* ignore duplicate */ }
+      }
+    }
+  }
+
+  await streamFillGrid(res, req.profile.id, fillMedId, numWeeks);
+  res.end();
+});
+
 
 export default router;
