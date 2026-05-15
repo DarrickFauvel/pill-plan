@@ -187,7 +187,7 @@
             headers="col-<%= day.date %>"
           >
             <% if (isScheduled) { %>
-            <% if (day.isToday && med.imageUrl) { %>
+            <% if (med.imageUrl && (day.isToday || isFilled)) { %>
             <button
               id="<%= cid %>"
               class="grid-cell grid-cell--image-cell<%= isTaken ? ' grid-cell--taken' : '' %>"
