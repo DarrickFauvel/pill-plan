@@ -223,7 +223,7 @@
 
   </div>
 
-  <div class="fill-mode-section" data-show="$gridMode === 'fill'">
+  <div class="fill-mode-section" data-show="$gridMode === 'fill'" data-class="{'fill-mode--remove': $fillAction === 'remove'}">
     <div class="fill-controls">
       <div class="fill-controls__row">
         <label for="fill-med-select" class="fill-controls__label">Medication</label>

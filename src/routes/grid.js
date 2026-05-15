@@ -466,19 +466,7 @@ async function streamFillGrid(res, profileId, medId, numWeeks, todayStr) {
   res.write('data: mode outer\n');
   res.write(`data: elements ${html}\n\n`);
 
-  let defaultStart  = '';
-  let defaultSlotId = '';
-  outer: for (const day of fillGrid.days) {
-    for (const slot of fillGrid.slots) {
-      const dow = new Date(day.date + 'T12:00:00').getDay();
-      if (slot.scheduledDays.includes(dow) && !slot.fillEntries[day.date]) {
-        defaultStart  = day.date;
-        defaultSlotId = slot.id;
-        break outer;
-      }
-    }
-  }
-  res.write(`event: datastar-patch-signals\ndata: signals {"fillRangeStart":"${defaultStart}","fillRangeSlotId":"${defaultSlotId}","fillRangeEnd":""}\n\n`);
+  res.write(`event: datastar-patch-signals\ndata: signals {"fillRangeStart":"","fillRangeSlotId":"","fillRangeEnd":""}\n\n`);
 }
 
 
